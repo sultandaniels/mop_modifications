@@ -8,10 +8,12 @@ from utils import log_info
 from utils import Singleton
 from utils import set_seed
 
-#/checkpoints/step=10000.ckpt
+
+# /checkpoints/step=10000.ckpt
 
 class Config(object, metaclass=Singleton):
-    ckpt_path = '/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240311_114155.9aadf7/checkpoints/step=10000.ckpt'
+    ckpt_path = "../outputs/GPT2/240311_143411.9aadf7/checkpoints/step=10000.ckpt"
+    # ckpt_path = "../outputs/GPT2/240312_142642.9bc8ae/checkpoints/step=10000.ckpt"
     seed = 0
     fully_reproducible = False
 
@@ -22,9 +24,10 @@ class Config(object, metaclass=Singleton):
     nx = 10
     ny = 5
     n_noise = 1
+    num_traces = {"train": 1, "val": 1}
 
     # Training settings
-    train_steps = 10000  
+    train_steps = 10000
     batch_size = 64
     train_data_workers = 8
     test_batch_size = 128
@@ -37,8 +40,8 @@ class Config(object, metaclass=Singleton):
     n_layer = 12
     n_head = 8
     n_dims_in = 5
-    n_dims_out = 5      # TODO: this used to be 10 but needs to be fixed to match lin_sys.yaml
-    changing = False    # only used for plotting
+    n_dims_out = 5  # TODO: this used to be 10 but needs to be fixed to match lin_sys.yaml
+    changing = False  # only used for plotting
 
     # Optimizer parameters
     learning_rate = 3e-4
@@ -85,7 +88,7 @@ class Config(object, metaclass=Singleton):
                     value = float(value)
                 else:
                     assert type(getattr(self, key)) is type(
-                        value), f"{key}, {type(getattr(self,key))}, {type(value)}"
+                        value), f"{key}, {type(getattr(self, key))}, {type(value)}"
                 if not isinstance(getattr(self, key), property):
                     setattr(self, key, value)
             else:
@@ -96,7 +99,8 @@ class Config(object, metaclass=Singleton):
                     setattr(self, key, value)
         self.__class__.__immutable = True
 
-    def __get_config_file_contents():
+    @classmethod
+    def __get_config_file_contents(cls):
         """Retrieve and cache default and user config file contents."""
         out = {}
         for relpath in ['config.py']:
@@ -111,8 +115,8 @@ class Config(object, metaclass=Singleton):
             (key, getattr(self, key))
             for key in dir(self)
             if not key.startswith('_Config')
-            and not key.startswith('__')
-            and not callable(getattr(self, key))
+               and not key.startswith('__')
+               and not callable(getattr(self, key))
         ])
 
     def get_full_yaml(self):
@@ -139,7 +143,10 @@ class Config(object, metaclass=Singleton):
         # Copy source folder contents over
         target_path = os.path.relpath(target_base_dir + '/src.zip')
         source_path = os.path.relpath(os.path.dirname(__file__) + '/../')
-        def filter_(x): return x.endswith('.py') or x.endswith('.yaml')  # noqa
+
+        def filter_(x):
+            return x.endswith('.py') or x.endswith('.yaml')  # noqa
+
         with zipfile.ZipFile(target_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             for root, dirs, files in os.walk(source_path):
                 for file_or_dir in files + dirs:
