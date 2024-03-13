@@ -1,8 +1,6 @@
 import logging
 
-from lightning.pytorch.strategies import SingleDeviceStrategy
 import pytorch_lightning as pl
-import torch
 
 from core import Config, training
 from models import GPT2
@@ -33,7 +31,6 @@ if __name__ == '__main__':
         accelerator="gpu",
         callbacks=callbacks,
         logger=loggers,
-        # gpus=torch.cuda.device_count(),
         gradient_clip_algorithm=config.gradient_clip_algorithm,
         gradient_clip_val=config.gradient_clip_val,
         log_every_n_steps=50,

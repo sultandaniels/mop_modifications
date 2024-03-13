@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def log_info(st):
     if type(st) != str:
         st = str(st)
@@ -30,37 +31,50 @@ def set_seed(seed=0, fully_reproducible=False):
         torch.backends.cudnn.benchmark = False
     np.random.seed(seed)
 
+
 class classproperty(property):
     def __get__(self, owner_self, owner_cls):
         return self.fget(owner_cls)
 
 
-def plot_errs(names, err_lss, legend_loc="upper right", ax=None, shade=True):
+def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
     if ax is None:
         fig = plt.figure(figsize=(15, 9))
         ax = fig.add_subplot(111)
     ax.set_yscale('log')
     ax.grid()
     handles = []
-    for i, (name, err_ls) in enumerate(zip(names, err_lss)):
-        traj_errs = err_ls.sum(axis=1)
-        print(name, "{:.2f}".format(traj_errs.mean()))
-        avg, std = err_ls.mean(axis=0), err_ls.std(axis=0)
-        handles.extend(ax.plot(avg, label=name, linewidth=3))
-        if shade:
-            ax.fill_between(range(len(avg)), avg-std, 
-                            avg+std, facecolor=handles[-1].get_color(), alpha=0.33)
-        
+    for i, (name, err_ls) in enumerate(err_lss.items()):
+        traj_errs = err_ls.sum(axis=-1)
+        print(name, "{:.2f}".format(traj_errs.mean(axis=(0, 1))))
+
+        t = np.arange(1, err_ls.shape[-1])
+        if normalized:
+            if name != "Kalman":
+                normalized_err = (err_ls - err_lss["Kalman"]) / np.expand_dims(err_irreducible, axis=tuple(range(1, err_ls.ndim)))
+
+                q1, median, q3 = np.quantile(normalized_err, [0.25, 0.5, 0.75], axis=-2).mean(axis=1)
+                handles.extend(ax.plot(t, median[1:], label=name, linewidth=3))
+                if shade:
+                    ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
+        else:
+            avg, std = err_ls.mean(axis=(0, 1)), err_ls.std(axis=(0, 1))
+            handles.extend(ax.plot(avg, label=name, linewidth=3))
+            if shade:
+                ax.fill_between(t, (avg - std)[1:], (avg + std)[1:], facecolor=handles[-1].get_color(), alpha=0.2)
+
     ax.legend(fontsize=30, loc=legend_loc)
-    ax.set_ylabel("Prediction Error", fontsize=30)
     ax.set_xlabel("t", fontsize=30)
+    ax.set_ylabel("Prediction Error", fontsize=30)
     ax.grid(which="both")
     ax.tick_params(axis='both', which='major', labelsize=30)
     ax.tick_params(axis='both', which='minor', labelsize=20)
 
+
 def spectrum(A, k):
     spec_rad = np.max(np.abs(np.linalg.eigvals(A)))
-    return np.linalg.norm(np.linalg.matrix_power(A,k)) / spec_rad**k
+    return np.linalg.norm(np.linalg.matrix_power(A, k)) / spec_rad ** k
+
 
 class RLSSingle:
     def __init__(self, ni, lam=1):
@@ -73,17 +87,16 @@ class RLSSingle:
         alpha = 1 / (1 + x.T @ z)
         wp = self.mu + y * z
         self.mu = self.mu + z * (y - alpha * x.T @ wp)
-        self.P -= alpha * np.outer(z,z)
-    
+        self.P -= alpha * np.outer(z, z)
+
+
 class RLS:
-    
     def __init__(self, ni, no, lam=1):
         self.rlss = [RLSSingle(ni, lam) for _ in range(no)]
-        
+
     def add_data(self, x, y):
         for _y, rls in zip(y, self.rlss):
             rls.add_data(x, _y)
-    
+
     def predict(self, x):
         return np.array([rls.mu @ x for rls in self.rlss])
-

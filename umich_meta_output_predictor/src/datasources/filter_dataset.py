@@ -1,4 +1,3 @@
-import numpy as np
 from torch.utils.data import Dataset
 from dyn_models.filtering_lti import *
 from core import Config
@@ -25,15 +24,15 @@ class FilterDataset(Dataset):
         # generate random entites
         entry = self.entries[idx % len(self.entries)].copy()
 
+        obs = entry.pop("obs")
+        L = obs.shape[-2]
         if config.dataset_typ in ["ypred", "noniid", "upperTriA"]:
-            obs = entry.pop("obs")
-            entry["xs"] = obs[:-1]
-            entry["ys"] = obs[1:]
+            entry["xs"] = np.take(obs, np.arange(L - 1), axis=-2)
+            entry["ys"] = np.take(obs, np.arange(1, L), axis=-2)
         elif config.dataset_typ == "drone":
-            obs = entry.pop("obs")
             actions = entry.pop("actions")
-            entry["xs"] = np.concatenate([obs[:-1], actions], axis=-1)
-            entry["ys"] = obs[1:]
+            entry["xs"] = np.concatenate([np.take(obs, np.arange(L - 1), axis=-2), actions], axis=-1)
+            entry["ys"] = np.take(obs, np.arange(1, L), axis=-2)
         else:
             raise NotImplementedError(f"{config.dataset_typ} is not implemented")
 
