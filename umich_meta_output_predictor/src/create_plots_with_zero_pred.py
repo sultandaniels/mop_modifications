@@ -1,18 +1,16 @@
-import logging
-
 import collections
-import pytorch_lightning as pl
-import torch
+import logging
 import os
 
-from core import Config, training
-from models import GPT2
-from dyn_models import apply_kf, generate_lti_sample, generate_changing_lti_sample, generate_drone_sample, \
-    apply_ekf_drone
-from dyn_models.filtering_lti import solve_ricc
-from utils import RLS, plot_errs
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
+
+from core import Config
+from dyn_models import apply_kf, generate_lti_sample, generate_changing_lti_sample, generate_drone_sample, \
+    apply_ekf_drone
+from models import GPT2
+from utils import RLS, plot_errs
 
 if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
@@ -28,7 +26,7 @@ if __name__ == '__main__':
 
     ys, sim_objs, us = [], [], []  # initialize the lists
     num_systems = 1
-    num_trials = 1000
+    num_trials = 2000
     for i in range(num_systems):  # iterate over 1000 (I think this is the number of trials for the dataset)
         if config.dataset_typ == "drone":  # if the dataset type is drone
             sim_obj, entry = generate_drone_sample(config.n_positions)  # generate drone sample
@@ -84,28 +82,30 @@ if __name__ == '__main__':
         ("Zero", errs_zero)
     ])
 
-    # if config.dataset_typ != "drone":
-    #     preds_rls = []
-    #     for _ys in ys:
-    #         ls = [np.zeros(config.ny)]
-    #         rls = RLS(config.nx, config.ny)
-    #         for i in range(len(_ys) - 1):
-    #             if i < 2:
-    #                 ls.append(_ys[i])
-    #             else:
-    #                 rls.add_data(_ys[i - 2:i].flatten(), _ys[i])
-    #                 ls.append(rls.predict(_ys[i - 1:i + 1].flatten()))
-    #
-    #         preds_rls.append(ls)
-    #     preds_rls = np.array(preds_rls)
-    #     err_lss["OLS"] = np.linalg.norm(ys - preds_rls, axis=-1) ** 2
+    if config.dataset_typ != "drone":
+        preds_rls = []
+        for _ys in ys:
+            _preds_rls = []
+            for __ys in _ys:
+                ls = [np.zeros(config.ny)]
+                rls = RLS(config.nx, config.ny)
+                for i in range(_ys.shape[-2] - 1):
+                    if i < 2:
+                        ls.append(__ys[i])
+                    else:
+                        rls.add_data(__ys[i - 2:i].flatten(), __ys[i])
+                        ls.append(rls.predict(__ys[i - 1:i + 1].flatten()))
+                _preds_rls.append(ls)
+            preds_rls.append(_preds_rls)
+        preds_rls = np.array(preds_rls)
+        err_lss["OLS"] = np.linalg.norm(ys - preds_rls, axis=-1) ** 2
 
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
 
     fig = plt.figure(figsize=(15, 9))
     ax = fig.add_subplot(111)
 
-    plot_errs(err_lss, irreducible_error, ax=ax, shade=True, normalized=True)
+    plot_errs(err_lss, irreducible_error, ax=ax, shade=True, normalized=False)
     # plot_errs(err_lss, irreducible_error, ax=ax, shade=config.dataset_typ != "drone", normalized=True)
 
     # plot_errs(err_lss, irreducible_error, ax=ax, shade=True, normalized=False)
@@ -113,3 +113,15 @@ if __name__ == '__main__':
 
     os.makedirs("../figures", exist_ok=True)
     fig.savefig(f"../figures/{config.dataset_typ}" + ("-changing" if config.changing else ""))
+    plt.show()
+
+    err_diff = (err_lss["OLS"] - err_lss["MOP"]).reshape(-1, config.n_positions + 1)
+    plt.hist(err_diff[:, -1], bins=100)
+    plt.show()
+
+    # bins = np.linspace(np.min(err_diff), np.max(err_diff), 101)
+    # density = np.stack([np.histogram(err_diff[:, i], bins, density=True)[0] for i in range(config.n_positions + 1)], axis=-1)
+    #
+    # im = plt.cm.get_cmap('RdPu')(density)
+    # plt.imshow(im)
+    # plt.show()
