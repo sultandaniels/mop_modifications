@@ -12,14 +12,14 @@ from utils import set_seed
 # /checkpoints/step=10000.ckpt
 
 class Config(object, metaclass=Singleton):
-    ckpt_path = "../outputs/GPT2/240311_143411.9aadf7/checkpoints/"
-    # ckpt_path = "../outputs/GPT2/240312_142642.9bc8ae/checkpoints/step=10000.ckpt"
+    ckpt_path = "../outputs/GPT2/240314_122752.f45883/checkpoints/new_eig_step=10000.ckpt"
+    # ckpt_path = "../outputs/GPT2/240314_122752.f45883/checkpoints/step=10000.ckpt"
     seed = 0
     fully_reproducible = False
 
     # Dataset settings
-    num_tasks = 20000
-    num_val_tasks = 5000
+    num_tasks = 20000 #number of training systems
+    num_val_tasks = 1000 #number of test systems
     dataset_typ = "ypred"
     nx = 10
     ny = 5
@@ -30,7 +30,7 @@ class Config(object, metaclass=Singleton):
     train_steps = 10000
     batch_size = 64
     train_data_workers = 8
-    test_batch_size = 128
+    test_batch_size = 256
     test_data_workers = 4
     num_epochs = 1
 

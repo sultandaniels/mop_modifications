@@ -89,8 +89,8 @@ def get_callbacks_and_loggers(model, output_dir, emb_dim): #add emb_dim as a par
 
     checkpoint_callback = pl_callbacks.ModelCheckpoint(
         dirpath=os.path.join(output_dir, "checkpoints"),
-        filename="emb_dim_" + str(emb_dim) + "_{step}",
-        save_top_k=-1,
+        filename="new_eig_{step}", # for embed dim experiments: "emb_dim_" + str(emb_dim) + "_{step}",
+        save_top_k=-1, 
         every_n_train_steps=10000,
     )
 
