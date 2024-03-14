@@ -37,7 +37,9 @@ class classproperty(property):
         return self.fget(owner_cls)
 
 
-def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
+def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=False):
+    print("normalized", normalized)
+    normalized = False
     if ax is None:
         fig = plt.figure(figsize=(15, 9))
         ax = fig.add_subplot(111)
@@ -58,6 +60,7 @@ def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade
                 if shade:
                     ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
         else:
+            print("normalized", normalized)
             avg, std = err_ls.mean(axis=(0, 1)), err_ls.std(axis=(0, 1))
             handles.extend(ax.plot(avg, label=name, linewidth=3))
             if shade:

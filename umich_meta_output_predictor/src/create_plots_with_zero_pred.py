@@ -14,10 +14,11 @@ from utils import RLS, plot_errs
 import matplotlib.pyplot as plt
 import numpy as np
 
-if __name__ == '__main__':
+
+def compute_errors(config):
+    # a function to compute the test errors for the GPT2 model, kalman filter, and zero predictions
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
     logger = logging.getLogger(__name__)  # get the logger
-    config = Config()  # get the config
     config.parse_args()  # parse the arguments
 
     model = GPT2.load_from_checkpoint(config.ckpt_path,
@@ -93,15 +94,23 @@ if __name__ == '__main__':
     #             if i < 2:
     #                 ls.append(_ys[i])
     #             else:
-    #                 rls.add_data(_ys[i - 2:i].flatten(), _ys[i])
+    #                 rls.add_data_orig(_ys[i - 2:i].flatten(), _ys[i])
     #                 ls.append(rls.predict(_ys[i - 1:i + 1].flatten()))
-    #
+    
     #         preds_rls.append(ls)
     #     preds_rls = np.array(preds_rls)
     #     err_lss["OLS"] = np.linalg.norm(ys - preds_rls, axis=-1) ** 2
 
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
 
+    return err_lss, irreducible_error
+
+if __name__ == '__main__':
+    config = Config()
+    emb_dim = 256
+    
+    err_lss, irreducible_error = compute_errors(config, emb_dim)
+    
     fig = plt.figure(figsize=(15, 9))
     ax = fig.add_subplot(111)
 
