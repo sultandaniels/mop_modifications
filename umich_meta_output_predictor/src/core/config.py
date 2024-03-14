@@ -28,10 +28,10 @@ class Config(object, metaclass=Singleton):
 
     # Training settings
     train_steps = 10000
-    batch_size = 64
-    train_data_workers = 8
+    batch_size = 64 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
+    train_data_workers = 8 #set to 1 (check if it changes the speed of the training process)
     test_batch_size = 256
-    test_data_workers = 4
+    test_data_workers = 4 #set to 1
     num_epochs = 1
 
     # Model settings
@@ -40,7 +40,7 @@ class Config(object, metaclass=Singleton):
     n_layer = 12
     n_head = 8
     n_dims_in = 5
-    n_dims_out = 5  # TODO: this used to be 10 but needs to be fixed to match lin_sys.yaml
+    n_dims_out = 10  # TODO: this used to be 10 but needs to be fixed to match lin_sys.yaml
     changing = False  # only used for plotting
 
     # Optimizer parameters
