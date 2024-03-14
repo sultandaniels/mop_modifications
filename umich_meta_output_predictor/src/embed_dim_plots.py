@@ -1,9 +1,10 @@
 from create_plots_with_zero_pred import compute_errors
 from train import train_gpt2
 from core import Config
-import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import json
+import os
 
 def plot_errors_emb(errors, embed_dims, legend_loc="upper right", ax=None, shade=True):
     if ax is None:
@@ -15,8 +16,8 @@ def plot_errors_emb(errors, embed_dims, legend_loc="upper right", ax=None, shade
     i = 0
     for err_ls in errors:
         # get the transformer errors and name from the err_ls dictionary
-        name, err_ls = err_ls["MOP"], err_ls["MOP"]
-        print("name", name)
+        name = "MOP"
+        err_ls = err_ls[name]
         traj_errs = err_ls.sum(axis=-1)
         print(name, "{:.2f}".format(traj_errs.mean(axis=(0, 1))))
 
@@ -34,6 +35,8 @@ def plot_errors_emb(errors, embed_dims, legend_loc="upper right", ax=None, shade
     ax.tick_params(axis='both', which='major', labelsize=30)
     ax.tick_params(axis='both', which='minor', labelsize=20)
     ax.title.set_text("Prediction Error vs Step for Different Embedding Lengths")
+    os.makedirs("../figures", exist_ok=True)
+    fig.savefig(f"../figures/embed_dim" + ("-changing" if config.changing else ""))
 
 def plot_train_time(times, embed_dims):
     fig = plt.figure(figsize=(15, 9))
@@ -47,6 +50,8 @@ def plot_train_time(times, embed_dims):
     ax.tick_params(axis='both', which='major', labelsize=30)
     ax.tick_params(axis='both', which='minor', labelsize=20)
     ax.title.set_text("Training Time vs Embedding Length")
+    os.makedirs("../figures", exist_ok=True)
+    fig.savefig(f"../figures/embed_dim_times" + ("-changing" if config.changing else ""))
 
 
 if __name__ == "__main__":
@@ -57,10 +62,27 @@ if __name__ == "__main__":
     times = []
     for embed_dim in embed_dims:
         config.override("n_embd", embed_dim)
-        config.override("ckpt_path", "../outputs/GPT2/240311_143411.9aadf7/checkpoints/emb_dim_" + str(embed_dim) + "_step=10000.ckpt")
+        config.override("ckpt_path", "../outputs/GPT2/240313_224903.646dbe/checkpoints/emb_dim_" + str(embed_dim) + "_step=10000.ckpt")
         train_time = train_gpt2(config)
         times.append(train_time)
-        errors.append(compute_errors(config))
+        error, irr = compute_errors(config)
+        errors.append(error)
     print(errors)
+    #save errors and times to a file
+
     plot_errors_emb(errors, embed_dims)
     plot_train_time(times, embed_dims)
+
+    # Assuming `errors` is your list of dictionaries
+    for error in errors:
+        for key in error:
+            # Convert numpy arrays to nested lists
+            if isinstance(error[key], np.ndarray):
+                error[key] = error[key].tolist()
+
+    with open('embed_dim_errors.json', 'w') as f:
+        json.dump(errors, f)
+
+    np.save("embed_dim_times.npy", times)
+    
+    

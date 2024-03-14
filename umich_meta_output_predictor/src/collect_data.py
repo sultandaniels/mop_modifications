@@ -1,5 +1,5 @@
 import logging
-from dyn_models import generate_drone_sample, generate_lti_sample  # , generate_pendulum_sample
+from dyn_models import generate_drone_sample, generate_lti_sample, generate_lti_sample_new_eig  # , generate_pendulum_sample
 from core import Config
 from tqdm import tqdm
 import pickle
@@ -19,7 +19,14 @@ if __name__ == '__main__':
                 sim_obj, sample = generate_drone_sample(
                     config.n_positions, sigma_w=1e-1, sigma_v=1e-1, dt=1e-1)
             else:
-                fsim, sample = generate_lti_sample(config.dataset_typ,
+                if name == "train":
+                    fsim, sample = generate_lti_sample(config.dataset_typ,
+                                                   config.num_traces[name],
+                                                   config.n_positions,
+                                                   config.nx, config.ny,
+                                                   sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
+                else:
+                    fsim, sample = generate_lti_sample_new_eig(config.dataset_typ,
                                                    config.num_traces[name],
                                                    config.n_positions,
                                                    config.nx, config.ny,
