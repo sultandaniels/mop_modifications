@@ -53,8 +53,7 @@ def train_gpt2(config): #input emd_dim as a parameter for the embed dim experime
 
 if __name__ == '__main__':
     config = Config()
-    emb_dim = 256
-    train_gpt2(config, emb_dim)
+    train_gpt2(config)
     
 
 
