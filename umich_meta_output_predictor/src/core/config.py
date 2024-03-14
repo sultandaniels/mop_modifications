@@ -36,7 +36,7 @@ class Config(object, metaclass=Singleton):
 
     # Model settings
     n_positions = 50
-    n_embd = 256
+    n_embd = 128
     n_layer = 12
     n_head = 8
     n_dims_in = 5

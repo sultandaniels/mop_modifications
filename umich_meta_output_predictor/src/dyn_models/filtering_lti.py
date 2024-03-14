@@ -1,5 +1,7 @@
 import numpy as np
 import scipy as sc
+from numpy import linalg as lin
+from scipy import linalg as la
 from filterpy.kalman import KalmanFilter
 
 
@@ -16,6 +18,50 @@ def solve_ricc(A, W):  # solve the Riccati equation for the steady state solutio
             (Vinv @ W @ Vinv.T) / (1 - L[:, None] * L)
     ) @ V.T).real
     return Pi
+
+def gen_A(elow, ehigh, n): # generates a 2d A matrix with evalue magnitudes in between elow and ehigh. For matrices larger than 2d, when there are complex evalues it just ensures that all evalues are below ehigh and at least one evalue is above elow.
+    if elow > ehigh:
+        raise ValueError("elow must be less than ehigh")
+
+    # bound = np.random.uniform(elow, ehigh, size=(2,)) #sample a random bound for the evalues
+    # #sort bound in descending order
+    # bound = np.sort(bound)[::-1]
+    a = ehigh #bound[0]
+    b = elow #bound[1]
+
+    # mat = np.random.normal(loc=0, scale = 1, size=(n,n)) #produce random square matrix with normal distribution
+    mat = np.random.uniform(-1, 1, (n,n)) #produce random square matrix with uniform distribution
+
+    # get eigenvalues of mat
+    eigs = lin.eigvals(mat)
+    # sort eignvalues by magnitude in descending order
+    sorted_indices = np.argsort(np.abs(eigs))[::-1] #changed from np.sort(eigs)[::-1]
+    eigs = eigs[sorted_indices] #sort the evalues
+
+    eps = 1e-10 #small number to check if evalues are out of bounds
+    if np.iscomplex(eigs).any(): #if there are complex evalues
+        # scale the eigenvalues to the bound
+        alpha = a #a + 0.5*(b-a) #number to scale the evalues to
+        out = (alpha/np.abs(eigs[0]))*mat #scale the matrix
+
+        if (np.sum(np.abs(lin.eigvals(out)) > elow - eps) < 1) or np.any(np.abs(lin.eigvals(out)) > ehigh+eps): #if there are no evalues above elow or there are evalues above ehigh
+            print("np.abs(lin.eigvals(out)):", np.abs(lin.eigvals(out)))
+            raise ValueError("evalues out of bounds (complex)")
+    
+    else: #if there are no complex evalues
+        print("all real evalues")
+        A = ((b-a)/(eigs[0] - eigs[-1]))*(mat - eigs[-1]*np.eye(n)) + a*np.eye(n) #subtract the smallest evalue from the matrix
+        T,Z = la.schur(A) #get the schur decomposition
+        sgn = 2*np.random.randint(2, size=n) - np.ones((n,)) #randomly choose a sign for each evalue
+        for i in range(n):
+            T[i,i] = T[i,i]*sgn[i] #multiply the diagonal by the sign
+        out = Z@T@Z.T #reconstruct the matrix
+        if (np.any(np.abs(lin.eigvals(out)) < elow-eps) or np.any(np.abs(lin.eigvals(out)) > ehigh+eps)): #if there are evalues below elow or above ehigh
+            print("np.abs(lin.eigvals(out)):", np.abs(lin.eigvals(out)))
+            raise ValueError("evalues out of bounds (real)")
+
+    print("np.abs(lin.eigvals(out)):", np.abs(lin.eigvals(out))) 
+    return out
 
 
 ####################################################################################################
@@ -41,7 +87,7 @@ class FilterSim:
 
     # ####################################################################################################
     # #code that I added
-    def __init__(self, nx=3, ny=2, sigma_w=1e-1, sigma_v=1e-1, tri=False, n_noise=1):
+    def __init__(self, nx, ny, sigma_w, sigma_v, tri, n_noise, new_eig):
         self.sigma_w = sigma_w
         self.sigma_v = sigma_v
 
@@ -52,12 +98,15 @@ class FilterSim:
             A[np.triu_indices(nx, 1)] = np.random.uniform(-1, 1, (nx ** 2 + nx) // 2 - nx)
             self.A = A
         else:
-            A = np.random.uniform(-1, 1, (nx, nx))  # fixed the sampling of A to be between -1 and 1
-            A /= np.max(np.abs(np.linalg.eigvals(A)))
-            self.A = A * 0.95
-            # A = np.zeros((nx, nx))
-            # A[0,0] = 0.95
-            # self.A = A
+            if new_eig:
+                self.A = gen_A(0.9, 0.95, nx)
+            else:
+                A = np.random.uniform(-1, 1, (nx, nx))  # fixed the sampling of A to be between -1 and 1
+                A /= np.max(np.abs(np.linalg.eigvals(A)))
+                self.A = A * 0.95
+                # A = np.zeros((nx, nx))
+                # A[0,0] = 0.95
+                # self.A = A
 
         self.C = np.eye(nx) if nx == ny else self.construct_C(self.A, ny)
 
@@ -163,7 +212,12 @@ def apply_kf(fsim, ys, sigma_w=None, sigma_v=None, return_obj=False):
 
 
 def _generate_lti_sample(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
-    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri="upperTriA" == dataset_typ, n_noise=n_noise)
+    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri="upperTriA" == dataset_typ, n_noise=n_noise, new_eig = False)
+    states, obs = fsim.simulate_steady(batch_size, n_positions)
+    return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
+
+def _generate_lti_sample_new_eig(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
+    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri="upperTriA" == dataset_typ, n_noise=n_noise, new_eig = True)
     states, obs = fsim.simulate_steady(batch_size, n_positions)
     return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
 
@@ -173,14 +227,20 @@ def generate_lti_sample(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e
         fsim, entry = _generate_lti_sample(dataset_typ, batch_size, n_positions, nx, ny, sigma_w, sigma_v, n_noise=n_noise)
         if check_validity(entry):
             return fsim, entry
+        
+def generate_lti_sample_new_eig(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
+    while True:
+        fsim, entry = _generate_lti_sample_new_eig(dataset_typ, batch_size, n_positions, nx, ny, sigma_w, sigma_v, n_noise=n_noise)
+        if check_validity(entry):
+            return fsim, entry
 
 
 ####################################################################################################
 
 
 def generate_changing_lti_sample(n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
-    fsim1 = FilterSim(nx=nx, ny=ny, sigma_w=sigma_w, sigma_v=sigma_v, n_noise=n_noise)
-    fsim2 = FilterSim(nx=nx, ny=ny, sigma_w=sigma_w, sigma_v=sigma_v, n_noise=n_noise)
+    fsim1 = FilterSim(nx=nx, ny=ny, sigma_w=sigma_w, sigma_v=sigma_v, n_noise=n_noise, new_eig=False)
+    fsim2 = FilterSim(nx=nx, ny=ny, sigma_w=sigma_w, sigma_v=sigma_v, n_noise=n_noise, new_eig=False)
 
     _xs, _ys = fsim1.simulate(n_positions)
     while not check_validity({"states": _xs, "obs": _ys}):
