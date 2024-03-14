@@ -111,8 +111,6 @@ class FilterSim:
         self.C = np.eye(nx) if nx == ny else self.construct_C(self.A, ny)
 
         self.S_state_inf = solve_ricc(self.A, np.eye(nx) * sigma_w ** 2)
-        self.sqrt_S_state_inf = np.linalg.cholesky(self.S_state_inf)
-
         S_state_inf_intermediate = sc.linalg.solve_discrete_are(self.A.T, self.C.T, np.eye(nx) * sigma_w ** 2, np.eye(ny) * sigma_v ** 2)
         self.S_observation_inf = self.C @ S_state_inf_intermediate @ self.C.T + np.eye(ny) * sigma_v ** 2
 
@@ -141,7 +139,10 @@ class FilterSim:
     def simulate_steady(self, batch_size, traj_len):  # change x0 to the steady state distribution
         ny, nx = self.C.shape
         n_noise = self.n_noise
-        x0 = np.random.randn(batch_size, nx) @ self.sqrt_S_state_inf.T
+        x0 = np.stack([
+            np.random.multivariate_normal(np.zeros(nx), self.S_state_inf)
+            for _ in range(batch_size)
+        ])
 
         ws = np.random.randn(batch_size, n_noise + traj_len, nx) * self.sigma_w    # state noise of dimension nx
         vs = np.random.randn(batch_size, n_noise + traj_len, ny) * self.sigma_v    # output noise of dimension ny
