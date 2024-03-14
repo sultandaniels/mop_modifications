@@ -50,8 +50,8 @@ def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade
         traj_errs = err_ls.sum(axis=-1)
         print(name, "{:.2f}".format(traj_errs.mean(axis=(0, 1))))
 
-        t = np.arange(1, err_ls.shape[-1])
         if normalized:
+            t = np.arange(1, err_ls.shape[-1])
             if name != "Kalman":
                 normalized_err = (err_ls - err_lss["Kalman"]) / np.expand_dims(err_irreducible, axis=tuple(range(1, err_ls.ndim)))
 
@@ -64,7 +64,7 @@ def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade
             avg, std = err_ls.mean(axis=(0, 1)), err_ls.std(axis=(0, 1))
             handles.extend(ax.plot(avg, label=name, linewidth=3))
             if shade:
-                ax.fill_between(t, (avg - std)[1:], (avg + std)[1:], facecolor=handles[-1].get_color(), alpha=0.2)
+                ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
 
     ax.legend(fontsize=30, loc=legend_loc)
     ax.set_xlabel("t", fontsize=30)
