@@ -40,7 +40,7 @@ class BaseModel(pl.LightningModule):
             input_dict, batch_idx=batch_idx, return_intermediate_dict=True)
         self.log_output_dct(output_dict, "val")
         return {"loss": output_dict["optimized_loss"],
-                "intermediate_dict": intermediate_dict,
+                "intermediate_di]-[ct": intermediate_dict,
                 "output_dict": output_dict}
 
     def test_step(self, input_dict, batch_idx):
