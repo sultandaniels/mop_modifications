@@ -31,7 +31,7 @@ if __name__ == '__main__':
                                                    config.n_positions,
                                                    config.nx, config.ny,
                                                    sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
-            samples.append(sample)
+            samples.extend([{k: v[i] for k, v in sample.items()} for i in range(config.num_traces[name])])
 
         os.makedirs("../data", exist_ok=True)
         with open(f"../data/{name}_{config.dataset_typ}.pkl", "wb") as f:

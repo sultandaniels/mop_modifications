@@ -9,7 +9,7 @@ import torch
 from core import Config
 from dyn_models import apply_kf, generate_lti_sample, generate_changing_lti_sample, generate_drone_sample, \
     apply_ekf_drone
-from models import GPT2
+from models import GPT2, CnnKF
 from utils import RLS, plot_errs
 
 def compute_errors(config):
@@ -82,23 +82,58 @@ def compute_errors(config):
         ("Zero", errs_zero)
     ])
 
+    ir_length = 2
     if config.dataset_typ != "drone":
         preds_rls = []
-        for _ys in ys:
+        preds_rls_analytical = []
+        for sim_obj, _ys in zip(sim_objs, ys):
             _preds_rls = []
+            _preds_rls_analytical = []
             for __ys in _ys:
                 ls = [np.zeros(config.ny)]
+                ls_analytical = [np.linalg.norm(__ys[0], axis=-1) ** 2]
+
                 rls = RLS(config.nx, config.ny)
                 for i in range(_ys.shape[-2] - 1):
                     if i < 2:
                         ls.append(__ys[i])
+                        ls_analytical.append(np.linalg.norm(__ys[i + 1], axis=-1) ** 2)
                     else:
                         rls.add_data(__ys[i - 2:i].flatten(), __ys[i])
+                        _cnn_rls = CnnKF(config.ny, ir_length)
+                        _cnn_rls.observation_IR.data = torch.from_numpy(np.stack([_rls.mu for _rls in rls.rlss], axis=-1)
+                                                                        .reshape(ir_length, config.ny, config.ny)
+                                                                        .transpose(1, 0, 2)[:, ::-1].copy())
+
                         ls.append(rls.predict(__ys[i - 1:i + 1].flatten()))
+                        ls_analytical.append(_cnn_rls.analytical_error(sim_obj).item())
+
                 _preds_rls.append(ls)
+                _preds_rls_analytical.append(ls_analytical)
+
             preds_rls.append(_preds_rls)
-        preds_rls = np.array(preds_rls)
-        err_lss["OLS"] = np.linalg.norm(ys - preds_rls, axis=-1) ** 2
+            preds_rls_analytical.append(_preds_rls_analytical)
+
+        err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
+        err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
+
+        # Debugging implemented OLS
+        errs_rls_wentinn = []
+        for sim_obj, _ys in zip(sim_objs, ys):
+            _errs_rls_wentinn = []
+            for __ys in _ys:
+                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+                ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+                rls_wentinn = CnnKF(config.ny, ir_length)
+                for i in range(config.n_positions - 1):
+                    rls_wentinn.update(
+                        torch.from_numpy(padded_ys[i:i + ir_length]),
+                        torch.from_numpy(padded_ys[i + ir_length])
+                    )
+                    ls.append(rls_wentinn.analytical_error(sim_obj).item())
+                _errs_rls_wentinn.append(ls)
+            errs_rls_wentinn.append(_errs_rls_wentinn)
+        err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
 
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
 
@@ -123,13 +158,6 @@ if __name__ == '__main__':
     fig.savefig(f"../figures/{config.dataset_typ}" + ("-changing" if config.changing else ""))
     plt.show()
 
-    err_diff = (err_lss["OLS"] - err_lss["MOP"]).reshape(-1, config.n_positions + 1)
-    plt.hist(err_diff[:, -1], bins=100)
-    plt.show()
 
-    # bins = np.linspace(np.min(err_diff), np.max(err_diff), 101)
-    # density = np.stack([np.histogram(err_diff[:, i], bins, density=True)[0] for i in range(config.n_positions + 1)], axis=-1)
-    #
-    # im = plt.cm.get_cmap('RdPu')(density)
-    # plt.imshow(im)
-    # plt.show()
+
+
