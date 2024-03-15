@@ -79,6 +79,10 @@ def spectrum(A, k):
     return np.linalg.norm(np.linalg.matrix_power(A, k)) / spec_rad ** k
 
 
+def batch_trace(x: torch.Tensor) -> torch.Tensor:
+    return x.diagonal(dim1=-2, dim2=-1).sum(dim=-1)
+
+
 class RLSSingle:
     def __init__(self, ni, lam=1):
         self.lam = lam
