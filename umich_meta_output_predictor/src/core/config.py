@@ -12,7 +12,7 @@ from utils import set_seed
 # /checkpoints/step=10000.ckpt
 
 class Config(object, metaclass=Singleton):
-    ckpt_path = "../outputs/GPT2/240314_122752.f45883/checkpoints/new_eig_step=10000.ckpt"
+    ckpt_path = "../outputs/GPT2/240314_122752.f45883/checkpoints/step=10000.ckpt"
     # ckpt_path = "../outputs/GPT2/240314_122752.f45883/checkpoints/step=10000.ckpt"
     seed = 0
     fully_reproducible = False

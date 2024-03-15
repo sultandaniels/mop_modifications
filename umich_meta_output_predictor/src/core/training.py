@@ -56,7 +56,7 @@ def setup_train(model):
     return output_dir
 
 
-def get_callbacks_and_loggers_old(model, output_dir):
+def get_callbacks_and_loggers(model, output_dir):
     lr_monitor = pl_callbacks.LearningRateMonitor(logging_interval='epoch')
     tb_logger = pl_loggers.TensorBoardLogger(output_dir)
     loggers = [tb_logger]
@@ -82,7 +82,7 @@ def get_callbacks_and_loggers_old(model, output_dir):
     callbacks = [checkpoint_callback, lr_monitor]
     return callbacks, loggers
 
-def get_callbacks_and_loggers(model, output_dir, emb_dim): #add emb_dim as a parameter
+def get_callbacks_and_loggers_new_eig(model, output_dir, emb_dim): #add emb_dim as a parameter
     lr_monitor = pl_callbacks.LearningRateMonitor(logging_interval='epoch')
     tb_logger = pl_loggers.TensorBoardLogger(output_dir)
     loggers = [tb_logger]

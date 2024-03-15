@@ -25,7 +25,7 @@ def train_gpt2(config): #input emd_dim as a parameter for the embed dim experime
     # Define model
     output_dir = training.setup_train(model)
     print(model)
-    callbacks, loggers = training.get_callbacks_and_loggers(model, output_dir, config.n_embd)
+    callbacks, loggers = training.get_callbacks_and_loggers(model, output_dir)#, config.n_embd)
     print("ckpt_path", config.ckpt_path)
     ckpt_path = config.ckpt_path if config.ckpt_path != '' else None
     
