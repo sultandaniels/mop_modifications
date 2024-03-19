@@ -12,13 +12,13 @@ from utils import set_seed
 # /checkpoints/step=10000.ckpt
 
 class Config(object, metaclass=Singleton):
-    ckpt_path = "../outputs/GPT2/240314_122752.f45883/checkpoints/step=10000.ckpt"
-    # ckpt_path = "../outputs/GPT2/240314_122752.f45883/checkpoints/step=10000.ckpt"
+    ckpt_path = ""
+    # ckpt_path = "../outputs/GPT2/240319_062031.0ec795/checkpoints/step=20000.ckpt"
     seed = 0
     fully_reproducible = False
 
     # Dataset settings
-    num_tasks = 20000 #number of training systems
+    num_tasks = 40000 #number of training systems
     num_val_tasks = 1000 #number of test systems
     dataset_typ = "ypred"
     nx = 10
@@ -27,20 +27,20 @@ class Config(object, metaclass=Singleton):
     num_traces = {"train": 1, "val": 1}
 
     # Training settings
-    train_steps = 10000
-    batch_size = 64 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
-    train_data_workers = 8 #set to 1 (check if it changes the speed of the training process)
+    train_steps = 20
+    batch_size = 39 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
+    train_data_workers = 1 #set to 1 (check if it changes the speed of the training process)
     test_batch_size = 256
     test_data_workers = 4 #set to 1
     num_epochs = 1
 
     # Model settings
-    n_positions = 50
+    n_positions = 400 #context length
     n_embd = 128
     n_layer = 12
     n_head = 8
     n_dims_in = 5
-    n_dims_out = 10  # TODO: this used to be 10 but needs to be fixed to match lin_sys.yaml
+    n_dims_out = 5  #(IMPORTANT TO KEEP THIS AT 5 FOR NOW) TODO: this used to be 10 but needs to be fixed to match lin_sys.yaml
     changing = False  # only used for plotting
 
     # Optimizer parameters

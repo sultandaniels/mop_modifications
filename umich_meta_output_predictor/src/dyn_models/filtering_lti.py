@@ -99,7 +99,7 @@ class FilterSim:
             self.A = A
         else:
             if new_eig:
-                self.A = gen_A(0.9, 0.95, nx)
+                self.A = gen_A(0.97, 0.99, nx)
             else:
                 A = np.random.uniform(-1, 1, (nx, nx))  # fixed the sampling of A to be between -1 and 1
                 A /= np.max(np.abs(np.linalg.eigvals(A)))
