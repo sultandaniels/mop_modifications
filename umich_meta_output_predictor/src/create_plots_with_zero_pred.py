@@ -143,7 +143,7 @@ if __name__ == '__main__':
     config = Config()
     emb_dim = 256
     
-    err_lss, irreducible_error = compute_errors(config, emb_dim)
+    err_lss, irreducible_error = compute_errors(config)#, emb_dim)
     
     fig = plt.figure(figsize=(15, 9))
     ax = fig.add_subplot(111)

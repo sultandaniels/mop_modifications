@@ -56,7 +56,7 @@ def setup_train(model):
     return output_dir
 
 
-def get_callbacks_and_loggers(model, output_dir):
+def get_callbacks_and_loggers_old(model, output_dir):
     lr_monitor = pl_callbacks.LearningRateMonitor(logging_interval='epoch')
     tb_logger = pl_loggers.TensorBoardLogger(output_dir)
     loggers = [tb_logger]
@@ -65,7 +65,7 @@ def get_callbacks_and_loggers(model, output_dir):
         dirpath=os.path.join(output_dir, "checkpoints"),
         filename="{step}",
         save_top_k=-1,
-        every_n_train_steps=10000,
+        every_n_train_steps=20000,
     )
 
     ckpt_path = None
@@ -92,6 +92,32 @@ def get_callbacks_and_loggers_new_eig(model, output_dir, emb_dim): #add emb_dim 
         filename="new_eig_{step}", # for embed dim experiments: "emb_dim_" + str(emb_dim) + "_{step}",
         save_top_k=-1, 
         every_n_train_steps=10000,
+    )
+
+    ckpt_path = None
+    ckpt_paths = glob.glob(os.path.join(output_dir, "checkpoints", "epoch=*"))
+    if len(ckpt_paths) > 0:
+        ckpt_paths = [int(ckpt_path.split(os.path.sep)[-1]
+                          [len("epoch="):len("epoch=") + 2]) for ckpt_path in ckpt_paths]
+        max_idx = max(ckpt_paths)
+        ckpt_path = os.path.join(output_dir, "checkpoints",
+                                 "epoch={:02d}.ckpt".format(max_idx))
+        logger.info("Resuming from checkpoint: {}".format(
+            ckpt_path.split(os.path.sep)[-1]))
+
+    callbacks = [checkpoint_callback, lr_monitor]
+    return callbacks, loggers
+
+def get_callbacks_and_loggers(model, output_dir, batch_size, train_step): #add emb_dim as a parameter
+    lr_monitor = pl_callbacks.LearningRateMonitor(logging_interval='epoch')
+    tb_logger = pl_loggers.TensorBoardLogger(output_dir)
+    loggers = [tb_logger]
+
+    checkpoint_callback = pl_callbacks.ModelCheckpoint(
+        dirpath=os.path.join(output_dir, "checkpoints"),
+        filename="num_tasks_" + str(batch_size) + "_{step}", # for embed dim experiments: "emb_dim_" + str(emb_dim) + "_{step}",
+        save_top_k=-1, 
+        every_n_train_steps=train_step, #this changed from 10000 to train_step
     )
 
     ckpt_path = None

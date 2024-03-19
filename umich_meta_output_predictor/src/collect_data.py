@@ -26,7 +26,7 @@ if __name__ == '__main__':
                                                    config.nx, config.ny,
                                                    sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
                 else:
-                    fsim, sample = generate_lti_sample_new_eig(config.dataset_typ,
+                    fsim, sample = generate_lti_sample(config.dataset_typ,
                                                    config.num_traces[name],
                                                    config.n_positions,
                                                    config.nx, config.ny,
