@@ -15,7 +15,7 @@ def train_gpt2(config): #input emd_dim as a parameter for the embed dim experime
     config.parse_args()
     print("batch_size:", config.batch_size)
     print("train_steps:", config.train_steps)
-    print("num_positions:", config.n_positions)
+    print("context length:", config.n_positions)
     print("num_tasks:", config.num_tasks)
 
     # Specify datasets used
@@ -28,7 +28,7 @@ def train_gpt2(config): #input emd_dim as a parameter for the embed dim experime
     # Define model
     output_dir = training.setup_train(model)
     print(model)
-    callbacks, loggers = training.get_callbacks_and_loggers(model, output_dir, config.num_tasks, config.train_steps)#, config.n_embd)
+    callbacks, loggers = training.get_callbacks_and_loggers(model, output_dir, config.batch_size, config.n_positions, config.train_steps)#, config.n_embd)
     ckpt_path = config.ckpt_path if config.ckpt_path != '' else None
     print("ckpt_path:", config.ckpt_path)
     

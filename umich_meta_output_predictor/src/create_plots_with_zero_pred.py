@@ -25,7 +25,7 @@ def compute_errors(config):
         device)  # load_from_checkpoint
 
     ys, sim_objs, us = [], [], []  # initialize the lists
-    num_systems = 1
+    num_systems = confg.num_val_tasks  # number of validation tasks
     num_trials = 2000
     for i in range(num_systems):  # iterate over 1000 (I think this is the number of trials for the dataset)
         if config.dataset_typ == "drone":  # if the dataset type is drone

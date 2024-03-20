@@ -12,8 +12,8 @@ from utils import set_seed
 # /checkpoints/step=10000.ckpt
 
 class Config(object, metaclass=Singleton):
-    ckpt_path = ""
-    # ckpt_path = "../outputs/GPT2/240319_062031.0ec795/checkpoints/step=20000.ckpt"
+    # ckpt_path = ""
+    ckpt_path = "../outputs/GPT2/240320_014524.c78f58/checkpoints/step=20000.ckpt"
     seed = 0
     fully_reproducible = False
 
@@ -27,15 +27,15 @@ class Config(object, metaclass=Singleton):
     num_traces = {"train": 1, "val": 1}
 
     # Training settings
-    train_steps = 20
-    batch_size = 39 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
+    train_steps = 20000
+    batch_size = 28 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
     train_data_workers = 1 #set to 1 (check if it changes the speed of the training process)
-    test_batch_size = 256
-    test_data_workers = 4 #set to 1
+    test_batch_size = 2 #256
+    test_data_workers = 7 #4 #set to 1
     num_epochs = 1
 
     # Model settings
-    n_positions = 400 #context length
+    n_positions = 250 #context length
     n_embd = 128
     n_layer = 12
     n_head = 8

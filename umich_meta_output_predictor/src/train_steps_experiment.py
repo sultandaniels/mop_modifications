@@ -63,6 +63,7 @@ if __name__ == "__main__":
     for train_step in train_steps:
         config.override("num_tasks", train_step)
         config.override("ckpt_path", "../outputs/GPT2/240317_214824.3faa79/checkpoints/num_tasks_" +str(train_step) + "_step=" + str(config.train_steps) + ".ckpt")
+        generate_data(config) #generate data for the new context length and number of systems
         train_time = train_gpt2(config)
         times.append(train_time)
         error, irr = compute_errors(config)
