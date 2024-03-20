@@ -1,6 +1,8 @@
 import numpy as np
 import scipy as sc
+import torch
 from filterpy.kalman import KalmanFilter
+from tensordict import TensorDict
 
 
 def softplus(x):
@@ -42,6 +44,7 @@ class FilterSim:
     # ####################################################################################################
     # #code that I added
     def __init__(self, nx=3, ny=2, sigma_w=1e-1, sigma_v=1e-1, tri=False, n_noise=1):
+        self.nx, self.ny = nx, ny
         self.sigma_w = sigma_w
         self.sigma_v = sigma_v
 
@@ -56,7 +59,7 @@ class FilterSim:
             A /= np.max(np.abs(np.linalg.eigvals(A)))
             self.A = A * 0.95
             # A = np.zeros((nx, nx))
-            # A[0,0] = 0.95
+            # A[0, 0] = 0.95
             # self.A = A
 
         self.C = np.eye(nx) if nx == ny else self.construct_C(self.A, ny)
@@ -166,7 +169,10 @@ def apply_kf(fsim, ys, sigma_w=None, sigma_v=None, return_obj=False):
 def _generate_lti_sample(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
     fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri="upperTriA" == dataset_typ, n_noise=n_noise)
     states, obs = fsim.simulate_steady(batch_size, n_positions)
-    return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
+    return fsim, TensorDict({
+        "states": torch.from_numpy(states),
+        "obs": torch.from_numpy(obs)
+    }, batch_size=(batch_size, n_positions + 1))
 
 
 def generate_lti_sample(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
@@ -197,4 +203,4 @@ def check_validity(entry):
     if entry is None:
         return False
     states, obs = entry["states"], entry["obs"]
-    return np.max(np.abs(states)) < 50 and np.max(np.abs(obs)) < 50
+    return torch.max(torch.abs(states)) < 50 and torch.max(torch.abs(obs)) < 50

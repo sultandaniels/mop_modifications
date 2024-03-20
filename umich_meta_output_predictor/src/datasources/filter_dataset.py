@@ -1,8 +1,7 @@
 from torch.utils.data import Dataset
-from dyn_models.filtering_lti import *
+
 from core import Config
-import torch
-import pickle
+from dyn_models.filtering_lti import *
 
 config = Config()
 
@@ -10,19 +9,16 @@ config = Config()
 class FilterDataset(Dataset):
     def __init__(self, path, use_true_len=False):
         super(FilterDataset, self).__init__()
-        self.load(path)
-        self.use_true_len = use_true_len
-
-    def load(self, path):
         with open(path, "rb") as f:
-            self.entries = pickle.load(f)
+            self.entries = list(torch.load(f).flatten(0, 1))
+        self.use_true_len = use_true_len
 
     def __len__(self):
         return config.train_steps * config.batch_size if not self.use_true_len else len(self.entries)
 
     def __getitem__(self, idx):
-        # generate random entites
-        entry = self.entries[idx % len(self.entries)].copy()
+        # generate random entries
+        entry = dict(self.entries[idx % len(self.entries)])
 
         obs = entry.pop("obs")
         L = obs.shape[-2]

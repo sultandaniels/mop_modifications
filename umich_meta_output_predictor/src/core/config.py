@@ -14,25 +14,26 @@ from utils import set_seed
 class Config(object, metaclass=Singleton):
     # ckpt_path = "../outputs/GPT2/240311_143411.9aadf7/checkpoints/step=10000.ckpt"
     # ckpt_path = "../outputs/GPT2/240312_142642.9bc8ae/checkpoints/step=10000.ckpt"
-    ckpt_path = "../outputs/GPT2/240314_211647.9bc8ae/checkpoints/step=10000.ckpt"
+    # ckpt_path = "../outputs/GPT2/240314_211647.9bc8ae/checkpoints/step=10000.ckpt"
+    # ckpt_path = "../outputs/GPT2/240316_234258.49e9c5/checkpoints/step=10000.ckpt"
+    ckpt_path = "../outputs/GPT2/240319_133249.49e9c5/checkpoints/step=10000.ckpt"
     seed = 0
     fully_reproducible = False
 
     # Dataset settings
-    num_tasks = 20000
-    num_val_tasks = 5000
+    num_tasks = {"train": 20000, "val": 5000, "test": 1}
+    num_traces = {"train": 1, "val": 1, "test": 5000}
     dataset_typ = "ypred"
     nx = 10
     ny = 5
     n_noise = 1
-    num_traces = {"train": 1, "val": 1}
 
     # Training settings
     train_steps = 10000
     batch_size = 64
-    train_data_workers = 8
+    train_data_workers = 1  # 8
     test_batch_size = 128
-    test_data_workers = 4
+    test_data_workers = 1   # 4
     num_epochs = 1
 
     # Model settings
