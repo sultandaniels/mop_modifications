@@ -38,7 +38,6 @@ class classproperty(property):
 
 
 def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=False):
-    print("normalized", normalized)
     normalized = False
     if ax is None:
         fig = plt.figure(figsize=(15, 9))
