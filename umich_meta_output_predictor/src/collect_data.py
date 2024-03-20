@@ -11,8 +11,8 @@ if __name__ == '__main__':
     config = Config()
     config.parse_args()
     print("Collecting data for", config.dataset_typ)
-    samples = []
     for name, num_tasks in zip(["train", "val"], [config.num_tasks, config.num_val_tasks]):
+        samples = [] #make sure that train and val samples are different
         print("Generating", num_tasks, "samples for", name)
         for i in tqdm(range(num_tasks)):
             if config.dataset_typ == "drone":
@@ -31,6 +31,11 @@ if __name__ == '__main__':
                                                    config.n_positions,
                                                    config.nx, config.ny,
                                                    sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
+                    print("fsim:", fsim)
+                    #save fsim to file
+                    os.makedirs("../data", exist_ok=True)
+                    with open(f"../data/{name}_{config.dataset_typ}_fsim_val.pkl", "wb") as f:
+                        pickle.dump(fsim, f)
             samples.extend([{k: v[i] for k, v in sample.items()} for i in range(config.num_traces[name])])
 
         os.makedirs("../data", exist_ok=True)

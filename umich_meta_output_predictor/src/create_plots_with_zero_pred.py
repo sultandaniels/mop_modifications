@@ -25,7 +25,7 @@ def compute_errors(config):
         device)  # load_from_checkpoint
 
     ys, sim_objs, us = [], [], []  # initialize the lists
-    num_systems = confg.num_val_tasks  # number of validation tasks
+    num_systems = config.num_val_tasks  # number of validation tasks
     num_trials = 2000
     for i in range(num_systems):  # iterate over 1000 (I think this is the number of trials for the dataset)
         if config.dataset_typ == "drone":  # if the dataset type is drone
@@ -117,23 +117,23 @@ def compute_errors(config):
         err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
         err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
 
-        # Debugging implemented OLS
-        errs_rls_wentinn = []
-        for sim_obj, _ys in zip(sim_objs, ys):
-            _errs_rls_wentinn = []
-            for __ys in _ys:
-                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-                ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
-                rls_wentinn = CnnKF(config.ny, ir_length)
-                for i in range(config.n_positions - 1):
-                    rls_wentinn.update(
-                        torch.from_numpy(padded_ys[i:i + ir_length]),
-                        torch.from_numpy(padded_ys[i + ir_length])
-                    )
-                    ls.append(rls_wentinn.analytical_error(sim_obj).item())
-                _errs_rls_wentinn.append(ls)
-            errs_rls_wentinn.append(_errs_rls_wentinn)
-        err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
+        # # Debugging implemented OLS
+        # errs_rls_wentinn = []
+        # for sim_obj, _ys in zip(sim_objs, ys):
+        #     _errs_rls_wentinn = []
+        #     for __ys in _ys:
+        #         padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+        #         ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+        #         rls_wentinn = CnnKF(config.ny, ir_length)
+        #         for i in range(config.n_positions - 1):
+        #             rls_wentinn.update(
+        #                 torch.from_numpy(padded_ys[i:i + ir_length]),
+        #                 torch.from_numpy(padded_ys[i + ir_length])
+        #             )
+        #             ls.append(rls_wentinn.analytical_error(sim_obj).item())
+        #         _errs_rls_wentinn.append(ls)
+        #     errs_rls_wentinn.append(_errs_rls_wentinn)
+        # err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
 
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
 
@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
     os.makedirs("../figures", exist_ok=True)
     fig.savefig(f"../figures/{config.dataset_typ}" + ("-changing" if config.changing else ""))
-    plt.show()
+    # plt.show()
 
 
 

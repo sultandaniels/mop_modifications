@@ -13,13 +13,13 @@ from utils import set_seed
 
 class Config(object, metaclass=Singleton):
     # ckpt_path = ""
-    ckpt_path = "../outputs/GPT2/240320_014524.c78f58/checkpoints/step=20000.ckpt"
+    ckpt_path = "../outputs/GPT2/240320_014524.c78f58/checkpoints/num_tasks_28_con_len_250_step=20000.ckpt"
     seed = 0
     fully_reproducible = False
 
     # Dataset settings
     num_tasks = 40000 #number of training systems
-    num_val_tasks = 1000 #number of test systems
+    num_val_tasks = 1 #number of test systems
     dataset_typ = "ypred"
     nx = 10
     ny = 5
