@@ -37,8 +37,7 @@ class classproperty(property):
         return self.fget(owner_cls)
 
 
-def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=False):
-    normalized = False
+def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
     if ax is None:
         fig = plt.figure(figsize=(15, 9))
         ax = fig.add_subplot(111)
