@@ -266,6 +266,7 @@ def compute_errors(config):
     print("preds_tf.shape:", preds_tf.shape)
     errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
     errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2     # get the errors of zero predictions
+    print("errs_tf.shape:", errs_tf.shape)
 
     n_noise = config.n_noise
 
