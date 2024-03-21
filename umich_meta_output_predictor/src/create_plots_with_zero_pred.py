@@ -27,6 +27,7 @@ def compute_errors(config):
 
     ys, sim_objs, us = [], [], []  # initialize the lists
     num_systems = config.num_val_tasks  # number of validation tasks
+    print("Number of validation systems:", num_systems)
     num_trials = 2000
     for i in range(num_systems):  # iterate over 1000 (I think this is the number of trials for the dataset)
         if config.dataset_typ == "drone":  # if the dataset type is drone

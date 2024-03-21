@@ -4,8 +4,9 @@ from core import Config
 from tqdm import tqdm
 import pickle
 import os
+import numpy as np
 
-
+#modify collect data so that it can tolerate multiple traces for one system
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)
     config = Config()
@@ -31,11 +32,18 @@ if __name__ == '__main__':
                                                    config.n_positions,
                                                    config.nx, config.ny,
                                                    sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
-                    print("fsim:", fsim)
                     #save fsim to file
                     os.makedirs("../data", exist_ok=True)
                     with open(f"../data/{name}_{config.dataset_typ}_fsim_val.pkl", "wb") as f:
                         pickle.dump(fsim, f)
+                    
+                repeated_A = np.repeat(sample["A"][np.newaxis,:,:], config.num_traces[name], axis=0)
+                sample["A"] = repeated_A
+
+                repeated_C = np.repeat(sample["C"][np.newaxis,:,:], config.num_traces[name], axis=0)
+                sample["C"] = repeated_C
+                # print("shape of sample items:", {k: v.shape for k, v in sample.items()})
+                # print("shape of sample A:", sample["A"].shape)
             samples.extend([{k: v[i] for k, v in sample.items()} for i in range(config.num_traces[name])])
 
         os.makedirs("../data", exist_ok=True)
