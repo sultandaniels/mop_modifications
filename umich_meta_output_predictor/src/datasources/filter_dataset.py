@@ -16,8 +16,6 @@ class FilterDataset(Dataset):
     def load(self, path):
         with open(path, "rb") as f:
             self.entries = pickle.load(f)
-            print("keys of entries:", self.entries.keys())
-            print("shape of entries:", self.entries["observation"].shape)
 
     def __len__(self):
         return config.train_steps * config.batch_size if not self.use_true_len else len(self.entries)
