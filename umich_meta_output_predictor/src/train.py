@@ -25,6 +25,8 @@ def train_gpt2(config): #input emd_dim as a parameter for the embed dim experime
     val_dset = FilterDataset(f"../data/val_{config.dataset_typ}.pkl", use_true_len=True) if os.path.exists(f"../data/val_{config.dataset_typ}.pkl") else None
     datamodule = DataModuleWrapper(FilterDataset(f"../data/train_{config.dataset_typ}.pkl"), val_dset)
 
+    
+
     # Define model
     output_dir = training.setup_train(model)
     print(model)
