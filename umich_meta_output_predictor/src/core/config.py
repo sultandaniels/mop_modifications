@@ -21,24 +21,24 @@ class Config(object, metaclass=Singleton):
     fully_reproducible = False
 
     # Dataset settings
-    num_tasks = {"train": 20000, "val": 5000, "test": 1}
-    num_traces = {"train": 1, "val": 1, "test": 5000}
+    num_tasks = {"train": 40000, "val": 5000, "test": 1} #{"train": 20000, "val": 5000, "test": 1}
+    num_traces = {"train": 1, "val": 1, "test": 5000} #{"train": 1, "val": 1, "test": 5000}
     dataset_typ = "ypred"
     nx = 10
     ny = 5
     n_noise = 1
 
     # Training settings
-    train_steps = 10000
-    batch_size = 64
+    train_steps = 20000 #10000
+    batch_size = 28 #64
     train_data_workers = 1  # 8
-    test_batch_size = 128
-    test_data_workers = 1   # 4
+    test_batch_size = 2 #128
+    test_data_workers = 7 #1   # 4
     num_epochs = 1
 
     # Model settings
-    n_positions = 50
-    n_embd = 256
+    n_positions = 250 #50
+    n_embd = 128 #256
     n_layer = 12
     n_head = 8
     n_dims_in = 5
@@ -236,3 +236,56 @@ class Config(object, metaclass=Singleton):
             if value is not None and hasattr(self, key)
         })
         set_seed(self.seed, self.fully_reproducible)
+
+
+
+
+
+
+
+
+####################################################################################################
+    #from transformer training
+        #
+# class Config(object, metaclass=Singleton):
+#     # ckpt_path = ""
+#     ckpt_path = "../outputs/GPT2/240320_014524.c78f58/checkpoints/num_tasks_28_con_len_250_step=20000.ckpt"
+#     seed = 0
+#     fully_reproducible = False
+
+#     # Dataset settings
+#     num_tasks = 40000 #number of training systems
+#     num_val_tasks = 1 #number of test systems
+#     dataset_typ = "ypred"
+#     nx = 10
+#     ny = 5
+#     n_noise = 1
+#     num_traces = {"train": 1, "val": 1}
+
+#     # Training settings
+#     train_steps = 20000
+#     batch_size = 28 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
+#     train_data_workers = 1 #set to 1 (check if it changes the speed of the training process)
+#     test_batch_size = 2 #256
+#     test_data_workers = 7 #4 #set to 1
+#     num_epochs = 1
+
+#     # Model settings
+#     n_positions = 250 #context length
+#     n_embd = 128
+#     n_layer = 12
+#     n_head = 8
+#     n_dims_in = 5
+#     n_dims_out = 5  #(IMPORTANT TO KEEP THIS AT 5 FOR NOW) TODO: this used to be 10 but needs to be fixed to match lin_sys.yaml
+#     changing = False  # only used for plotting
+
+#     # Optimizer parameters
+#     learning_rate = 3e-4
+#     weight_decay = 1e-2
+
+#     # Gradient Clipping
+#     gradient_clip_algorithm = 'norm'  # 'norm' or 'value'
+#     gradient_clip_val = 1.0
+
+
+####################################################################################################
