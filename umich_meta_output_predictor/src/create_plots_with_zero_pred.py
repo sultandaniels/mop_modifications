@@ -202,10 +202,20 @@ def compute_errors(config):
     
     # with open(f"../data/test_sim.pt", "rb") as f:
     #     sim_objs = torch.load(f)
-    with open('../data/numpy/data.pkl', 'rb') as f: #load the data.pkl file for the test data
-        data = pickle.load(f)
-        ys = data["observation"]
-        print("ys.shape:", ys.shape)
+    # with open('../data/numpy/data.pkl', 'rb') as f: #load the data.pkl file for the test data
+    #     data = pickle.load(f)
+    #     ys = data["observation"]
+    #     print("ys.shape:", ys.shape)
+
+    with open("../data/val_ypred.pkl", "rb") as f:
+            entries = pickle.load(f)
+            print("keys of entries:", entries[0].keys())
+            print("len of entries:", len(entries))
+            print("shape of all the values for each key in entries[0]", {k: v.shape for k, v in entries[0].items()})
+            #set ys equal to the observation values of all the entries
+            ys = np.array([entry["obs"] for entry in entries])
+            print("ys.shape:", ys.shape)
+            # print("shape of entries:", entries["observation"].shape)
 
 
     # ys, sim_objs, us = [], [], []  # initialize the lists
