@@ -202,11 +202,11 @@ def compute_errors(config):
                                       n_layer=config.n_layer, n_head=config.n_head).eval().to(
         device)  # load_from_checkpoint
     
-    with open(f"../data/numpy_three_sys_2000/test_sim.pt", "rb") as f:
+    with open(f"../data/numpy_three_sys_C_gaussian/test_sim.pt", "rb") as f:
         sim_objs = torch.load(f)
 
 
-    with open('../data/numpy_three_sys_2000/data.pkl', 'rb') as f: #load the data.pkl file for the test data
+    with open('../data/numpy_three_sys_C_gaussian/data.pkl', 'rb') as f: #load the data.pkl file for the test data
         data = pickle.load(f)
         ys = data["observation"]
         print("ys.shape:", ys.shape)
@@ -381,34 +381,38 @@ def compute_errors(config):
 
 if __name__ == '__main__':
     config = Config()
+
+    C_dist = "_gauss_C"
     
     # err_lss, irreducible_error = compute_errors(config)#, emb_dim)
 
     # #make the prediction errors directory
-    # os.makedirs("../data/prediction_errors", exist_ok=True)
+    # os.makedirs("../data/prediction_errors" + C_dist, exist_ok=True)
     # #save err_lss and irreducible_error to a file
-    # with open(f"../data/prediction_errors/{config.dataset_typ}_err_lss.pkl", "wb") as f:
+    # with open(f"../data/prediction_errors" + C_dist + "/{config.dataset_typ}_err_lss.pkl", "wb") as f:
     #     pickle.dump(err_lss, f)
-    # with open(f"../data/prediction_errors/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
+    # with open(f"../data/prediction_errors" + C_dist + "/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
     #     pickle.dump(irreducible_error, f)
 
     #load the prediction errors from the file
-    with open(f"../data/prediction_errors_unif_C/{config.dataset_typ}_err_lss_unif_C.pkl", "rb") as f:
+    with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
         err_lss_load = pickle.load(f)
-    with open(f"../data/prediction_errors_unif_C/{config.dataset_typ}_irreducible_error_unif_C.pkl", "rb") as f:
+    with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "rb") as f:
         irreducible_error_load = pickle.load(f)
     
     print(irreducible_error_load)
 
-    with open(f"../data/prediction_errors_unif_C/fir_bounds.pt", "rb") as f:
-        fir_bounds = torch.load(f, map_location=torch.device('cpu'))
-        fir_bounds = fir_bounds.T
+    if C_dist == "_unif_C":
+        with open(f"../data/prediction_errors_unif_C/fir_bounds.pt", "rb") as f:
+            fir_bounds = torch.load(f, map_location=torch.device('cpu'))
+            fir_bounds = fir_bounds.T
 
-    with open(f"../data/prediction_errors_unif_C/wentinn_errors.pt", "rb") as f:
-        rnn_errors = torch.load(f, map_location=torch.device('cpu'))
+        with open(f"../data/prediction_errors_unif_C/wentinn_errors.pt", "rb") as f:
+            rnn_errors = torch.load(f, map_location=torch.device('cpu'))
 
-    print("arange:", np.arange(0, 251, 5))
-    print("len arange:", np.arange(0, 251, 5))
+        with open(f"../data/prediction_errors_unif_C/rnn_analytical_errors.pt", "rb") as f:
+            rnn_an_errors = torch.load(f, map_location=torch.device('cpu'))
+            rnn_an_errors = rnn_an_errors.permute(1,2,0)
 
     for sys in range(config.num_val_tasks):
         fig = plt.figure(figsize=(15, 9))
@@ -417,17 +421,24 @@ if __name__ == '__main__':
         #plot transformer, KF and FIR errors
         handles = plot_errs(sys, err_lss_load, irreducible_error_load, ax=ax, shade=True, normalized=False)
 
-        #plot RNN errors
-        avg, std = rnn_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_errors.shape[1]))*rnn_errors.std(axis=(0, 1))
-        avg_numpy = avg.detach().numpy()
-        std_numpy = std.detach().numpy()
-        handles.append(ax.scatter(np.arange(0,251,5), avg_numpy, label="RNN", linewidth=3, marker='x', s=50))
-        ax.fill_between(np.arange(rnn_errors.shape[-1]), avg_numpy - std_numpy, avg_numpy + std_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+        if C_dist == "_unif_C":
+            #plot RNN errors
+            avg, std = rnn_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_errors.shape[1]))*rnn_errors.std(axis=(0, 1))
+            avg_numpy = avg.detach().numpy()
+            std_numpy = std.detach().numpy()
+            handles.append(ax.scatter(np.arange(0,251,5), avg_numpy, label="RNN", linewidth=3, marker='x', s=50))
+            ax.fill_between(np.arange(rnn_errors.shape[-1]), avg_numpy - std_numpy, avg_numpy + std_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
 
-        
-        #plot fir bounds
-        for i in range(fir_bounds.shape[1]):
-            handles.extend(ax.plot(np.array(range(config.n_positions)), fir_bounds[sys,i]*np.ones(config.n_positions), label="IR Analytical Length " + str(i + 1), linewidth=3, linestyle='--'))
+            avg_an, std_an = rnn_an_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_an_errors.shape[1]))*rnn_an_errors.std(axis=(0, 1))
+            avg_an_numpy = avg_an.detach().numpy()
+            std_an_numpy = std_an.detach().numpy()
+            handles.append(ax.scatter(np.arange(0,251,5), avg_an_numpy, label="RNN Analytical", linewidth=3, marker='o', s=50))
+            ax.fill_between(np.arange(rnn_an_errors.shape[-1]), avg_an_numpy - std_an_numpy, avg_an_numpy + std_an_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+
+            
+            #plot fir bounds
+            for i in range(fir_bounds.shape[1]):
+                handles.extend(ax.plot(np.array(range(config.n_positions)), fir_bounds[sys,i]*np.ones(config.n_positions), label="IR Analytical Length " + str(i + 1), linewidth=3, linestyle='--'))
 
         ax.legend(fontsize=12, loc="lower right", ncol= math.floor(len(handles)/3))
         ax.set_xlabel("t", fontsize=30)
@@ -435,16 +446,8 @@ if __name__ == '__main__':
         ax.grid(which="both")
         ax.tick_params(axis='both', which='major', labelsize=30)
         ax.tick_params(axis='both', which='minor', labelsize=20)
-        ax.set_ylim(bottom=10**(-0.8), top=2)
+        ax.set_ylim(bottom=10**(-0.5), top=2*10**(1))
 
         os.makedirs("../figures", exist_ok=True)
-        fig.savefig(f"../figures/{config.dataset_typ}_unif_C_system_cutoff_" + str(sys) + ("-changing" if config.changing else ""))
+        fig.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else ""))
             
-            
-            
-            
-            
-
-
-
-
