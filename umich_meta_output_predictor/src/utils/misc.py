@@ -65,20 +65,13 @@ def plot_errs(sys, err_lss, err_irreducible, legend_loc="upper right", ax=None, 
                     ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
         else:
             if name != "Analytical_Kalman":
-                avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls.std(axis=(0, 1))
-                handles.extend(ax.plot(avg, label=name, linewidth=3, marker='o' if name == "MOP" else "."))
+                avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
+                handles.extend(ax.plot(avg, label=name if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else "."))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
             else:
                 handles.extend(ax.plot(err_ls[sys], label=name, linewidth=3))
-
-    ax.legend(fontsize=18, loc=legend_loc)
-    ax.set_xlabel("t", fontsize=30)
-    ax.set_ylabel("Prediction Error", fontsize=30)
-    ax.grid(which="both")
-    ax.tick_params(axis='both', which='major', labelsize=30)
-    ax.tick_params(axis='both', which='minor', labelsize=20)
-    ax.set_ylim(bottom=None, top=2)
+    return handles
 
 
 def spectrum(A, k):

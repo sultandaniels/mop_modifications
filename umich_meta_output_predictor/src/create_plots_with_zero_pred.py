@@ -12,6 +12,7 @@ from dyn_models import apply_kf, generate_lti_sample, generate_changing_lti_samp
 from models import GPT2, CnnKF
 from utils import RLS, plot_errs
 import pickle
+import math
 
 ####################################################################################################
 # from wentinn's code
@@ -381,32 +382,68 @@ def compute_errors(config):
 if __name__ == '__main__':
     config = Config()
     
-    err_lss, irreducible_error = compute_errors(config)#, emb_dim)
+    # err_lss, irreducible_error = compute_errors(config)#, emb_dim)
 
-    #make the prediction errors directory
-    os.makedirs("../data/prediction_errors", exist_ok=True)
-    #save err_lss and irreducible_error to a file
-    with open(f"../data/prediction_errors/{config.dataset_typ}_err_lss.pkl", "wb") as f:
-        pickle.dump(err_lss, f)
-    with open(f"../data/prediction_errors/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
-        pickle.dump(irreducible_error, f)
+    # #make the prediction errors directory
+    # os.makedirs("../data/prediction_errors", exist_ok=True)
+    # #save err_lss and irreducible_error to a file
+    # with open(f"../data/prediction_errors/{config.dataset_typ}_err_lss.pkl", "wb") as f:
+    #     pickle.dump(err_lss, f)
+    # with open(f"../data/prediction_errors/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
+    #     pickle.dump(irreducible_error, f)
 
     #load the prediction errors from the file
-    with open(f"../data/prediction_errors/{config.dataset_typ}_err_lss_unif_C_three_sys.pkl", "rb") as f:
+    with open(f"../data/prediction_errors_unif_C/{config.dataset_typ}_err_lss_unif_C.pkl", "rb") as f:
         err_lss_load = pickle.load(f)
-    with open(f"../data/prediction_errors/{config.dataset_typ}_irreducible_error_unif_C_three_sys.pkl", "rb") as f:
+    with open(f"../data/prediction_errors_unif_C/{config.dataset_typ}_irreducible_error_unif_C.pkl", "rb") as f:
         irreducible_error_load = pickle.load(f)
     
     print(irreducible_error_load)
+
+    with open(f"../data/prediction_errors_unif_C/fir_bounds.pt", "rb") as f:
+        fir_bounds = torch.load(f, map_location=torch.device('cpu'))
+        fir_bounds = fir_bounds.T
+
+    with open(f"../data/prediction_errors_unif_C/wentinn_errors.pt", "rb") as f:
+        rnn_errors = torch.load(f, map_location=torch.device('cpu'))
+
+    print("arange:", np.arange(0, 251, 5))
+    print("len arange:", np.arange(0, 251, 5))
 
     for sys in range(config.num_val_tasks):
         fig = plt.figure(figsize=(15, 9))
         ax = fig.add_subplot(111)
 
-        plot_errs(sys, err_lss_load, irreducible_error_load, ax=ax, shade=True, normalized=False)
+        #plot transformer, KF and FIR errors
+        handles = plot_errs(sys, err_lss_load, irreducible_error_load, ax=ax, shade=True, normalized=False)
+
+        #plot RNN errors
+        avg, std = rnn_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_errors.shape[1]))*rnn_errors.std(axis=(0, 1))
+        avg_numpy = avg.detach().numpy()
+        std_numpy = std.detach().numpy()
+        handles.append(ax.scatter(np.arange(0,251,5), avg_numpy, label="RNN", linewidth=3, marker='x', s=50))
+        ax.fill_between(np.arange(rnn_errors.shape[-1]), avg_numpy - std_numpy, avg_numpy + std_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+
+        
+        #plot fir bounds
+        for i in range(fir_bounds.shape[1]):
+            handles.extend(ax.plot(np.array(range(config.n_positions)), fir_bounds[sys,i]*np.ones(config.n_positions), label="IR Analytical Length " + str(i + 1), linewidth=3, linestyle='--'))
+
+        ax.legend(fontsize=12, loc="lower right", ncol= math.floor(len(handles)/3))
+        ax.set_xlabel("t", fontsize=30)
+        ax.set_ylabel("Prediction Error", fontsize=30)
+        ax.grid(which="both")
+        ax.tick_params(axis='both', which='major', labelsize=30)
+        ax.tick_params(axis='both', which='minor', labelsize=20)
+        ax.set_ylim(bottom=10**(-0.8), top=2)
 
         os.makedirs("../figures", exist_ok=True)
         fig.savefig(f"../figures/{config.dataset_typ}_unif_C_system_cutoff_" + str(sys) + ("-changing" if config.changing else ""))
+            
+            
+            
+            
+            
 
 
 
