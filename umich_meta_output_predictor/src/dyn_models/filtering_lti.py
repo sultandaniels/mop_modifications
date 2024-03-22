@@ -161,13 +161,16 @@ class FilterSim:
     ####################################################################################################
 
     @staticmethod
-    def construct_C(A, ny):
+    def construct_C(A, ny, normC=False): #normC is a boolean that determines if the C matrix is sampled from a normal distribution or a uniform distribution
         nx = A.shape[0]
         _O = [np.eye(nx)]
         for _ in range(nx - 1):
             _O.append(_O[-1] @ A)
         while True:
-            C = np.random.rand(ny, nx)
+            if normC:
+                C = np.random.normal(0, 1, (ny, nx)) 
+            else:
+                C = np.random.rand(ny, nx) #change this to sampled from normal distribution
             O = np.concatenate([C @ o for o in _O], axis=0)
             if np.linalg.matrix_rank(O) == nx:  # checking if state is observable
                 break

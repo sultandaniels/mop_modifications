@@ -62,7 +62,7 @@ def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade
                     ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
         else:
             print("normalized", normalized)
-            avg, std = err_ls.mean(axis=(0, 1)), err_ls.std(axis=(0, 1))
+            avg, std = err_ls.mean(axis=(0, 1)), (3/np.sqrt(err_ls.shape[1]))*err_ls.std(axis=(0, 1))
             handles.extend(ax.plot(avg, label=name, linewidth=3))
             if shade:
                 ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
