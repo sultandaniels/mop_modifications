@@ -61,24 +61,24 @@ def train_gpt2(config): #input emd_dim as a parameter for the embed dim experime
 
 if __name__ == '__main__':
 
-    #load the numpy folder in ../data and unpack the data.pkl file and show the keys
-    # Load the pickle file
-    with open('../data/numpy/data.pkl', 'rb') as f:
-        data = pickle.load(f)
+    # #load the numpy folder in ../data and unpack the data.pkl file and show the keys
+    # # Load the pickle file
+    # with open('../data/numpy/data.pkl', 'rb') as f:
+    #     data = pickle.load(f)
 
-    # If the data is a dictionary, print its keys
-    if isinstance(data, dict):
-        print("data[observation].shape:", data["observation"].shape)
-        print("data[state].shape:", data["state"].shape)
-    else:
-        print("The loaded data is not a dictionary.")
+    # # If the data is a dictionary, print its keys
+    # if isinstance(data, dict):
+    #     print("data[observation].shape:", data["observation"].shape)
+    #     print("data[state].shape:", data["state"].shape)
+    # else:
+    #     print("The loaded data is not a dictionary.")
 
-    with open("../data/val_ypred.pkl", "rb") as f:
-            entries = pickle.load(f)
-            print("keys of entries:", entries[0].keys())
-            print("len of entries:", len(entries))
-            print("shape of all the values for each key in entries[0]", {k: v.shape for k, v in entries[0].items()})
-            # print("shape of entries:", entries["observation"].shape)
+    # with open("../data/val_ypred.pkl", "rb") as f:
+    #         entries = pickle.load(f)
+    #         print("keys of entries:", entries[0].keys())
+    #         print("len of entries:", len(entries))
+    #         print("shape of all the values for each key in entries[0]", {k: v.shape for k, v in entries[0].items()})
+    #         # print("shape of entries:", entries["observation"].shape)
 
     config = Config()
     train_gpt2(config)

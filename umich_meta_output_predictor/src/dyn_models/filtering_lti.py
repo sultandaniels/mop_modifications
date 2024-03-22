@@ -161,7 +161,7 @@ class FilterSim:
     ####################################################################################################
 
     @staticmethod
-    def construct_C(A, ny, normC=False): #normC is a boolean that determines if the C matrix is sampled from a normal distribution or a uniform distribution
+    def construct_C(A, ny, normC=True): #normC is a boolean that determines if the C matrix is sampled from a normal distribution or a uniform distribution
         nx = A.shape[0]
         _O = [np.eye(nx)]
         for _ in range(nx - 1):
