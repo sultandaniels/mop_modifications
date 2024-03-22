@@ -37,7 +37,7 @@ class classproperty(property):
         return self.fget(owner_cls)
 
 
-def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
+def plot_errs(sys, err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
     if ax is None:
         fig = plt.figure(figsize=(15, 9))
         ax = fig.add_subplot(111)
@@ -48,13 +48,12 @@ def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade
 
         print("name", name)
         print("err_ls.shape", err_ls.shape)
-        if name != "Analytical_Kalman":
-            traj_errs = err_ls.sum(axis=-1)
-            print("traj_errs.shape", traj_errs.shape)
-            print(name, "{:.2f}".format(traj_errs.mean(axis=(0, 1))))
-        else:
-            print(name, "{:.2f}".format(err_ls[0]))
-
+        # if name != "Analytical_Kalman":
+        #     traj_errs = err_ls.sum(axis=-1)
+        #     print("traj_errs.shape", traj_errs.shape)
+        #     print(name, "{:.2f}".format(traj_errs.mean(axis=(0, 1))))
+        # else:
+        #     print(name, "{:.2f}".format(err_ls[0]))
         if normalized:
             t = np.arange(1, err_ls.shape[-1])
             if name != "Kalman":
@@ -66,19 +65,20 @@ def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade
                     ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
         else:
             if name != "Analytical_Kalman":
-                avg, std = err_ls.mean(axis=(0, 1)), (3/np.sqrt(err_ls.shape[1]))*err_ls.std(axis=(0, 1))
-                handles.extend(ax.plot(avg, label=name, linewidth=3))
+                avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls.std(axis=(0, 1))
+                handles.extend(ax.plot(avg, label=name, linewidth=3, marker='o' if name == "MOP" else "."))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
             else:
-                handles.extend(ax.plot(err_ls, label=name, linewidth=3))
+                handles.extend(ax.plot(err_ls[sys], label=name, linewidth=3))
 
-    ax.legend(fontsize=30, loc=legend_loc)
+    ax.legend(fontsize=18, loc=legend_loc)
     ax.set_xlabel("t", fontsize=30)
     ax.set_ylabel("Prediction Error", fontsize=30)
     ax.grid(which="both")
     ax.tick_params(axis='both', which='major', labelsize=30)
     ax.tick_params(axis='both', which='minor', labelsize=20)
+    ax.set_ylim(bottom=None, top=2)
 
 
 def spectrum(A, k):

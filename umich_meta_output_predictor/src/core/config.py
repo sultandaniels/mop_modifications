@@ -24,7 +24,7 @@ class Config(object, metaclass=Singleton):
     nx = 10
     ny = 5
     n_noise = 1
-    num_traces = {"train": 1, "val": 5000}
+    num_traces = {"train": 1, "val": 2000}
 
     # Training settings
     train_steps = 20000
