@@ -21,7 +21,7 @@ class Config(object, metaclass=Singleton):
     fully_reproducible = False
 
     # Dataset settings
-    num_tasks = {"train": 40000, "val": 5000, "test": 1} #{"train": 20000, "val": 5000, "test": 1}
+    num_tasks = {"train": 40000, "val": 1, "test": 3} #{"train": 20000, "val": 5000, "test": 1}
     num_traces = {"train": 1, "val": 1, "test": 5000} #{"train": 1, "val": 1, "test": 5000}
     dataset_typ = "ypred"
     nx = 10
