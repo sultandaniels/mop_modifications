@@ -13,7 +13,7 @@ from utils import set_seed
 
 class Config(object, metaclass=Singleton):
     # ckpt_path = ""
-    ckpt_path = "../outputs/GPT2/240321_133400.e442b1/checkpoints/num_tasks_28_con_len_250_step=3.ckpt"
+    ckpt_path = "../outputs/GPT2/240320_014524.c78f58/checkpoints/num_tasks_28_con_len_250_step=20000.ckpt"
     seed = 0
     fully_reproducible = False
 
@@ -24,14 +24,14 @@ class Config(object, metaclass=Singleton):
     nx = 10
     ny = 5
     n_noise = 1
-    num_traces = {"train": 1, "val": 7}
+    num_traces = {"train": 1, "val": 5000}
 
     # Training settings
-    train_steps = 3
+    train_steps = 20000
     batch_size = 28 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
     train_data_workers = 1 #set to 1 (check if it changes the speed of the training process)
     test_batch_size = 2 #256
-    test_data_workers = 7 #4 #set to 1
+    test_data_workers = 10 #4 #set to 1
     num_epochs = 1
 
     # Model settings
