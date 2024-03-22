@@ -1,5 +1,3 @@
-from typing import *
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as Fn
@@ -9,7 +7,7 @@ from dyn_models.filtering_lti import FilterSim
 
 
 class CnnKF(nn.Module):
-    def __init__(self, ny: int, ir_length: int):
+    def __init__(self, ny: int, ir_length: int, ridge: float = 0.0):
         super().__init__()
 
         self.O_D = ny
@@ -18,7 +16,7 @@ class CnnKF(nn.Module):
         self.observation_IR = nn.Parameter(torch.zeros(self.O_D, self.ir_length, self.O_D))     # [O_D x R x O_D]
 
         r_ = self.ir_length * self.O_D
-        self.XTX = torch.zeros((r_, r_))                                                        # [RO_D x RO_D]
+        self.XTX = ridge * torch.eye(r_) # torch.zeros((r_, r_))                                # [RO_D x RO_D]
         self.XTy = torch.zeros((r_, self.O_D))                                                  # [RO_D x O_D]
 
         self.X = torch.zeros((0, r_))                                                           # [k x RO_D]
@@ -87,17 +85,12 @@ class CnnKF(nn.Module):
             'observation_estimation': [B x L x O_D]
         }
     """
-    def forward(self, trace: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        state, inputs, observations = self.extract(trace, 0)
-        B, L = inputs.shape[:2]
-
-        result = Fn.conv2d(
+    def forward(self, context: torch.Tensor) -> torch.Tensor:
+        # [5, 2, 5] [1, 5, 2, 1]
+        return Fn.conv2d(
             self.observation_IR,
-            observations[:, :L].transpose(-2, -1).unsqueeze(-1).flip(-2),
-            padding=(L, 0)
-        )[:, :L]
-
-        return {'observation_estimation': result}
+            context.transpose(-2, -1).unsqueeze(-1).flip(-2),
+        )
 
     """ forward
         :parameter {
@@ -111,7 +104,7 @@ class CnnKF(nn.Module):
                target: torch.Tensor     # [B... x O_D]
     ) -> None:
         # DONE: Implement online least squares for memory efficiency
-        flattened_X = context.flip(-2).view((-1, self.ir_length * self.O_D))                   # [B x RO_D]
+        flattened_X = context.flip(-2).view((-1, self.ir_length * self.O_D))                        # [B x RO_D]
         flattened_observations = target.view((-1, self.O_D))                                        # [B x O_D]
 
         self.XTX = self.XTX + (flattened_X.mT @ flattened_X)
@@ -124,8 +117,4 @@ class CnnKF(nn.Module):
             self.y = torch.cat([self.y, flattened_observations], dim=0)
             flattened_w = torch.linalg.pinv(self.X) @ self.y
 
-        self.observation_IR.data = flattened_w.unflatten(0, (self.ir_length, -1)).transpose(0, 1)   # [O_D x R x O_D]
-
-
-
-
+        self.observation_IR.data = flattened_w.unflatten(0, (self.ir_length, -1)).transpose(0, 1).to(torch.float32) # [O_D x R x O_D]

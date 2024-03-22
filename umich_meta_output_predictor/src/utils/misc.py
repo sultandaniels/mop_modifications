@@ -45,11 +45,15 @@ def plot_errs(err_lss, err_irreducible, legend_loc="upper right", ax=None, shade
     ax.grid()
     handles = []
     for i, (name, err_ls) in enumerate(err_lss.items()):
+
         print("name", name)
         print("err_ls.shape", err_ls.shape)
-        traj_errs = err_ls.sum(axis=-1)
-        print("traj_errs.shape", traj_errs.shape)
-        print(name, "{:.2f}".format(traj_errs.mean(axis=(0, 1))))
+        if name != "Analytical_Kalman":
+            traj_errs = err_ls.sum(axis=-1)
+            print("traj_errs.shape", traj_errs.shape)
+            print(name, "{:.2f}".format(traj_errs.mean(axis=(0, 1))))
+        else:
+            print(name, "{:.2f}".format(err_ls[0]))
 
         if normalized:
             t = np.arange(1, err_ls.shape[-1])
