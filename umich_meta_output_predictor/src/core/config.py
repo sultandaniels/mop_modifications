@@ -19,7 +19,7 @@ class Config(object, metaclass=Singleton):
 
     # Dataset settings
     num_tasks = 40000 #number of training systems
-    num_val_tasks = 1 #number of test systems
+    num_val_tasks = 3 #number of test systems
     dataset_typ = "ypred"
     nx = 10
     ny = 5
