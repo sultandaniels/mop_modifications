@@ -201,11 +201,11 @@ def compute_errors(config):
                                       n_layer=config.n_layer, n_head=config.n_head).eval().to(
         device)  # load_from_checkpoint
     
-    with open(f"../data/numpy_1031894/test_sim.pt", "rb") as f:
+    with open(f"../data/numpy_three_sys/test_sim.pt", "rb") as f:
         sim_objs = torch.load(f)
 
 
-    with open('../data/numpy_1031894/data.pkl', 'rb') as f: #load the data.pkl file for the test data
+    with open('../data/numpy_three_sys/data.pkl', 'rb') as f: #load the data.pkl file for the test data
         data = pickle.load(f)
         ys = data["observation"]
         print("ys.shape:", ys.shape)
@@ -288,8 +288,9 @@ def compute_errors(config):
         ("Zero", errs_zero)
     ])
 
-    analytical_kf = sim_objs[0].S_observation_inf
-    err_lss["Analytical_Kalman"] = np.array([np.trace(analytical_kf) for _ in range(ys.shape[2])])
+    analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
+    err_lss["Analytical_Kalman"] = analytical_kf.T@np.ones((1,config.n_positions))
+    print("err_lss[Analytical_Kalman].shape:", err_lss["Analytical_Kalman"].shape)
 
     # #compute analytical Kalman error
     # Ps = np.zeros((config.n_positions, config.nx, config.nx))
@@ -356,35 +357,35 @@ def compute_errors(config):
         #         _errs_rls_wentinn.append(ls)
         #     errs_rls_wentinn.append(_errs_rls_wentinn)
         # err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
-    for ir_length in range(1, 4):
-        print(f"IR length: {ir_length}")
-        preds_rls_wentinn = []
-        preds_rls_wentinn_analytical = []
-        for sim_obj, _ys in zip(sim_objs, ys):
-            _preds_rls_wentinn = []
-            _preds_rls_wentinn_analytical = []
-            for __ys in _ys:
-                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-                ls = list(np.zeros((2, config.ny)))
-                ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+    # for ir_length in range(1, 4):
+    #     print(f"IR length: {ir_length}")
+    #     preds_rls_wentinn = []
+    #     preds_rls_wentinn_analytical = []
+    #     for sim_obj, _ys in zip(sim_objs, ys):
+    #         _preds_rls_wentinn = []
+    #         _preds_rls_wentinn_analytical = []
+    #         for __ys in _ys:
+    #             padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+    #             ls = list(np.zeros((2, config.ny)))
+    #             ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
 
-                rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
-                for i in range(config.n_positions - 1):
-                    rls_wentinn.update(
-                        torch.from_numpy(padded_ys[i:i + ir_length]),
-                        torch.from_numpy(padded_ys[i + ir_length])
-                    )
+    #             rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
+    #             for i in range(config.n_positions - 1):
+    #                 rls_wentinn.update(
+    #                     torch.from_numpy(padded_ys[i:i + ir_length]),
+    #                     torch.from_numpy(padded_ys[i + ir_length])
+    #                 )
 
-                    ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
-                    ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+    #                 ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
+    #                 ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
 
-                _preds_rls_wentinn.append(ls)
-                _preds_rls_wentinn_analytical.append(ls_analytical)
+    #             _preds_rls_wentinn.append(ls)
+    #             _preds_rls_wentinn_analytical.append(ls_analytical)
 
-            preds_rls_wentinn.append(_preds_rls_wentinn)
-            preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
+    #         preds_rls_wentinn.append(_preds_rls_wentinn)
+    #         preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
 
-        err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+    #     err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
 
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error
