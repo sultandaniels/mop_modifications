@@ -66,7 +66,7 @@ if __name__ == "__main__":
         generate_data(config) #generate data for the new context length and number of systems
         train_time = train_gpt2(config)
         times.append(train_time)
-        error, irr = compute_errors(config)
+        error, irr = compute_errors(config, "_unif_C", generate_data=True)
         errors.append(error)
     #save errors and times to a file
 
