@@ -13,10 +13,11 @@ import pickle
 
 def generate_data(config):
     logger = logging.getLogger(__name__)
+    config = Config()
     config.parse_args()
     print("Collecting data for", config.dataset_typ)
-    samples = []
     for name, num_tasks in zip(["train", "val"], [config.num_tasks, config.num_val_tasks]):
+        samples = [] #make sure that train and val samples are different
         print("Generating", num_tasks, "samples for", name)
         for i in tqdm(range(num_tasks)):
             if config.dataset_typ == "drone":
@@ -35,12 +36,24 @@ def generate_data(config):
                                                    config.n_positions,
                                                    config.nx, config.ny,
                                                    sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
+                    # #save fsim to file
+                    # os.makedirs("../data", exist_ok=True)
+                    # with open(f"../data/{name}_{config.dataset_typ}_fsim_val.pkl", "wb") as f:
+                    #     pickle.dump(fsim, f)
+                    
+                repeated_A = np.repeat(sample["A"][np.newaxis,:,:], config.num_traces[name], axis=0)
+                sample["A"] = repeated_A
+
+                repeated_C = np.repeat(sample["C"][np.newaxis,:,:], config.num_traces[name], axis=0)
+                sample["C"] = repeated_C
+                # print("shape of sample items:", {k: v.shape for k, v in sample.items()})
+                # print("shape of sample A:", sample["A"].shape)
             samples.extend([{k: v[i] for k, v in sample.items()} for i in range(config.num_traces[name])])
 
         os.makedirs("../data", exist_ok=True)
         with open(f"../data/{name}_{config.dataset_typ}.pkl", "wb") as f:
             pickle.dump(samples, f)
-    return None
+        return None
 
 def plot_errors_emb(errors, embed_dims, legend_loc="upper right", ax=None, shade=True):
     if ax is None:
@@ -93,30 +106,30 @@ def plot_train_time(times, embed_dims):
 if __name__ == "__main__":
     config = Config()
     config.parse_args()
-    train_steps = [20000,25000,30000,35000,40000]
+    train_steps = [240, 245, 250, 255, 260, 265, 270]
     errors = []
     times = []
     for train_step in train_steps:
-        config.override("num_tasks", train_step)
-        config.override("ckpt_path", "../outputs/GPT2/240318_141350.155b56/checkpoints/num_tasks_" +str(train_step) + "_step=" + str(config.train_steps) + ".ckpt")
+        config.override("n_positions", train_step)
+        config.override("ckpt_path", "../outputs/GPT2/240409_161242.3279c4/checkpoints/batch_size_" + str(config.batch_size) + "_con_len_" + str(config.n_positions) + "_step=" + str(config.train_steps) + ".ckpt")
         generate_data(config) #generate data for the new context length
         train_time = train_gpt2(config)
         times.append(train_time)
-        error, irr = compute_errors(config)
-        errors.append(error)
+        # error, irr = compute_errors(config)
+        # errors.append(error)
     #save errors and times to a file
 
-    plot_errors_emb(errors, train_steps)
+    # plot_errors_emb(errors, train_steps)
     plot_train_time(times, train_steps)
 
-    # Assuming `errors` is your list of dictionaries
-    for error in errors:
-        for key in error:
-            # Convert numpy arrays to nested lists
-            if isinstance(error[key], np.ndarray):
-                error[key] = error[key].tolist()
+    # # Assuming `errors` is your list of dictionaries
+    # for error in errors:
+    #     for key in error:
+    #         # Convert numpy arrays to nested lists
+    #         if isinstance(error[key], np.ndarray):
+    #             error[key] = error[key].tolist()
 
-    with open('num_tasks_errors.json', 'w') as f:
-        json.dump(errors, f)
+    # with open('num_tasks_errors.json', 'w') as f:
+    #     json.dump(errors, f)
 
     np.save("num_tasks_times.npy", times)

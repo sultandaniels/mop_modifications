@@ -22,14 +22,14 @@ class DataModuleWrapper(pl.LightningDataModule):
             drop_last=False,
         )
 
-    def val_dataloader(self):
-        if self.val_ds is not None:
-            return DataLoader(
-                self.val_ds,
-                batch_size=config.test_batch_size,
-                shuffle=False,
-                num_workers=config.test_data_workers,
-                persistent_workers=True,
-                pin_memory=True,
-                drop_last=False,
-            )
+    # def val_dataloader(self):
+    #     if self.val_ds is not None:
+    #         return DataLoader(
+    #             self.val_ds,
+    #             batch_size=config.test_batch_size,
+    #             shuffle=False,
+    #             num_workers=config.test_data_workers,
+    #             persistent_workers=True,
+    #             pin_memory=True,
+    #             drop_last=False,
+    #         )

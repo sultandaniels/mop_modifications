@@ -93,10 +93,19 @@ class FilterSim:
 
         self.n_noise = n_noise
 
-        if tri:
+        if tri == "upperTriA":
             A = np.diag(np.random.uniform(-1, 1, nx)) * 0.95
             A[np.triu_indices(nx, 1)] = np.random.uniform(-1, 1, (nx ** 2 + nx) // 2 - nx)
             self.A = A
+        elif tri == "rotDiagA":
+            A = np.diag([0.99,0.98,0.97,0.96,0.95,0.94,0.93,0.92,0.91,0.9]) * 0.95 #generate a random diagonal matrix
+            # Generate a random 10x10 matrix
+            random_matrix = np.random.rand(10, 10)
+
+            # Use QR decomposition to get a random rotation matrix
+            Q, R = np.linalg.qr(random_matrix)
+                         
+            self.A = Q @ A @ Q.T 
         else:
             if new_eig:
                 self.A = gen_A(0.97, 0.99, nx)
@@ -161,14 +170,14 @@ class FilterSim:
     ####################################################################################################
 
     @staticmethod
-    def construct_C(A, ny, normC=True): #normC is a boolean that determines if the C matrix is sampled from a normal distribution or a uniform distribution
+    def construct_C(A, ny, normC=False): #normC is a boolean that determines if the C matrix is sampled from a normal distribution or a uniform distribution
         nx = A.shape[0]
         _O = [np.eye(nx)]
         for _ in range(nx - 1):
             _O.append(_O[-1] @ A)
         while True:
             if normC:
-                C = np.random.normal(0, 1, (ny, nx)) 
+                C = np.random.normal(0, np.sqrt(0.333333333), (ny, nx)) 
             else:
                 C = np.random.rand(ny, nx) #change this to sampled from normal distribution
             O = np.concatenate([C @ o for o in _O], axis=0)
@@ -216,12 +225,12 @@ def apply_kf(fsim, ys, sigma_w=None, sigma_v=None, return_obj=False):
 
 
 def _generate_lti_sample(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
-    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri="upperTriA" == dataset_typ, n_noise=n_noise, new_eig = False)
+    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri=dataset_typ, n_noise=n_noise, new_eig = False)
     states, obs = fsim.simulate_steady(batch_size, n_positions)
     return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
 
 def _generate_lti_sample_new_eig(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
-    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri="upperTriA" == dataset_typ, n_noise=n_noise, new_eig = True)
+    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri=dataset_typ, n_noise=n_noise, new_eig = True)
     states, obs = fsim.simulate_steady(batch_size, n_positions)
     return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
 

@@ -37,7 +37,8 @@ class classproperty(property):
         return self.fget(owner_cls)
 
 
-def plot_errs(sys, err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
+def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
+    # shade = False
     if ax is None:
         fig = plt.figure(figsize=(15, 9))
         ax = fig.add_subplot(111)
@@ -66,11 +67,11 @@ def plot_errs(sys, err_lss, err_irreducible, legend_loc="upper right", ax=None, 
         else:
             if name != "Analytical_Kalman":
                 avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
-                handles.extend(ax.plot(avg, label=name if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else "."))
+                handles.extend(ax.plot(avg, label=name if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[i]))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
             else:
-                handles.extend(ax.plot(err_ls[sys], label=name, linewidth=3))
+                handles.extend(ax.plot(err_ls[sys], label=name, linewidth=5, color='#000000'))
     return handles
 
 

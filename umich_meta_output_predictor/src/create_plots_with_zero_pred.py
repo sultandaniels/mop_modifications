@@ -184,7 +184,7 @@ def wentinn_compute_errors(config):
 
 ####################################################################################################
 
-def compute_errors(config):
+def compute_errors(config, C_dist, generate_data):
     # a function to compute the test errors for the GPT2 model, kalman filter, and zero predictions
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
     logger = logging.getLogger(__name__)  # get the logger
@@ -202,49 +202,49 @@ def compute_errors(config):
                                       n_layer=config.n_layer, n_head=config.n_head).eval().to(
         device)  # load_from_checkpoint
     
-    with open(f"../data/numpy_three_sys_C_gaussian/test_sim.pt", "rb") as f:
-        sim_objs = torch.load(f)
-
-
-    with open('../data/numpy_three_sys_C_gaussian/data.pkl', 'rb') as f: #load the data.pkl file for the test data
-        data = pickle.load(f)
-        ys = data["observation"]
-        print("ys.shape:", ys.shape)
-
-    # with open("../data/val_ypred.pkl", "rb") as f:
-    #         entries = pickle.load(f)
-    #         print("keys of entries:", entries[0].keys())
-    #         print("len of entries:", len(entries))
-    #         print("shape of all the values for each key in entries[0]", {k: v.shape for k, v in entries[0].items()})
-    #         #set ys equal to the observation values of all the entries
-    #         ys = np.array([entry["obs"] for entry in entries])
-    #         print("ys.shape:", ys.shape)
-    #         # print("shape of entries:", entries["observation"].shape)
-
-
-    # ys, sim_objs, us = [], [], []  # initialize the lists
+    if not generate_data:
     
-    
-    # for i in range(num_systems):  # iterate over 1000 (I think this is the number of trials for the dataset)
-    #     if config.dataset_typ == "drone":  # if the dataset type is drone
-    #         sim_obj, entry = generate_drone_sample(config.n_positions)  # generate drone sample
-    #         us.append(entry["actions"])  # append the actions
-    #     else:
-    #         if config.changing:  # if the dataset is changing
-    #             sim_obj, entry = generate_changing_lti_sample(config.n_positions, config.nx, config.ny,
-    #                                                           n_noise=config.n_noise)  # generate changing lti sample
-    #         else:
-    #             sim_obj, entry = generate_lti_sample(config.dataset_typ,
-    #                                                  num_trials,
-    #                                                  config.n_positions,
-    #                                                  config.nx, config.ny,
-    #                                                  n_noise=config.n_noise)  # generate lti sample
-    #     ys.append(entry["obs"])  # append the observations
-    #     sim_objs.append(sim_obj)  # append the sim object
-    # ys = np.array(ys)
-    # us = np.array(us)
+        with open(f"../data/numpy_three_sys" + C_dist + "/test_sim.pt", "rb") as f:
+            sim_objs = torch.load(f)
 
-    print("before torch.no_grad()")
+
+        with open('../data/numpy_three_sys' + C_dist + '/data.pkl', 'rb') as f: #load the data.pkl file for the test data
+            data = pickle.load(f)
+            ys = data["observation"]
+            print("ys.shape:", ys.shape)
+            
+        # with open("../data/val_ypred.pkl", "rb") as f:
+        #         entries = pickle.load(f)
+        #         print("keys of entries:", entries[0].keys())
+        #         print("len of entries:", len(entries))
+        #         print("shape of all the values for each key in entries[0]", {k: v.shape for k, v in entries[0].items()})
+        #         #set ys equal to the observation values of all the entries
+        #         ys = np.array([entry["obs"] for entry in entries])
+        #         print("ys.shape:", ys.shape)
+        #         # print("shape of entries:", entries["observation"].shape)
+    else:
+        ys, sim_objs, us = [], [], []  # initialize the lists
+        
+        
+        for i in range(num_systems):  # iterate over 1000 (I think this is the number of trials for the dataset)
+            if config.dataset_typ == "drone":  # if the dataset type is drone
+                sim_obj, entry = generate_drone_sample(config.n_positions)  # generate drone sample
+                us.append(entry["actions"])  # append the actions
+            else:
+                if config.changing:  # if the dataset is changing
+                    sim_obj, entry = generate_changing_lti_sample(config.n_positions, config.nx, config.ny,
+                                                                n_noise=config.n_noise)  # generate changing lti sample
+                else:
+                    sim_obj, entry = generate_lti_sample(config.dataset_typ,
+                                                        num_trials,
+                                                        config.n_positions,
+                                                        config.nx, config.ny,
+                                                        n_noise=config.n_noise)  # generate lti sample
+            ys.append(entry["obs"])  # append the observations
+            sim_objs.append(sim_obj)  # append the sim object
+        ys = np.array(ys)
+        us = np.array(us)
+
     with torch.no_grad():  # no gradients
         I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)   # get the inputs (observations without the last one)
         # if config.dataset_typ == "drone":  # if the dataset type is drone
@@ -253,22 +253,22 @@ def compute_errors(config):
         if config.changing:
             preds_tf = model.predict_ar(ys[:, :-1])  # predict using the model
         else:
-            print("before model.predict_step()")
+            # print("before model.predict_step()")
             batch_shape = I.shape[:-2]
-            print("batch_shape:", batch_shape)
+            # print("batch_shape:", batch_shape)
             flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
-            print("flattened_I.shape:", flattened_I.shape)
+            # print("flattened_I.shape:", flattened_I.shape)
             _, flattened_preds_tf = model.predict_step({"xs": torch.from_numpy(flattened_I).to(device)})    # predict using the model
-            print("flattened_preds_tf:", flattened_preds_tf)
+            # print("flattened_preds_tf:", flattened_preds_tf)
             preds_tf = np.reshape(flattened_preds_tf["preds"].cpu().numpy(), (*batch_shape, *I.shape[-2:])) # get the predictions
-            print("preds_tf.shape:", preds_tf.shape)
+            # print("preds_tf.shape:", preds_tf.shape)
             preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf], axis=-2)  # concatenate the predictions
-            print("preds_tf.shape:", preds_tf.shape)
+            # print("preds_tf.shape:", preds_tf.shape)
 
-    print("preds_tf.shape:", preds_tf.shape)
+    # print("preds_tf.shape:", preds_tf.shape)
     errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
     errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2     # get the errors of zero predictions
-    print("errs_tf.shape:", errs_tf.shape)
+    # print("errs_tf.shape:", errs_tf.shape)
 
     n_noise = config.n_noise
 
@@ -290,7 +290,7 @@ def compute_errors(config):
 
     analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     print("analytical_kf.shape:", analytical_kf.shape)
-    err_lss["Analytical_Kalman"] = analytical_kf.reshape((3,1))@np.ones((1,config.n_positions))
+    err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
     print("err_lss[Analytical_Kalman].shape:", err_lss["Analytical_Kalman"].shape)
 
 
@@ -382,17 +382,19 @@ def compute_errors(config):
 if __name__ == '__main__':
     config = Config()
 
-    C_dist = "_gauss_C"
+    C_dist = "_unif_C" #"_gauss_C" #"_gauss_C_large_var"
+    run_preds = True
     
-    # err_lss, irreducible_error = compute_errors(config)#, emb_dim)
+    if run_preds:
+        err_lss, irreducible_error = compute_errors(config, C_dist, generate_data=True)#, emb_dim)
 
-    # #make the prediction errors directory
-    # os.makedirs("../data/prediction_errors" + C_dist, exist_ok=True)
-    # #save err_lss and irreducible_error to a file
-    # with open(f"../data/prediction_errors" + C_dist + "/{config.dataset_typ}_err_lss.pkl", "wb") as f:
-    #     pickle.dump(err_lss, f)
-    # with open(f"../data/prediction_errors" + C_dist + "/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
-    #     pickle.dump(irreducible_error, f)
+        #make the prediction errors directory
+        os.makedirs("../data/prediction_errors" + C_dist, exist_ok=True)
+        #save err_lss and irreducible_error to a file
+        with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss.pkl", "wb") as f:
+            pickle.dump(err_lss, f)
+        with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
+            pickle.dump(irreducible_error, f)
 
     #load the prediction errors from the file
     with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
@@ -402,52 +404,61 @@ if __name__ == '__main__':
     
     print(irreducible_error_load)
 
-    if C_dist == "_unif_C":
+    if C_dist == "_unif_C" and config.dataset_typ == "ypred":
         with open(f"../data/prediction_errors_unif_C/fir_bounds.pt", "rb") as f:
             fir_bounds = torch.load(f, map_location=torch.device('cpu'))
             fir_bounds = fir_bounds.T
 
-        with open(f"../data/prediction_errors_unif_C/wentinn_errors.pt", "rb") as f:
+        # with open(f"../data/prediction_errors_unif_C/wentinn_errors.pt", "rb") as f:
+        #     rnn_errors = torch.load(f, map_location=torch.device('cpu'))
+
+        # with open(f"../data/prediction_errors_unif_C/rnn_analytical_errors.pt", "rb") as f:
+        #     rnn_an_errors = torch.load(f, map_location=torch.device('cpu'))
+        #     rnn_an_errors = rnn_an_errors.permute(1,2,0)
+
+        with open(f"../data/wentinn_12_04_24/errors.pt", "rb") as f:
             rnn_errors = torch.load(f, map_location=torch.device('cpu'))
 
-        with open(f"../data/prediction_errors_unif_C/rnn_analytical_errors.pt", "rb") as f:
+        with open(f"../data/wentinn_12_04_24/analytical_errors.pt", "rb") as f:
             rnn_an_errors = torch.load(f, map_location=torch.device('cpu'))
             rnn_an_errors = rnn_an_errors.permute(1,2,0)
 
-    for sys in range(config.num_val_tasks):
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#A80000', '#bcbd22']
+
+    print("len(err_lss_load):", len(err_lss_load))
+    for sys in range(len(irreducible_error_load)):
         fig = plt.figure(figsize=(15, 9))
         ax = fig.add_subplot(111)
 
         #plot transformer, KF and FIR errors
-        handles = plot_errs(sys, err_lss_load, irreducible_error_load, ax=ax, shade=True, normalized=False)
+        handles = plot_errs(colors, sys, err_lss_load, irreducible_error_load, ax=ax, shade=True, normalized=False)
 
-        if C_dist == "_unif_C":
+        if C_dist == "_unif_C" and config.dataset_typ == "ypred":
+            #plot fir bounds
+            for i in range(fir_bounds.shape[1] - 2):
+                handles.extend(ax.plot(np.array(range(config.n_positions)), fir_bounds[sys,i]*np.ones(config.n_positions), label="IR Analytical Length " + str(i + 1), linewidth=3, linestyle='--', color = colors[i + 5]))
+
             #plot RNN errors
             avg, std = rnn_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_errors.shape[1]))*rnn_errors.std(axis=(0, 1))
             avg_numpy = avg.detach().numpy()
             std_numpy = std.detach().numpy()
-            handles.append(ax.scatter(np.arange(0,251,5), avg_numpy, label="RNN", linewidth=3, marker='x', s=50))
+            print("avg_numpy.shape:", avg_numpy.shape)
+            handles.append(ax.scatter(np.arange(0,32*5,5), avg_numpy, label="RNN", linewidth=1, marker='x', s=50, color=colors[len(err_lss_load)]))
             ax.fill_between(np.arange(rnn_errors.shape[-1]), avg_numpy - std_numpy, avg_numpy + std_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
 
             avg_an, std_an = rnn_an_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_an_errors.shape[1]))*rnn_an_errors.std(axis=(0, 1))
             avg_an_numpy = avg_an.detach().numpy()
             std_an_numpy = std_an.detach().numpy()
-            handles.append(ax.scatter(np.arange(0,251,5), avg_an_numpy, label="RNN Analytical", linewidth=3, marker='o', s=50))
+            handles.append(ax.scatter(np.arange(0,251,5), avg_an_numpy, label="RNN Analytical", linewidth=1, marker='o', s=100, color=colors[len(err_lss_load)], zorder=10))
             ax.fill_between(np.arange(rnn_an_errors.shape[-1]), avg_an_numpy - std_an_numpy, avg_an_numpy + std_an_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
 
-            
-            #plot fir bounds
-            for i in range(fir_bounds.shape[1]):
-                handles.extend(ax.plot(np.array(range(config.n_positions)), fir_bounds[sys,i]*np.ones(config.n_positions), label="IR Analytical Length " + str(i + 1), linewidth=3, linestyle='--'))
-
-        ax.legend(fontsize=12, loc="lower right", ncol= math.floor(len(handles)/3))
+        ax.legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/4))
         ax.set_xlabel("t", fontsize=30)
         ax.set_ylabel("Prediction Error", fontsize=30)
         ax.grid(which="both")
         ax.tick_params(axis='both', which='major', labelsize=30)
         ax.tick_params(axis='both', which='minor', labelsize=20)
-        ax.set_ylim(bottom=10**(-0.5), top=2*10**(1))
+        ax.set_ylim(bottom=10**(-0.7), top=2*10**(0))
 
         os.makedirs("../figures", exist_ok=True)
         fig.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else ""))
-            

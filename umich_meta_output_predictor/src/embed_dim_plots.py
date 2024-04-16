@@ -65,7 +65,7 @@ if __name__ == "__main__":
         config.override("ckpt_path", "../outputs/GPT2/240313_224903.646dbe/checkpoints/emb_dim_" + str(embed_dim) + "_step=10000.ckpt")
         train_time = train_gpt2(config)
         times.append(train_time)
-        error, irr = compute_errors(config)
+        error, irr = compute_errors(config, generate_data=True)
         errors.append(error)
     print(errors)
     #save errors and times to a file
