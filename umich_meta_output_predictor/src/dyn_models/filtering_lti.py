@@ -100,7 +100,7 @@ class FilterSim:
         elif tri == "rotDiagA":
             A = np.diag([0.99,0.98,0.97,0.96,0.95,0.94,0.93,0.92,0.91,0.9]) * 0.95 #generate a random diagonal matrix
             # Generate a random 10x10 matrix
-            random_matrix = np.random.rand(10, 10)
+            random_matrix = np.random.randn(10, 10)
 
             # Use QR decomposition to get a random rotation matrix
             Q, R = np.linalg.qr(random_matrix)
