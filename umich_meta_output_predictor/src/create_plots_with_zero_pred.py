@@ -458,8 +458,8 @@ if __name__ == '__main__':
         ax.grid(which="both")
         ax.tick_params(axis='both', which='major', labelsize=30)
         ax.tick_params(axis='both', which='minor', labelsize=20)
-        ax.set_ylim(bottom=10**(-0.7), top=2*10**(0))
-        ax.set_xlim(left=0, right=10)
+        ax.set_ylim(bottom=10**(-0.7), top=2*10**(2))
+        # ax.set_xlim(left=0, right=10)
 
         os.makedirs("../figures", exist_ok=True)
         fig.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else ""))
