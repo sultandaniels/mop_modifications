@@ -20,7 +20,7 @@ class Config(object, metaclass=Singleton):
     # Dataset settings
     num_tasks = 40000 #number of training systems
     num_val_tasks = 3 #number of test systems
-    dataset_typ = "upperTriA" #"rotDiagA" #"upperTriA" #"ypred"
+    dataset_typ = "rotDiagA" #"rotDiagA" #"upperTriA" #"ypred"
     nx = 10
     ny = 5
     n_noise = 1
