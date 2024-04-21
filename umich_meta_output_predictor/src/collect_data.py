@@ -44,6 +44,10 @@ if __name__ == '__main__':
         os.makedirs("../data", exist_ok=True)
         with open(f"../data/{name}_{config.dataset_typ}.pkl", "wb") as f:
             pickle.dump(samples, f)
+
+        #save fsim to pickle file
+        with open(f"../data/{name}_{config.dataset_typ}_fsim.pkl", "wb") as f:
+            pickle.dump(fsim, f)
         
         # os.makedirs("../data", exist_ok=True)
         # with open(f"../data/{name}_sim.pt", "wb") as f:
