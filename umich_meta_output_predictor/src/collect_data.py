@@ -20,14 +20,7 @@ if __name__ == '__main__':
                 sim_obj, sample = generate_drone_sample(
                     config.n_positions, sigma_w=1e-1, sigma_v=1e-1, dt=1e-1)
             else:
-                if name == "train":
-                    fsim, sample = generate_lti_sample(config.dataset_typ,
-                                                   config.num_traces[name],
-                                                   config.n_positions,
-                                                   config.nx, config.ny,
-                                                   sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
-                else:
-                    fsim, sample = generate_lti_sample(config.dataset_typ,
+                fsim, sample = generate_lti_sample(config.dataset_typ,
                                                    config.num_traces[name],
                                                    config.n_positions,
                                                    config.nx, config.ny,
@@ -46,6 +39,14 @@ if __name__ == '__main__':
                 # print("shape of sample A:", sample["A"].shape)
             samples.extend([{k: v[i] for k, v in sample.items()} for i in range(config.num_traces[name])])
 
+        print("Saving", len(samples), "samples for", name)
+        print("shape of samples:", {k: v.shape for k, v in samples[0].items()})
         os.makedirs("../data", exist_ok=True)
         with open(f"../data/{name}_{config.dataset_typ}.pkl", "wb") as f:
             pickle.dump(samples, f)
+        
+        # os.makedirs("../data", exist_ok=True)
+        # with open(f"../data/{name}_sim.pt", "wb") as f:
+        #     torch.save(sim_objs, f)
+        # with open(f"../data/{name}_{config.dataset_typ}.pt", "wb") as f:
+        #     torch.save(torch.stack(samples), f)
