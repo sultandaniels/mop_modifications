@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import gc
 
 from core import Config
 from dyn_models import apply_kf, generate_lti_sample, generate_changing_lti_sample, generate_drone_sample, \
@@ -184,7 +185,7 @@ def wentinn_compute_errors(config):
 
 ####################################################################################################
 
-def compute_errors(config, C_dist, generate_data):
+def compute_errors(config, C_dist, wentinn_data):
     # a function to compute the test errors for the GPT2 model, kalman filter, and zero predictions
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
     logger = logging.getLogger(__name__)  # get the logger
@@ -202,7 +203,7 @@ def compute_errors(config, C_dist, generate_data):
                                       n_layer=config.n_layer, n_head=config.n_head).eval().to(
         device)  # load_from_checkpoint
     
-    if not generate_data:
+    if wentinn_data:
     
         with open(f"../data/numpy_three_sys" + C_dist + "/test_sim.pt", "rb") as f:
             sim_objs = torch.load(f)
@@ -244,6 +245,21 @@ def compute_errors(config, C_dist, generate_data):
             sim_objs.append(sim_obj)  # append the sim object
         ys = np.array(ys)
         us = np.array(us)
+        print("ys.shape:", ys.shape)
+        print("type of ys:", type(ys))
+        raise Exception("Just checking the shape of ys")
+        # with open(f"../data/val_{config.dataset_typ}.pkl", "rb") as f:
+        #     samples = pickle.load(f)
+        #     # for every 2000 entries in samples, get the observation values and append them to the ys list
+        #     i = 0
+        #     ys = np.zeros((num_systems, num_trials, config.n_positions + 1, config.ny))
+        #     for entry in samples:
+        #         ys[math.floor(i/num_trials), i % num_trials] = entry["obs"]
+        #         i += 1
+        #     print("ys.shape:", ys.shape)
+        #     print("type of ys:", type(ys))
+        #     del samples  # Delete the variable
+        #     gc.collect()  # Start the garbage collector
 
     with torch.no_grad():  # no gradients
         I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)   # get the inputs (observations without the last one)
@@ -258,7 +274,7 @@ def compute_errors(config, C_dist, generate_data):
             # print("batch_shape:", batch_shape)
             flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
             # print("flattened_I.shape:", flattened_I.shape)
-            _, flattened_preds_tf = model.predict_step({"xs": torch.from_numpy(flattened_I).to(device)})    # predict using the model
+            _, flattened_preds_tf = model.predict_step({"xs": torch.from_numpy(flattened_I).to(device)}) #.float().to(device)})    # predict using the model
             # print("flattened_preds_tf:", flattened_preds_tf)
             preds_tf = np.reshape(flattened_preds_tf["preds"].cpu().numpy(), (*batch_shape, *I.shape[-2:])) # get the predictions
             # print("preds_tf.shape:", preds_tf.shape)
@@ -383,10 +399,10 @@ if __name__ == '__main__':
     config = Config()
 
     C_dist = "_unif_C" #"_gauss_C" #"_gauss_C_large_var"
-    run_preds = False
+    run_preds = True
     
     if run_preds:
-        err_lss, irreducible_error = compute_errors(config, C_dist, generate_data=True)#, emb_dim)
+        err_lss, irreducible_error = compute_errors(config, C_dist, wentinn_data=False)#, emb_dim)
 
         #make the prediction errors directory
         os.makedirs("../data/prediction_errors" + C_dist, exist_ok=True)
