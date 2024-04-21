@@ -224,42 +224,53 @@ def compute_errors(config, C_dist, wentinn_data):
         #         print("ys.shape:", ys.shape)
         #         # print("shape of entries:", entries["observation"].shape)
     else:
-        ys, sim_objs, us = [], [], []  # initialize the lists
+        # ys, sim_objs, us = [], [], []  # initialize the lists
         
         
-        for i in range(num_systems):  # iterate over 1000 (I think this is the number of trials for the dataset)
-            if config.dataset_typ == "drone":  # if the dataset type is drone
-                sim_obj, entry = generate_drone_sample(config.n_positions)  # generate drone sample
-                us.append(entry["actions"])  # append the actions
-            else:
-                if config.changing:  # if the dataset is changing
-                    sim_obj, entry = generate_changing_lti_sample(config.n_positions, config.nx, config.ny,
-                                                                n_noise=config.n_noise)  # generate changing lti sample
-                else:
-                    sim_obj, entry = generate_lti_sample(config.dataset_typ,
-                                                        num_trials,
-                                                        config.n_positions,
-                                                        config.nx, config.ny,
-                                                        n_noise=config.n_noise)  # generate lti sample
-            ys.append(entry["obs"])  # append the observations
-            sim_objs.append(sim_obj)  # append the sim object
-        ys = np.array(ys)
-        us = np.array(us)
-        print("ys.shape:", ys.shape)
-        print("type of ys:", type(ys))
+        # for i in range(num_systems):  # iterate over 1000 (I think this is the number of trials for the dataset)
+        #     if config.dataset_typ == "drone":  # if the dataset type is drone
+        #         sim_obj, entry = generate_drone_sample(config.n_positions)  # generate drone sample
+        #         us.append(entry["actions"])  # append the actions
+        #     else:
+        #         if config.changing:  # if the dataset is changing
+        #             sim_obj, entry = generate_changing_lti_sample(config.n_positions, config.nx, config.ny,
+        #                                                         n_noise=config.n_noise)  # generate changing lti sample
+        #         else:
+        #             sim_obj, entry = generate_lti_sample(config.dataset_typ,
+        #                                                 num_trials,
+        #                                                 config.n_positions,
+        #                                                 config.nx, config.ny,
+        #                                                 n_noise=config.n_noise)  # generate lti sample
+        #     ys.append(entry["obs"])  # append the observations
+        #     sim_objs.append(sim_obj)  # append the sim object
+        # ys = np.array(ys)
+        # us = np.array(us)
+        # print("ys.shape:", ys.shape)
+        # print("type of ys:", type(ys))
+        # print("type of sim_objs:", type(sim_objs))
+        # print("len of sim_objs:", len(sim_objs))
+        # raise Exception("Just checking the shape of ys")
+        with open(f"../data/val_{config.dataset_typ}.pkl", "rb") as f:
+            samples = pickle.load(f)
+            # for every 2000 entries in samples, get the observation values and append them to the ys list
+            i = 0
+            ys = np.zeros((num_systems, num_trials, config.n_positions + 1, config.ny))
+            for entry in samples:
+                ys[math.floor(i/num_trials), i % num_trials] = entry["obs"]
+                i += 1
+            print("ys.shape:", ys.shape)
+            print("type of ys:", type(ys))
+            del samples  # Delete the variable
+            gc.collect()  # Start the garbage collector
+
+        #open fsim file
+        with open(f"../data/val_{config.dataset_typ}_fsim.pkl", "rb") as f:
+            sim_objs = pickle.load(f)
+            print("type of sim_objs:", type(sim_objs))
+            # print("shape of sim_objs:", sim_objs.shape)
+            print("sim_objs", sim_objs)
+
         raise Exception("Just checking the shape of ys")
-        # with open(f"../data/val_{config.dataset_typ}.pkl", "rb") as f:
-        #     samples = pickle.load(f)
-        #     # for every 2000 entries in samples, get the observation values and append them to the ys list
-        #     i = 0
-        #     ys = np.zeros((num_systems, num_trials, config.n_positions + 1, config.ny))
-        #     for entry in samples:
-        #         ys[math.floor(i/num_trials), i % num_trials] = entry["obs"]
-        #         i += 1
-        #     print("ys.shape:", ys.shape)
-        #     print("type of ys:", type(ys))
-        #     del samples  # Delete the variable
-        #     gc.collect()  # Start the garbage collector
 
     with torch.no_grad():  # no gradients
         I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)   # get the inputs (observations without the last one)
