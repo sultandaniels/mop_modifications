@@ -38,7 +38,8 @@ class classproperty(property):
 
 
 def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
-    # shade = False
+    print("\n\n\nSYS", sys)
+    err_rat = np.zeros(2)
     if ax is None:
         fig = plt.figure(figsize=(15, 9))
         ax = fig.add_subplot(111)
@@ -46,7 +47,6 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
     ax.grid()
     handles = []
     for i, (name, err_ls) in enumerate(err_lss.items()):
-
         print("name", name)
         print("err_ls.shape", err_ls.shape)
         # if name != "Analytical_Kalman":
@@ -57,11 +57,25 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
         #     print(name, "{:.2f}".format(err_ls[0]))
         if normalized:
             t = np.arange(1, err_ls.shape[-1])
-            if name != "Kalman":
-                normalized_err = (err_ls - err_lss["Kalman"]) / np.expand_dims(err_irreducible, axis=tuple(range(1, err_ls.ndim)))
+            # if name != "Kalman" and name != "Analytical_Kalman":
+            if name == "MOP" or name == "OLS_ir_length1" or name == "OLS_ir_length2":
+                normalized_err = (err_ls - err_lss["Kalman"])#np.repeat(err_lss["Analytical_Kalman"][:,np.newaxis,:], err_ls.shape[1], axis=1 )) #/ np.expand_dims(err_irreducible, axis=tuple(range(1, err_ls.ndim)))
 
-                q1, median, q3 = np.quantile(normalized_err, [0.25, 0.5, 0.75], axis=-2).mean(axis=1)
-                handles.extend(ax.plot(t, median[1:], label=name, linewidth=3))
+                q1, median, q3 = np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2)
+                print("q1[10]", q1[10])
+                print("median[10]", median[10])
+                print("q3[10]", q3[10])
+                # print("shape of np.quantile(normalized_err, [0.25, 0.5, 0.75], axis=-2)", np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2).shape)
+                # print("shape of np.quantile(normalized_err, [0.25, 0.5, 0.75], axis=-2).mean(axis=1)", np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2).mean(axis=1).shape)
+                #scale by the median of the first index
+                scale = median[1]
+                q1 = q1/scale
+                median = median/scale
+                q3 = q3/scale
+                print("q1[10]", q1[10])
+                print("median[10]", median[10])
+                print("q3[10]", q3[10])
+                handles.extend(ax.plot(t, median[1:], label=name + " sys: " + str(sys), linewidth=3))
                 if shade:
                     ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
         else:
@@ -72,7 +86,13 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
             else:
                 handles.extend(ax.plot(err_ls[sys], label=name, linewidth=5, color='#000000'))
-    return handles
+            if name == "Kalman":
+                err_rat[0] = np.mean(avg)/err_irreducible[sys]
+                print("KF (time avergaged mean)/(irreducible): ", err_rat[0])
+            if name == "Zero":
+                err_rat[1] = np.mean(avg)/err_irreducible[sys]
+                print("Zero (time avergaged mean)/(irreducible): ", err_rat[1])
+    return handles, err_rat
 
 
 def spectrum(A, k):

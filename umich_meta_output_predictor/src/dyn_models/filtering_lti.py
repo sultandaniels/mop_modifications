@@ -106,6 +106,10 @@ class FilterSim:
             Q, R = np.linalg.qr(random_matrix)
                          
             self.A = Q @ A @ Q.T 
+        elif tri == "gaussA":
+            A = np.sqrt(0.33)*np.random.randn(nx, nx) #same second moment as uniform(-1,1)
+            A /= np.max(np.abs(np.linalg.eigvals(A)))
+            self.A = A * 0.95 #scale the matrix
         else:
             if new_eig:
                 self.A = gen_A(0.97, 0.99, nx)
@@ -170,7 +174,7 @@ class FilterSim:
     ####################################################################################################
 
     @staticmethod
-    def construct_C(A, ny, normC=False): #normC is a boolean that determines if the C matrix is sampled from a normal distribution or a uniform distribution
+    def construct_C(A, ny, normC=True): #normC is a boolean that determines if the C matrix is sampled from a normal distribution or a uniform distribution
         nx = A.shape[0]
         _O = [np.eye(nx)]
         for _ in range(nx - 1):
