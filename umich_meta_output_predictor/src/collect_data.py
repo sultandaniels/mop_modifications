@@ -39,7 +39,7 @@ if __name__ == '__main__':
                 # print("shape of sample items:", {k: v.shape for k, v in sample.items()})
                 # print("shape of sample A:", sample["A"].shape)
             samples.extend([{k: v[i] for k, v in sample.items()} for i in range(config.num_traces[name])])
-        sim_objs.append(sim_obj)
+            sim_objs.append(fsim)
         print("Saving", len(samples), "samples for", name)
         print("shape of samples:", {k: v.shape for k, v in samples[0].items()})
         os.makedirs("../data", exist_ok=True)
@@ -47,8 +47,8 @@ if __name__ == '__main__':
             pickle.dump(samples, f)
 
         #save fsim to pickle file
-        with open(f"../data/{name}_{config.dataset_typ}_fsim.pkl", "wb") as f:
-            pickle.dump(fsim, f)
+        with open(f"../data/{name}_{config.dataset_typ}_sim_objs.pkl", "wb") as f:
+            pickle.dump(sim_objs, f)
         
         # os.makedirs("../data", exist_ok=True)
         # with open(f"../data/{name}_sim.pt", "wb") as f:

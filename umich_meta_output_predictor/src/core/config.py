@@ -13,14 +13,15 @@ from utils import set_seed
 
 class Config(object, metaclass=Singleton):
     # ckpt_path = ""
-    ckpt_path = "../outputs/GPT2/240415_095129.473da0/checkpoints/batch_size_28_con_len_250_step=20000.ckpt"
+    ckpt_path = "../outputs/GPT2/240425_225022.52199c/checkpoints/batch_size_28_con_len_250_step=20000.ckpt"
+    # ckpt_path = "../outputs/GPT2/240415_095129.473da0/checkpoints/num_tasks_28_con_len_250_step=20000.ckpt" #checkpoint of dense A uniform
     seed = 0
     fully_reproducible = False
 
     # Dataset settings
     num_tasks = 40000 #number of training systems
     num_val_tasks = 3 #number of test systems
-    dataset_typ = "rotDiagA" #"rotDiagA" #"upperTriA" #"ypred"
+    dataset_typ = "gaussA" #"rotDiagA" #"upperTriA" #"ypred"
     nx = 10
     ny = 5
     n_noise = 1
@@ -29,13 +30,13 @@ class Config(object, metaclass=Singleton):
     # Training settings
     train_steps = 20000
     batch_size = 28 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
-    train_data_workers = 5 #set to 1 (check if it changes the speed of the training process)
+    train_data_workers = 2 #set to 1 (check if it changes the speed of the training process)
     test_batch_size = 2 #256
     test_data_workers = 4 #4 #set to 1
     num_epochs = 1
 
     # Model settings
-    n_positions = 250 #context length
+    n_positions = 500 #for extended OLS #250 #context length
     n_embd = 128
     n_layer = 12
     n_head = 8
