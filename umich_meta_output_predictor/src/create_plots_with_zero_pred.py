@@ -17,6 +17,7 @@ from models import GPT2, CnnKF
 from utils import RLS, plot_errs
 import pickle
 import math
+from tensordict import TensorDict
 
 plt.rcParams['axes.titlesize'] = 20
 
@@ -234,6 +235,20 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             # for every 2000 entries in samples, get the observation values and append them to the ys list
             i = 0
             ys = np.zeros((num_systems, num_trials, config.n_positions + 1, config.ny))
+            print("\n\n")
+            print("samples[0][A] eigenvalues", np.linalg.eigvals(samples[0]['A']))
+            print("samples[0][C] eigenvalues", np.linalg.svd(samples[0]['C']))
+            print("\n\n")
+            print("samples[2050][A] eigenvalues", np.linalg.eigvals(samples[2050]['A']))
+            print("samples[2050][C] eigenvalues", np.linalg.svd(samples[2050]['C']))
+            print("\n\n")
+            # print("samples[4050][A] eigenvalues", np.linalg.eigvals(samples[4050]['A']))
+            # print("samples[0][A] eigenvalues", np.linalg.eigvals(samples[0]['A']))
+            # print("samples[2050][A] eigenvalues", np.linalg.eigvals(samples[2050]['A']))
+            print("\n\n")
+            print("samples[4050][A] eigenvalues", np.linalg.eigvals(samples[4050]['A']))
+            print("samples[4050][C] eigenvalues", np.linalg.svd(samples[4050]['C']))
+            
             for entry in samples:
                 ys[math.floor(i/num_trials), i % num_trials] = entry["obs"]
                 i += 1
@@ -247,6 +262,9 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         #open fsim file
         with open(f"../data/val_{config.dataset_typ}_sim_objs.pkl", "rb") as f:
             sim_objs = pickle.load(f)
+            # print(sim_objs[0])
+
+            raise Exception("just looking at systems")
             # print("type of sim_objs:", type(sim_objs))
             # print("shape of sim_objs:", sim_objs.shape)
             # print("len sim_objs", len(sim_objs))
@@ -381,35 +399,68 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
                 _errs_rls_wentinn.append(ls)
             errs_rls_wentinn.append(_errs_rls_wentinn)
         err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
+    # for ir_length in range(1, 4):
+    #     print(f"IR length: {ir_length}")
+    #     preds_rls_wentinn = []
+    #     preds_rls_wentinn_analytical = []
+    #     for sim_obj, _ys in zip(sim_objs, ys):
+    #         _preds_rls_wentinn = []
+    #         _preds_rls_wentinn_analytical = []
+    #         for __ys in _ys:
+    #             padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+    #             ls = list(np.zeros((2, config.ny)))
+    #             ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+
+    #             rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
+    #             for i in range(config.n_positions - 1):
+    #                 rls_wentinn.update(
+    #                     torch.from_numpy(padded_ys[i:i + ir_length]),
+    #                     torch.from_numpy(padded_ys[i + ir_length])
+    #                 )
+
+    #                 ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
+    #                 ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+
+    #             _preds_rls_wentinn.append(ls)
+    #             _preds_rls_wentinn_analytical.append(ls_analytical)
+
+    #         preds_rls_wentinn.append(_preds_rls_wentinn)
+    #         preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
+
+    #     err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+    sim_obj_td = torch.stack([
+        TensorDict({
+            'F': torch.Tensor(sim.A),                                                   # [N x S_D x S_D]
+            'H': torch.Tensor(sim.C),                                                   # [N x O_D x S_D]
+            'sqrt_S_W': sim.sigma_w * torch.eye(sim.C.shape[-1]),                       # [N x S_D x S_D]
+            'sqrt_S_V': sim.sigma_v * torch.eye(sim.C.shape[-2])                        # [N x O_D x O_D]
+        }, batch_size=())
+        for sim in sim_objs
+    ])
+
     for ir_length in range(1, 4):
         print(f"IR length: {ir_length}")
-        preds_rls_wentinn = []
-        preds_rls_wentinn_analytical = []
-        for sim_obj, _ys in zip(sim_objs, ys):
-            _preds_rls_wentinn = []
-            _preds_rls_wentinn_analytical = []
-            for __ys in _ys:
-                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-                ls = list(np.zeros((2, config.ny)))
-                ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+        rls_preds, rls_analytical_error = [], []
 
-                rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
-                for i in range(config.n_positions - 1):
-                    rls_wentinn.update(
-                        torch.from_numpy(padded_ys[i:i + ir_length]),
-                        torch.from_numpy(padded_ys[i + ir_length])
-                    )
+        torch_ys = torch.Tensor(ys)         # [N x E x L x O_D]
+        padded_torch_ys = torch.cat([
+            torch_ys,
+            torch.zeros((num_systems, num_trials, ir_length - 1, config.ny))
+        ])                                  # [N x E x (L + R - 1) x O_D]
 
-                    ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
-                    ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+        rls_wentinn = CnnKF((num_systems, num_trials), config.ny, ir_length, ridge=1.0)
+        for i in range(config.n_positions - 1):
+            rls_wentinn.update(
+                padded_torch_ys[:, :, i:i + ir_length],
+                padded_torch_ys[:, :, i + ir_length]
+            )
+            rls_preds.append(rls_wentinn(padded_torch_ys[i + 1:i + ir_length + 1]))
+            rls_analytical_error.append(rls_wentinn.analytical_error(sim_obj_td[:, None]))
 
-                _preds_rls_wentinn.append(ls)
-                _preds_rls_wentinn_analytical.append(ls_analytical)
+        rls_preds = torch.stack(rls_preds, dim=2).detach().numpy()                      # [N x E x L x O_D]
+        rls_analytical_error = torch.stack(rls_analytical_error, dim=2).detach.numpy()  # [N x E x L]
 
-            preds_rls_wentinn.append(_preds_rls_wentinn)
-            preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
-
-        err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+        err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(rls_preds), axis=-1) ** 2
 
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error
@@ -420,13 +471,13 @@ if __name__ == '__main__':
     config = Config()
 
     C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
-    run_preds = False #run the predictions evaluation
+    run_preds = True #run the predictions evaluation
     run_deg_kf_test = False #run degenerate KF test
-    excess = True #run the excess plots
+    excess = False #run the excess plots
     if excess:
         fig = plt.figure(figsize=(30, 15))
         ax = fig.add_subplot(111)
-    shade = True
+    shade = False
 
     num_systems = config.num_val_tasks  # number of validation tasks
     
@@ -568,9 +619,12 @@ if __name__ == '__main__':
                 os.makedirs("../figures", exist_ok=True)
                 deg_fig.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + ("-changing_deg_kf_test" if config.changing else "deg_kf_test"))
         else:
-            if not excess:
-                fig = plt.figure(figsize=(15, 9))
-                ax = fig.add_subplot(111)
+            # if not excess:
+            #     fig = plt.figure(figsize=(15, 9))
+            #     ax = fig.add_subplot(111)
+
+            fig = plt.figure(figsize=(15, 9))
+            ax = fig.add_subplot(111)
             #plot transformer, KF and FIR errors
             handles, err_rat = plot_errs(colors, sys, err_lss_load, irreducible_error_load, ax=ax, shade=shade, normalized=excess)
 
@@ -580,25 +634,33 @@ if __name__ == '__main__':
                     for i in range(fir_bounds.shape[1] - 2):
                         handles.extend(ax.plot(np.array(range(config.n_positions)), (fir_bounds[sys,i] - irreducible_error_load[sys])*np.ones(config.n_positions), label="IR Analytical Length " + str(i + 1) + " sys: " + str(sys), linewidth=3, linestyle='--'))#, color = colors[i + 5]))
 
-                    #plot RNN errors
-                    rnn_er = rnn_errors[sys].detach().numpy()
-                    kalman_err = err_lss_load["Kalman"][sys,:, ::5].mean(axis=(0))
-                    #figure out how to take median and quantiles of the rnn errors
-                    rnn_q1, rnn_median, rnn_q3 = np.quantile((rnn_er -kalman_err), [0.25, 0.5, 0.75], axis=-2)
-                    N = rnn_median.shape[0]
-                    # Adjust the range of np.arange function
-                    x = np.arange(1, (N-1)*5 + 1, 5)
-                    handles.append(ax.scatter(x, rnn_median[1:], label="RNN sys: " + str(sys), linewidth=3, marker='x', s=50))#, color=colors[len(err_lss_load)]))
-                    if shade:
-                        ax.fill_between(x, rnn_q1[1:], rnn_q3[1:], facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+                    # #plot RNN errors
+                    # rnn_er = rnn_errors[sys].detach().numpy()
+                    # kalman_err = err_lss_load["Kalman"][sys,:, ::5].mean(axis=(0))
+                    # #figure out how to take median and quantiles of the rnn errors
+                    # rnn_q1, rnn_median, rnn_q3 = np.quantile((rnn_er -kalman_err), [0.25, 0.5, 0.75], axis=-2)
+                    # scale = rnn_median[1]
+                    # rnn_median = rnn_median/scale
+                    # rnn_q1 = rnn_q1/scale
+                    # rnn_q3 = rnn_q3/scale
+                    # N = rnn_median.shape[0]
+                    # # Adjust the range of np.arange function
+                    # x = np.arange(1, (N-1)*5 + 1, 5)
+                    # handles.append(ax.scatter(x, rnn_median[1:], label="RNN sys: " + str(sys), linewidth=3, marker='x', s=50))#, color=colors[len(err_lss_load)]))
+                    # if shade:
+                    #     ax.fill_between(x, rnn_q1[1:], rnn_q3[1:], facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
 
                     print("rnn_an_errors.shape:", rnn_an_errors.shape)
-                    #plot RNN errors
+                    #plot Analytical RNN errors
                     rnn_an_er = rnn_an_errors[sys].detach().numpy()
                     print("shape of err_lss_load[Kalman]:", err_lss_load["Kalman"][sys,:, ::5].shape)
                     kalman_err = err_lss_load["Kalman"][sys,:, ::5].mean(axis=(0))
                     #figure out how to take median and quantiles of the rnn errors
                     rnn_an_q1, rnn_an_median, rnn_an_q3 = np.quantile((rnn_an_er - kalman_err), [0.25, 0.5, 0.75], axis=-2)
+                    scale = rnn_an_median[1]
+                    rnn_an_median = rnn_an_median/scale
+                    rnn_an_q1 = rnn_an_q1/scale
+                    rnn_an_q3 = rnn_an_q3/scale
                     N = rnn_an_median.shape[0]
                     # Adjust the range of np.arange function
                     x = np.arange(1, (N-1)*5 + 1, 5)
@@ -712,9 +774,7 @@ if __name__ == '__main__':
         #make the x axis log scale
         ax.set_xscale('log')
         # ax.set_ylim(bottom=-1, top=2*10**(-1))
-        ax.set_title(("Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else ("Upper Triangular A " if config.dataset_typ == "upperTriA" else ("N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
+        ax.set_title(("Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else ("Upper Triangular A " if config.dataset_typ == "upperTriA" else ("N(0,0.33) A " if config.dataset_typ == "gaussA" else "Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
         # ax.set_xlim(left=0, right=10)
         os.makedirs("../figures", exist_ok=True)
         fig.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_system_cutoff" + ("-changing" if config.changing else "_excess"))
-
-

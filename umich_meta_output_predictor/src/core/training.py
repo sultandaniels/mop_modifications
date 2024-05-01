@@ -117,7 +117,7 @@ def get_callbacks_and_loggers(model, output_dir, batch_size, context_len, train_
         dirpath=os.path.join(output_dir, "checkpoints"),
         filename="batch_size_" + str(batch_size) + "_con_len_" + str(context_len) + "_{step}", # for embed dim experiments: "emb_dim_" + str(emb_dim) + "_{step}",
         save_top_k=-1, 
-        every_n_train_steps=train_step, #this changed from 10000 to train_step
+        every_n_train_steps=4000, #this changed from 10000 to train_step
     )
 
     ckpt_path = None

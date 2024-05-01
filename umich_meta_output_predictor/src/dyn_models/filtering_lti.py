@@ -183,7 +183,7 @@ class FilterSim:
             if normC:
                 C = np.random.normal(0, np.sqrt(0.333333333), (ny, nx)) 
             else:
-                C = np.random.rand(ny, nx) #change this to sampled from normal distribution
+                C = np.random.rand(ny, nx) #uniform(0,1)
             O = np.concatenate([C @ o for o in _O], axis=0)
             if np.linalg.matrix_rank(O) == nx:  # checking if state is observable
                 break
