@@ -58,8 +58,11 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
         if normalized:
             t = np.arange(1, err_ls.shape[-1])
             # if name != "Kalman" and name != "Analytical_Kalman":
-            if name == "MOP" or name == "OLS_ir_length1" or name == "OLS_ir_length2":
+            if name == "OLS_ir_length1" or name == "OLS_ir_length2" or name == "OLS_ir_length3" or name == "MOP": 
                 normalized_err = (err_ls - err_lss["Kalman"])#np.repeat(err_lss["Analytical_Kalman"][:,np.newaxis,:], err_ls.shape[1], axis=1 )) #/ np.expand_dims(err_irreducible, axis=tuple(range(1, err_ls.ndim)))
+
+                # #bootstrapping normalized_err
+                # np.random.choice(normalized_err, size=None, replace=True, p=None)
 
                 q1, median, q3 = np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2)
                 print("q1[10]", q1[10])
