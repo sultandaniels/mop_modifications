@@ -181,7 +181,10 @@ class FilterSim:
             _O.append(_O[-1] @ A)
         while True:
             if normC:
-                C = np.random.normal(0, np.sqrt(0.333333333), (ny, nx)) 
+                C = np.random.normal(0, np.sqrt(0.333333333), (ny, nx))
+                
+                #scale C by the reciprocal of its frobenius norm
+                C = C/np.linalg.norm(C, ord='fro') #scale the matrix 
             else:
                 C = np.random.rand(ny, nx) #uniform(0,1)
             O = np.concatenate([C @ o for o in _O], axis=0)
