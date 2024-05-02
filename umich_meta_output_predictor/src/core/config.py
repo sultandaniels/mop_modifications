@@ -13,8 +13,8 @@ from utils import set_seed
 
 class Config(object, metaclass=Singleton):
     # ckpt_path = ""
-    # ckpt_path = "../outputs/GPT2/240429_221811.ea7f54/checkpoints/batch_size_28_con_len_250_step=40000.ckpt"
-    ckpt_path = "../outputs/GPT2/240425_225022.52199c/checkpoints/batch_size_28_con_len_250_step=20000.ckpt"
+    ckpt_path = "../outputs/GPT2/240502_103224.6c02a0/checkpoints/batch_size_28_con_len_250_step=40000.ckpt"
+    # ckpt_path = "../outputs/GPT2/240425_225022.52199c/checkpoints/batch_size_28_con_len_250_step=20000.ckpt" #20000 steps gaussA gaussC
     # ckpt_path = "../outputs/GPT2/240320_014524.c78f58/checkpoints/num_tasks_28_con_len_250_step=20000.ckpt" #checkpoint of dense A uniform C
     seed = 0
     fully_reproducible = False
@@ -37,7 +37,7 @@ class Config(object, metaclass=Singleton):
     num_epochs = 1
 
     # Model settings
-    n_positions = 500 #250 #500 for extended OLS #250 #context length
+    n_positions = 250 #500 for extended OLS #250 #context length
     n_embd = 128
     n_layer = 12
     n_head = 8
