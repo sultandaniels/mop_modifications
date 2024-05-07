@@ -21,7 +21,7 @@ if __name__ == '__main__':
                 sim_obj, sample = generate_drone_sample(
                     config.n_positions, sigma_w=1e-1, sigma_v=1e-1, dt=1e-1)
             else:
-                fsim, sample = generate_lti_sample(config.dataset_typ,
+                fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ,
                                                    config.num_traces[name],
                                                    config.n_positions,
                                                    config.nx, config.ny,
@@ -43,11 +43,11 @@ if __name__ == '__main__':
         print("Saving", len(samples), "samples for", name)
         print("shape of samples:", {k: v.shape for k, v in samples[0].items()})
         os.makedirs("../data", exist_ok=True)
-        with open(f"../data/{name}_{config.dataset_typ}.pkl", "wb") as f:
+        with open(f"../data/{name}_{config.dataset_typ}_{config.C_dist}.pkl", "wb") as f:
             pickle.dump(samples, f)
 
         #save fsim to pickle file
-        with open(f"../data/{name}_{config.dataset_typ}_sim_objs.pkl", "wb") as f:
+        with open(f"../data/{name}_{config.dataset_typ}_{config.C_dist}_sim_objs.pkl", "wb") as f:
             pickle.dump(sim_objs, f)
         
         # os.makedirs("../data", exist_ok=True)

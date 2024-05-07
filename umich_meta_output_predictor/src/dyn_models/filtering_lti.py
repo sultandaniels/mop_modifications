@@ -87,7 +87,7 @@ class FilterSim:
 
     # ####################################################################################################
     # #code that I added
-    def __init__(self, nx, ny, sigma_w, sigma_v, tri, n_noise, new_eig):
+    def __init__(self, nx, ny, sigma_w, sigma_v, tri, C_dist, n_noise, new_eig):
         self.sigma_w = sigma_w
         self.sigma_v = sigma_v
 
@@ -121,7 +121,11 @@ class FilterSim:
                 # A[0,0] = 0.95
                 # self.A = A
 
-        self.C = np.eye(nx) if nx == ny else self.construct_C(self.A, ny)
+        if C_dist == "_gauss_C":
+            normC = True
+        else:
+            normC = False
+        self.C = np.eye(nx) if nx == ny else self.construct_C(self.A, ny, normC)
 
         self.S_state_inf = solve_ricc(self.A, np.eye(nx) * sigma_w ** 2)
         S_state_inf_intermediate = sc.linalg.solve_discrete_are(self.A.T, self.C.T, np.eye(nx) * sigma_w ** 2, np.eye(ny) * sigma_v ** 2)
@@ -174,7 +178,7 @@ class FilterSim:
     ####################################################################################################
 
     @staticmethod
-    def construct_C(A, ny, normC=True): #normC is a boolean that determines if the C matrix is sampled from a normal distribution or a uniform distribution
+    def construct_C(A, ny, normC): #normC is a boolean that determines if the C matrix is sampled from a normal distribution or a uniform distribution
         nx = A.shape[0]
         _O = [np.eye(nx)]
         for _ in range(nx - 1):
@@ -182,7 +186,7 @@ class FilterSim:
         while True:
             if normC:
                 C = np.random.normal(0, np.sqrt(0.333333333), (ny, nx))
-                
+
                 #scale C by the reciprocal of its frobenius norm
                 C = C/np.linalg.norm(C, ord='fro') #scale the matrix 
             else:
@@ -231,26 +235,26 @@ def apply_kf(fsim, ys, sigma_w=None, sigma_v=None, return_obj=False):
 # code that I added
 
 
-def _generate_lti_sample(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
-    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri=dataset_typ, n_noise=n_noise, new_eig = False)
+def _generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
+    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri=dataset_typ, C_dist=C_dist, n_noise=n_noise, new_eig = False)
     states, obs = fsim.simulate_steady(batch_size, n_positions)
     return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
 
-def _generate_lti_sample_new_eig(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
-    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri=dataset_typ, n_noise=n_noise, new_eig = True)
+def _generate_lti_sample_new_eig(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
+    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri=dataset_typ, C_dist=C_dist, n_noise=n_noise, new_eig = True)
     states, obs = fsim.simulate_steady(batch_size, n_positions)
     return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
 
 
-def generate_lti_sample(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
+def generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
     while True:
-        fsim, entry = _generate_lti_sample(dataset_typ, batch_size, n_positions, nx, ny, sigma_w, sigma_v, n_noise=n_noise)
+        fsim, entry = _generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w, sigma_v, n_noise=n_noise)
         if check_validity(entry):
             return fsim, entry
         
-def generate_lti_sample_new_eig(dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
+def generate_lti_sample_new_eig(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
     while True:
-        fsim, entry = _generate_lti_sample_new_eig(dataset_typ, batch_size, n_positions, nx, ny, sigma_w, sigma_v, n_noise=n_noise)
+        fsim, entry = _generate_lti_sample_new_eig(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w, sigma_v, n_noise=n_noise)
         if check_validity(entry):
             return fsim, entry
 

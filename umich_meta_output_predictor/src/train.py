@@ -23,10 +23,10 @@ def train_gpt2(config): #input emd_dim as a parameter for the embed dim experime
     model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
                  n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
 
-    val_dset = FilterDataset(f"../data/val_{config.dataset_typ}.pkl", use_true_len=True) if os.path.exists(f"../data/val_{config.dataset_typ}.pkl") else None
+    val_dset = FilterDataset(f"../data/val_{config.dataset_typ}_{config.C_dist}.pkl", use_true_len=True) if os.path.exists(f"../data/val_{config.dataset_typ}.pkl") else None
     # raise Exception("Just checking FilterDataset")
 
-    datamodule = DataModuleWrapper(FilterDataset(f"../data/train_{config.dataset_typ}.pkl"), val_dset)
+    datamodule = DataModuleWrapper(FilterDataset(f"../data/train_{config.dataset_typ}_{config.C_dist}.pkl"), val_dset)
 
     
 
