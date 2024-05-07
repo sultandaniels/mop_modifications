@@ -18,6 +18,7 @@ from utils import RLS, plot_errs
 import pickle
 import math
 from tensordict import TensorDict
+from striprtf.striprtf import rtf_to_text
 
 plt.rcParams['axes.titlesize'] = 20
 
@@ -230,7 +231,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         #         print("ys.shape:", ys.shape)
         #         # print("shape of entries:", entries["observation"].shape)
     else:
-        with open(f"../data/val_{config.dataset_typ}.pkl", "rb") as f:
+        with open(f"../data/val_{config.dataset_typ}_{config.C_dist}.pkl", "rb") as f:
             samples = pickle.load(f)
             # for every 2000 entries in samples, get the observation values and append them to the ys list
             i = 0
@@ -260,7 +261,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             gc.collect()  # Start the garbage collector
 
         #open fsim file
-        with open(f"../data/val_{config.dataset_typ}_sim_objs.pkl", "rb") as f:
+        with open(f"../data/val_{config.dataset_typ}_{config.C_dist}_sim_objs.pkl", "rb") as f:
             sim_objs = pickle.load(f)
             # print(sim_objs[0])
             # print("type of sim_objs:", type(sim_objs))
@@ -468,8 +469,9 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 if __name__ == '__main__':
     config = Config()
 
-    C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
-    run_preds = False #run the predictions evaluation
+    C_dist = config.C_dist #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
+    print("C_dist:", C_dist)
+    run_preds = True #run the predictions evaluation
     run_deg_kf_test = False #run degenerate KF test
     excess = False #run the excess plots
     context_el = 200 #element of the context
@@ -484,8 +486,29 @@ if __name__ == '__main__':
         all_err_lss = []
         all_irreducible_error = []
         for steps in range(4000, 40001, 4000):
-            config.override("ckpt_path", "../outputs/GPT2/240429_221811.ea7f54/checkpoints/batch_size_28_con_len_250_step=" + str(steps) + ".ckpt")
+
+            # CHANGE THE CKPT PATH ########################################
+            config.override("ckpt_path", "../outputs/GPT2/240505_102734.114a39/checkpoints/batch_size_28_con_len_250_step=" + str(steps) + ".ckpt")
             print("config.ckpt_path:", config.ckpt_path)
+
+            # Get the directory of the checkpoint file
+            ckpt_dir = os.path.dirname(config.ckpt_path)
+
+            # Get the parent directory
+            parent_dir = os.path.dirname(ckpt_dir)
+
+            print(parent_dir)
+
+            print("\n\nReading the README file\n\n")
+
+            # Open the README file and print its contents
+            with open(parent_dir + "/README.rtf", "r") as file:
+                rtf_text = file.read()
+
+            plain_text = rtf_to_text(rtf_text)
+            print(plain_text)
+
+
 
             err_lss, irreducible_error = compute_errors(config, C_dist, run_deg_kf_test, wentinn_data=False)
             all_err_lss.append(err_lss)
