@@ -378,55 +378,57 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     #         preds_rls.append(_preds_rls)
     #         preds_rls_analytical.append(_preds_rls_analytical)
 
-        # err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
-        # err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
+    #     err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
+    #     err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
 
-        # # Debugging implemented OLS
-        # errs_rls_wentinn = []
-        # for sim_obj, _ys in zip(sim_objs, ys):
-        #     _errs_rls_wentinn = []
-        #     for __ys in _ys:
-        #         padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-        #         ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
-        #         rls_wentinn = CnnKF(config.ny, ir_length)
-        #         for i in range(config.n_positions - 1):
-        #             rls_wentinn.update(
-        #                 torch.from_numpy(padded_ys[i:i + ir_length]),
-        #                 torch.from_numpy(padded_ys[i + ir_length])
-        #             )
-        #             ls.append(rls_wentinn.analytical_error(sim_obj).item())
-        #         _errs_rls_wentinn.append(ls)
-        #     errs_rls_wentinn.append(_errs_rls_wentinn)
-        # err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
-    # for ir_length in range(1, 4):
-    #     print(f"IR length: {ir_length}")
-    #     preds_rls_wentinn = []
-    #     preds_rls_wentinn_analytical = []
+    #     # Debugging implemented OLS
+    #     errs_rls_wentinn = []
     #     for sim_obj, _ys in zip(sim_objs, ys):
-    #         _preds_rls_wentinn = []
-    #         _preds_rls_wentinn_analytical = []
+    #         _errs_rls_wentinn = []
     #         for __ys in _ys:
     #             padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-    #             ls = list(np.zeros((2, config.ny)))
-    #             ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
-
-    #             rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
+    #             ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+    #             rls_wentinn = CnnKF(config.ny, ir_length)
     #             for i in range(config.n_positions - 1):
     #                 rls_wentinn.update(
     #                     torch.from_numpy(padded_ys[i:i + ir_length]),
     #                     torch.from_numpy(padded_ys[i + ir_length])
     #                 )
+    #                 ls.append(rls_wentinn.analytical_error(sim_obj).item())
+    #             _errs_rls_wentinn.append(ls)
+    #         errs_rls_wentinn.append(_errs_rls_wentinn)
+    #     err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
 
-    #                 ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
-    #                 ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+    for ir_length in range(1, 4):
+        print(f"IR length: {ir_length}")
+        preds_rls_wentinn = []
+        preds_rls_wentinn_analytical = []
+        for sim_obj, _ys in zip(sim_objs, ys):
+            _preds_rls_wentinn = []
+            _preds_rls_wentinn_analytical = []
+            for __ys in _ys:
+                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+                ls = list(np.zeros((2, config.ny)))
+                ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
 
-    #             _preds_rls_wentinn.append(ls)
-    #             _preds_rls_wentinn_analytical.append(ls_analytical)
+                rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
+                for i in range(config.n_positions - 1):
+                    rls_wentinn.update(
+                        torch.from_numpy(padded_ys[i:i + ir_length]),
+                        torch.from_numpy(padded_ys[i + ir_length])
+                    )
 
-    #         preds_rls_wentinn.append(_preds_rls_wentinn)
-    #         preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
+                    ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
+                    ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
 
-    #     err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+                _preds_rls_wentinn.append(ls)
+                _preds_rls_wentinn_analytical.append(ls_analytical)
+
+            preds_rls_wentinn.append(_preds_rls_wentinn)
+            preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
+
+        err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+
     # sim_obj_td = torch.stack([
     #     TensorDict({
     #         'F': torch.Tensor(sim.A),                                                   # [N x S_D x S_D]
@@ -471,10 +473,11 @@ if __name__ == '__main__':
 
     C_dist = config.C_dist #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
     print("C_dist:", C_dist)
-    run_preds = True #run the predictions evaluation
+    run_preds = False #run the predictions evaluation
+    just_OLS = True #run just the OLS test
     run_deg_kf_test = False #run degenerate KF test
     excess = False #run the excess plots
-    context_el = 200 #element of the context
+    context_el = 250 #element of the context
     if excess:
         fig = plt.figure(figsize=(30, 15))
         ax = fig.add_subplot(111)
@@ -555,7 +558,32 @@ if __name__ == '__main__':
         axs = [[ax1, ax2, ax3],[ax4, ax5, ax6],[ax7, ax8, ax9]]
     else:
         with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss_checks.pkl", "rb") as f:
-            err_lss_load_checks = pickle.load(f)
+                err_lss_load_checks = pickle.load(f)
+
+
+        #computed OLS errors
+        # err_lss_load_checks_ols = err_lss_load_checks
+        # err_lss_load_checks_ols[0] = compute_errors(config, C_dist, run_deg_kf_test, wentinn_data=False)
+        # #save err_lss and irreducible_error to a file
+        # with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss_checks_ols.pkl", "wb") as f:
+        #     pickle.dump(err_lss_load_checks_ols, f)
+
+        # with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss_checks.pkl", "rb") as f:
+        #         err_lss_load_checks = pickle.load(f)
+
+        with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss_checks_ols.pkl", "rb") as f:
+                err_lss_load_checks_ols = pickle.load(f)
+
+            # if just_OLS:
+            #     print("\n running just OLS test\n")
+
+            #     config.override("ckpt_path", "../outputs/GPT2/240505_102734.114a39/checkpoints/batch_size_28_con_len_250_step=4000.ckpt")
+            #     err_lss_load_checks[0] = compute_errors(config, C_dist, run_deg_kf_test, wentinn_data=False)
+
+            #     #save err_lss and irreducible_error to a file
+            #     with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss_checks_ols.pkl", "wb") as f:
+            #         pickle.dump(err_lss_load_checks, f)
+
             # if excess == True:
             #     err_lss_load["Analytical_Kalman"] = np.append(err_lss_load["Analytical_Kalman"],err_lss_load["Analytical_Kalman"][:,-1, np.newaxis], axis=-1)
             # irreducible_error = [err_lss_load["Analytical_Kalman"][i][i] for i in range(num_systems)]
@@ -576,28 +604,37 @@ if __name__ == '__main__':
 
     error_vals = np.zeros((num_systems, 10))
     std_devs = np.zeros((num_systems, 10))
+    ols_error_vals = np.zeros((num_systems, 10, 3))
+    ols_std_devs = np.zeros((num_systems, 10, 3))
     print("num_systems:", num_systems)
     print("error_vals.shape:", error_vals.shape)
 
     fig = plt.figure(figsize=(15, 9))
     ax = fig.add_subplot(111)
 
-    print("len(err_lss_load):", len(err_lss_load_checks))
+    max_ols = 3
+
     i = 0
     for err_lss_load in err_lss_load_checks:
         irreducible_error_load = irreducible_error_load_checks[i]
         for sys in range(len(irreducible_error_load)):
             #plot transformer, KF and FIR errors
-            print("shape of err_lss_load[MOP]:", err_lss_load["MOP"][sys,:,context_el].shape)
             error_vals[sys,i] = err_lss_load["MOP"][sys,:,context_el].mean()
             std_devs[sys,i] = err_lss_load["MOP"][sys,:,context_el].std()*(3/np.sqrt(err_lss_load["MOP"][sys,:,context_el].shape[0])) #3 standard deviations divided by the square root of the number of samples
+
+            if just_OLS:
+                for ir_length in range(1, 4):
+                    ols_error_vals[sys,i, ir_length-1] = err_lss_load_checks_ols[0][0][f"OLS_ir_length{ir_length}"][sys,:,context_el-1].mean()
+                    ols_std_devs[sys,i, ir_length-1] = err_lss_load_checks_ols[0][0][f"OLS_ir_length{ir_length}"][sys,:,context_el].std()*(3/np.sqrt(err_lss_load_checks_ols[0][0][f"OLS_ir_length{ir_length}"][sys,:,context_el].shape[0])) #3 standard deviations divided by the square root of the number of samples
+
         i += 1
 
-    print("err_lss_checks[Analytical_Kalman]:", err_lss_load_checks[0]["Analytical_Kalman"].shape)
-    print("irreducible_error_load_checks]:", irreducible_error_load_checks)
 # for each system, plot error_vals with std dev error bars. The system number is the first axis of error_vals
     for sys in range(num_systems):
         ax.errorbar(4000*np.arange(10), error_vals[sys], yerr=std_devs[sys], label=f"System {sys}", color=colors[sys])
+        if just_OLS:
+            for ir_length in range(1, max_ols):
+                ax.errorbar(4000*np.arange(10), ols_error_vals[sys,:,ir_length-1], yerr=ols_std_devs[sys,:,ir_length-1], label=f"System {sys} OLS_ir_length{ir_length}", color=colors[sys], linestyle=":")
         ax.plot(4000*np.arange(10), irreducible_error_load_checks[0][sys]*np.ones(10), label=f"System {sys} Irreducible Error", color=colors[sys], linestyle="--")
     ax.legend()
     plt.title(("Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else ("Upper Triangular A " if config.dataset_typ == "upperTriA" else ("N(0,0.33) A " if config.dataset_typ == "gaussA" else "Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")) + " Test Error vs Training Step")

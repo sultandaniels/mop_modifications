@@ -1,0 +1,49 @@
+{
+    "os": "macOS-13.3.1-arm64-arm-64bit",
+    "python": "3.12.2",
+    "heartbeatAt": "2024-05-13T03:01:23.895076",
+    "startedAt": "2024-05-13T03:01:22.119941",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb_check.py",
+    "codePathLocal": "wandb_check.py",
+    "codePath": "wandb_check.py",
+    "git": {
+        "remote": "https://github.com/sultandaniels/mop_modifications.git",
+        "commit": "87ce9ab8fba728fd5f5f06f1d054744e9bd62f73"
+    },
+    "email": "63972349+sultandaniels@users.noreply.github.com",
+    "root": "/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications",
+    "host": "Sultans-MacBook-Pro.local",
+    "username": "sultandaniels",
+    "executable": "/Users/sultandaniels/anaconda3/envs/mop/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 3504,
+        "min": 600,
+        "max": 3504
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3504,
+            "min": 600,
+            "max": 3504
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 460.4317207336426,
+            "used": 11.342376708984375
+        }
+    },
+    "gpuapple": {
+        "type": "Apple M2",
+        "vendor": "sppci_vendor_Apple"
+    },
+    "memory": {
+        "total": 8.0
+    }
+}
