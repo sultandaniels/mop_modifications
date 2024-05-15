@@ -55,3 +55,7 @@ if __name__ == '__main__':
         #     torch.save(sim_objs, f)
         # with open(f"../data/{name}_{config.dataset_typ}.pt", "wb") as f:
         #     torch.save(torch.stack(samples), f)
+
+
+
+
