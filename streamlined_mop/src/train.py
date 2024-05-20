@@ -23,15 +23,14 @@ def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the
     # model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
     #              n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
 
-    val_dset = FilterDataset(f"../data/val_{config.dataset_typ}_{config.C_dist}.pkl", use_true_len=True) if os.path.exists(f"../data/val_{config.dataset_typ}.pkl") else None
+    val_dset = FilterDataset(output_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", use_true_len=True) if os.path.exists(output_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl") else None
     # raise Exception("Just checking FilterDataset")
 
-    datamodule = DataModuleWrapper(FilterDataset(f"../data/train_{config.dataset_typ}_{config.C_dist}.pkl"), val_dset)
-
-    
+    datamodule = DataModuleWrapper(FilterDataset(output_dir + f"/data/train_{config.dataset_typ}{config.C_dist}.pkl"), val_dset)
 
     # Define model
     # output_dir = training.setup_train(model)
+    print("output_dir:", output_dir)
     callbacks, loggers = training.get_callbacks_and_loggers(model, output_dir, config.batch_size, config.n_positions, config.train_steps)#, config.n_embd)
     ckpt_path = config.ckpt_path if config.ckpt_path != '' else None
     print("ckpt_path:", config.ckpt_path)
@@ -59,7 +58,6 @@ def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the
     return time_end - time_start
 
 if __name__ == '__main__':
-
     # #load the numpy folder in ../data and unpack the data.pkl file and show the keys
     # # Load the pickle file
     # with open('../data/numpy/data.pkl', 'rb') as f:

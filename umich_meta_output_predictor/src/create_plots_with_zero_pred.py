@@ -4,6 +4,7 @@ import os
 import copy
 import pandas as pd
 from pandas.plotting import table
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -235,64 +236,41 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             # for every 2000 entries in samples, get the observation values and append them to the ys list
             i = 0
             ys = np.zeros((num_systems, num_trials, config.n_positions + 1, config.ny))
-            print("\n\n")
-            print("samples[0][A] eigenvalues", np.linalg.eigvals(samples[0]['A']))
-            print("samples[0][C] eigenvalues", np.linalg.svd(samples[0]['C']))
-            print("\n\n")
-            print("samples[2050][A] eigenvalues", np.linalg.eigvals(samples[2050]['A']))
-            print("samples[2050][C] eigenvalues", np.linalg.svd(samples[2050]['C']))
-            print("\n\n")
-            # print("samples[4050][A] eigenvalues", np.linalg.eigvals(samples[4050]['A']))
-            # print("samples[0][A] eigenvalues", np.linalg.eigvals(samples[0]['A']))
-            # print("samples[2050][A] eigenvalues", np.linalg.eigvals(samples[2050]['A']))
-            print("\n\n")
-            print("samples[4050][A] eigenvalues", np.linalg.eigvals(samples[4050]['A']))
-            print("samples[4050][C] eigenvalues", np.linalg.svd(samples[4050]['C']))
-            
             for entry in samples:
                 ys[math.floor(i/num_trials), i % num_trials] = entry["obs"]
                 i += 1
             ys = ys.astype(np.float32)
-            # print("ys.shape:", ys.shape)
-            # print("type of ys:", type(ys))
-            # print("dtype of ys:", ys.dtype)
             del samples  # Delete the variable
             gc.collect()  # Start the garbage collector
 
         #open fsim file
-        with open(f"../data/val_{config.dataset_typ}_sim_objs.pkl", "rb") as f:
+        with open(f"../data/val_{config.dataset_typ}_{config.C_dist}_sim_objs.pkl", "rb") as f:
             sim_objs = pickle.load(f)
-            # print(sim_objs[0])
-
-            raise Exception("just looking at systems")
-            # print("type of sim_objs:", type(sim_objs))
-            # print("shape of sim_objs:", sim_objs.shape)
-            # print("len sim_objs", len(sim_objs))
 
         # raise Exception("Just checking the shape of ys")
 
-    with torch.no_grad():  # no gradients
-        I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)   # get the inputs (observations without the last one)
-        # if config.dataset_typ == "drone":  # if the dataset type is drone
-        #     I = np.concatenate([I, us], axis=-1)  # concatenate the inputs
+    # with torch.no_grad():  # no gradients
+    #     I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)   # get the inputs (observations without the last one)
+    #     # if config.dataset_typ == "drone":  # if the dataset type is drone
+    #     #     I = np.concatenate([I, us], axis=-1)  # concatenate the inputs
 
-        if config.changing:
-            preds_tf = model.predict_ar(ys[:, :-1])  # predict using the model
-        else:
-            # print("before model.predict_step()")
-            batch_shape = I.shape[:-2]
-            # print("batch_shape:", batch_shape)
-            flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
-            # print("flattened_I.shape:", flattened_I.shape)
-            _, flattened_preds_tf = model.predict_step({"xs": torch.from_numpy(flattened_I).to(device)}) #.float().to(device)})    # predict using the model
-            # print("flattened_preds_tf:", flattened_preds_tf)
-            preds_tf = np.reshape(flattened_preds_tf["preds"].cpu().numpy(), (*batch_shape, *I.shape[-2:])) # get the predictions
-            # print("preds_tf.shape:", preds_tf.shape)
-            preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf], axis=-2)  # concatenate the predictions
-            # print("preds_tf.shape:", preds_tf.shape)
+    #     if config.changing:
+    #         preds_tf = model.predict_ar(ys[:, :-1])  # predict using the model
+    #     else:
+    #         # print("before model.predict_step()")
+    #         batch_shape = I.shape[:-2]
+    #         # print("batch_shape:", batch_shape)
+    #         flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
+    #         # print("flattened_I.shape:", flattened_I.shape)
+    #         _, flattened_preds_tf = model.predict_step({"xs": torch.from_numpy(flattened_I).to(device)}) #.float().to(device)})    # predict using the model
+    #         # print("flattened_preds_tf:", flattened_preds_tf)
+    #         preds_tf = np.reshape(flattened_preds_tf["preds"].cpu().numpy(), (*batch_shape, *I.shape[-2:])) # get the predictions
+    #         # print("preds_tf.shape:", preds_tf.shape)
+    #         preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf], axis=-2)  # concatenate the predictions
+    #         # print("preds_tf.shape:", preds_tf.shape)
 
-    # print("preds_tf.shape:", preds_tf.shape)
-    errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
+    # # print("preds_tf.shape:", preds_tf.shape)
+    # errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
     errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2     # get the errors of zero predictions
     # print("errs_tf.shape:", errs_tf.shape)
 
@@ -327,17 +305,21 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             kf_index += 1
         # errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
 
-    else:
-        preds_kf = np.array([[
-                apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-                for __ys in _ys
-            ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
-        ])  # get kalman filter predictions
-        errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
+    # else:
+        # preds_kf = np.array([[
+        #         apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
+        #         for __ys in _ys
+        #     ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
+        # ])  # get kalman filter predictions
+        # errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
+
+    # err_lss = collections.OrderedDict([
+    #     ("Kalman", errs_kf),
+    #     ("MOP", errs_tf),
+    #     ("Zero", errs_zero)
+    # ])
 
     err_lss = collections.OrderedDict([
-        ("Kalman", errs_kf),
-        ("MOP", errs_tf),
         ("Zero", errs_zero)
     ])
 
@@ -347,8 +329,8 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     print("err_lss[Analytical_Kalman].shape:", err_lss["Analytical_Kalman"].shape)
 
 
-    ir_length = 2
-    if config.dataset_typ != "drone":
+    # ir_length = 2
+    # if config.dataset_typ != "drone":
     #     preds_rls = []
     #     preds_rls_analytical = []
     #     for sim_obj, _ys in zip(sim_objs, ys):
@@ -383,24 +365,25 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         # err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
 
         # Debugging implemented OLS
-        errs_rls_wentinn = []
-        for sim_obj, _ys in zip(sim_objs, ys):
-            _errs_rls_wentinn = []
-            for __ys in _ys:
-                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-                ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
-                rls_wentinn = CnnKF(config.ny, ir_length)
-                for i in range(config.n_positions - 1):
-                    rls_wentinn.update(
-                        torch.from_numpy(padded_ys[i:i + ir_length]),
-                        torch.from_numpy(padded_ys[i + ir_length])
-                    )
-                    ls.append(rls_wentinn.analytical_error(sim_obj).item())
-                _errs_rls_wentinn.append(ls)
-            errs_rls_wentinn.append(_errs_rls_wentinn)
-        err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
+    #     errs_rls_wentinn = []
+    #     for sim_obj, _ys in zip(sim_objs, ys):
+    #         _errs_rls_wentinn = []
+    #         for __ys in _ys:
+    #             padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+    #             ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+    #             rls_wentinn = CnnKF(config.ny, ir_length)
+    #             for i in range(config.n_positions - 1):
+    #                 rls_wentinn.update(
+    #                     torch.from_numpy(padded_ys[i:i + ir_length]),
+    #                     torch.from_numpy(padded_ys[i + ir_length])
+    #                 )
+    #                 ls.append(rls_wentinn.analytical_error(sim_obj).item())
+    #             _errs_rls_wentinn.append(ls)
+    #         errs_rls_wentinn.append(_errs_rls_wentinn)
+    #     err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
     # for ir_length in range(1, 4):
-    #     print(f"IR length: {ir_length}")
+    #     start = time.time()
+    #     print(f"\n\nIR length: {ir_length}")
     #     preds_rls_wentinn = []
     #     preds_rls_wentinn_analytical = []
     #     for sim_obj, _ys in zip(sim_objs, ys):
@@ -427,7 +410,10 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     #         preds_rls_wentinn.append(_preds_rls_wentinn)
     #         preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
 
-    #     err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+    #     err_lss[f"OLS_ir_length{ir_length}_orig"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+    #     end = time.time()
+    #     print("time elapsed:", (end - start)/60, "min")
+
     sim_obj_td = torch.stack([
         TensorDict({
             'F': torch.Tensor(sim.A),                                                   # [N x S_D x S_D]
@@ -438,17 +424,31 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         for sim in sim_objs
     ])
 
+    print("\n\nREVISED OLS")
+    sim_obj_td = torch.stack([
+        TensorDict({
+            'F': torch.Tensor(sim.A),                              # [N x S_D x S_D]
+            'H': torch.Tensor(sim.C),                              # [N x O_D x S_D]
+            'sqrt_S_W': sim.sigma_w * torch.eye(sim.C.shape[-1]),  # [N x S_D x S_D]
+            'sqrt_S_V': sim.sigma_v * torch.eye(sim.C.shape[-2])   # [N x O_D x O_D]
+        }, batch_size=())
+        for sim in sim_objs
+    ])
+
     for ir_length in range(1, 4):
         print(f"IR length: {ir_length}")
+        start = time.time()
         rls_preds, rls_analytical_error = [], []
 
         torch_ys = torch.Tensor(ys)         # [N x E x L x O_D]
+        print("torch_ys.shape:", torch_ys.shape)
         padded_torch_ys = torch.cat([
             torch_ys,
-            torch.zeros((num_systems, num_trials, ir_length - 1, config.ny))
-        ])                                  # [N x E x (L + R - 1) x O_D]
+            # torch.zeros((num_systems, num_trials, ir_length - 1, config.ny))
+            torch.zeros((num_systems, num_trials, config.n_positions +1, config.ny))
+        ], dim=-2)                                  # [N x E x (L + R - 1) x O_D]
 
-        rls_wentinn = CnnKF((num_systems, num_trials), config.ny, ir_length, ridge=1.0)
+        rls_wentinn = CnnKF(batch_shape=(num_systems, num_trials), ny=config.ny, ir_length=ir_length, ridge=1.0)
         for i in range(config.n_positions - 1):
             rls_wentinn.update(
                 padded_torch_ys[:, :, i:i + ir_length],
@@ -461,6 +461,10 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         rls_analytical_error = torch.stack(rls_analytical_error, dim=2).detach.numpy()  # [N x E x L]
 
         err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(rls_preds), axis=-1) ** 2
+
+        # err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+        end = time.time()
+        print("time elapsed:", (end - start)/60, "min")
 
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error

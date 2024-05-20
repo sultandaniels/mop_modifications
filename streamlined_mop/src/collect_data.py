@@ -13,7 +13,7 @@ def collect_data(model, config, output_dir):
     logger = logging.getLogger(__name__)
     # config = Config()
     config.parse_args()
-    print("Collecting data for", config.dataset_typ)
+    print("Collecting data for", config.dataset_typ, config.C_dist)
 
 
     # instantiate gpt2 model (FOR THE SAKE OF TESTING, REMOVE LATER)
@@ -36,9 +36,9 @@ def collect_data(model, config, output_dir):
             sim_objs.append(fsim)
         print("Saving", len(samples), "samples for", name)
 
-        with open(output_dir + f".pkl", "wb") as f:
+        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}.pkl", "wb") as f:
             pickle.dump(samples, f)
 
         #save fsim to pickle file
-        with open(output_dir + f".pkl", "wb") as f:
+        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "wb") as f:
             pickle.dump(sim_objs, f)

@@ -366,7 +366,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
         err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(rls_preds), axis=-1) ** 2
 
-        # err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+        err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
         end = time.time()
         print("Time taken for OLS_ir_length" + str(ir_length) + ":", end - start)
         ols_times.append(end - start)

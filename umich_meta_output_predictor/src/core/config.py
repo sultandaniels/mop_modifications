@@ -12,18 +12,18 @@ from utils import set_seed
 # /checkpoints/step=10000.ckpt
 
 class Config(object, metaclass=Singleton):
-    ckpt_path = ""
-    # ckpt_path = "../outputs/GPT2/240505_102734.114a39/checkpoints/batch_size_28_con_len_250_step=4000.ckpt"
+    # ckpt_path = ""
+    ckpt_path = "../outputs/GPT2/240429_221811.ea7f54/checkpoints/batch_size_28_con_len_250_step=40000.ckpt"
     # ckpt_path = "../outputs/GPT2/240425_225022.52199c/checkpoints/batch_size_28_con_len_250_step=20000.ckpt" #20000 steps gaussA gaussC
     # ckpt_path = "../outputs/GPT2/240320_014524.c78f58/checkpoints/num_tasks_28_con_len_250_step=20000.ckpt" #checkpoint of dense A uniform C
     seed = 0
     fully_reproducible = False
 
     # Dataset settings
-    num_tasks = 40000 #number of training systems
+    num_tasks = 4 #number of training systems
     num_val_tasks = 3 #number of test systems
     dataset_typ = "ypred" #"gaussA" #"rotDiagA" #"upperTriA" #"ypred"
-    C_dist = "_unif_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
+    C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
     nx = 10
     ny = 5
     n_noise = 1
