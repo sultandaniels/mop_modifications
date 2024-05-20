@@ -26,6 +26,7 @@ class FilterDataset(Dataset):
 
         obs = entry.pop("obs")
         L = obs.shape[-2]
+        print("config.dataset_typ:", config.dataset_typ)
         if config.dataset_typ in ["ypred", "noniid", "upperTriA", "rotDiagA", "gaussA"]:
             entry["xs"] = np.take(obs, np.arange(L - 1), axis=-2)
             entry["ys"] = np.take(obs, np.arange(1, L), axis=-2)

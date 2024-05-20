@@ -28,7 +28,7 @@ def setup_train(model):
                       hashlib.md5(config.get_full_yaml().encode('utf-8')).hexdigest()[:6]
                       )
 
-        output_dir = '../outputs/' + identifier
+        output_dir = '../outputs/' + identifier + f"_{config.dataset_typ}{config.C_dist}"
 
         if not os.path.isdir(output_dir):
             print("here")
@@ -41,6 +41,8 @@ def setup_train(model):
     # Log messages to file
     root_logger = logging.getLogger()
     file_handler = logging.FileHandler(output_dir + '/messages.log')
+    if not root_logger.handlers:
+        root_logger.addHandler(logging.StreamHandler())
     file_handler.setFormatter(root_logger.handlers[0].formatter)
     for handler in root_logger.handlers[1:]:  # all except stdout
         root_logger.removeHandler(handler)
@@ -115,10 +117,12 @@ def get_callbacks_and_loggers(model, output_dir, batch_size, context_len, train_
 
     checkpoint_callback = pl_callbacks.ModelCheckpoint(
         dirpath=os.path.join(output_dir, "checkpoints"),
-        filename="batch_size_" + str(batch_size) + "_con_len_" + str(context_len) + "_{step}", # for embed dim experiments: "emb_dim_" + str(emb_dim) + "_{step}",
+        filename="{step}", # for embed dim experiments: "emb_dim_" + str(emb_dim) + "_{step}",
         save_top_k=-1, 
-        every_n_train_steps=4000, #this changed from 10000 to train_step
+        every_n_train_steps=7, #this changed from 10000 to train_step
     )
+
+    print("\n\n\ncheckpoint_callback", checkpoint_callback.dirpath)
 
     ckpt_path = None
     ckpt_paths = glob.glob(os.path.join(output_dir, "checkpoints", "epoch=*"))

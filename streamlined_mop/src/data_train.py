@@ -14,8 +14,12 @@ if __name__ == '__main__':
                  n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
     
     output_dir = setup_train(model)
+    # output_dir = output_dir + f"_{config.dataset_typ}{config.C_dist}"
     os.makedirs(output_dir + f"/data/", exist_ok=True)
 
     collect_data(model, config, output_dir) # collect data
+
+    # replace ckpt_path with the path to the checkpoint file
+    config.override("ckpt_path", output_dir + "/step=" + str(config.train_steps) + ".ckpt")
     train_gpt2(model, config, output_dir) # train the model
 
