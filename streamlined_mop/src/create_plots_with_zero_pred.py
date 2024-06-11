@@ -4,6 +4,7 @@ import os
 import copy
 import pandas as pd
 from pandas.plotting import table
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,8 +12,7 @@ import torch
 import gc
 
 from core import Config
-from dyn_models import apply_kf, generate_lti_sample, generate_changing_lti_sample, generate_drone_sample, \
-    apply_ekf_drone
+from dyn_models import apply_kf, generate_lti_sample, generate_changing_lti_sample
 from models import GPT2, CnnKF
 from utils import RLS, plot_errs
 import pickle
@@ -219,58 +219,33 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             data = pickle.load(f)
             ys = data["observation"]
             print("ys.shape:", ys.shape)
-            
-        # with open("../data/val_ypred.pkl", "rb") as f:
-        #         entries = pickle.load(f)
-        #         print("keys of entries:", entries[0].keys())
-        #         print("len of entries:", len(entries))
-        #         print("shape of all the values for each key in entries[0]", {k: v.shape for k, v in entries[0].items()})
-        #         #set ys equal to the observation values of all the entries
-        #         ys = np.array([entry["obs"] for entry in entries])
-        #         print("ys.shape:", ys.shape)
-        #         # print("shape of entries:", entries["observation"].shape)
     else:
-        with open(f"../data/val_{config.dataset_typ}.pkl", "rb") as f:
+        # get the parent directory of the ckpt_path
+        parent_dir = os.path.dirname(config.ckpt_path)
+        print("parent_dir:", parent_dir)
+
+        #get the parent directory of the parent directory
+        parent_parent_dir = os.path.dirname(parent_dir)
+        print("parent_parent_dir:", parent_parent_dir)
+
+        with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
             samples = pickle.load(f)
             # for every 2000 entries in samples, get the observation values and append them to the ys list
             i = 0
             ys = np.zeros((num_systems, num_trials, config.n_positions + 1, config.ny))
-            print("\n\n")
-            print("samples[0][A] eigenvalues", np.linalg.eigvals(samples[0]['A']))
-            print("samples[0][C] eigenvalues", np.linalg.svd(samples[0]['C']))
-            print("\n\n")
-            print("samples[2050][A] eigenvalues", np.linalg.eigvals(samples[2050]['A']))
-            print("samples[2050][C] eigenvalues", np.linalg.svd(samples[2050]['C']))
-            print("\n\n")
-            # print("samples[4050][A] eigenvalues", np.linalg.eigvals(samples[4050]['A']))
-            # print("samples[0][A] eigenvalues", np.linalg.eigvals(samples[0]['A']))
-            # print("samples[2050][A] eigenvalues", np.linalg.eigvals(samples[2050]['A']))
-            print("\n\n")
-            print("samples[4050][A] eigenvalues", np.linalg.eigvals(samples[4050]['A']))
-            print("samples[4050][C] eigenvalues", np.linalg.svd(samples[4050]['C']))
-            
             for entry in samples:
                 ys[math.floor(i/num_trials), i % num_trials] = entry["obs"]
                 i += 1
             ys = ys.astype(np.float32)
-            # print("ys.shape:", ys.shape)
-            # print("type of ys:", type(ys))
-            # print("dtype of ys:", ys.dtype)
             del samples  # Delete the variable
             gc.collect()  # Start the garbage collector
 
         #open fsim file
-        with open(f"../data/val_{config.dataset_typ}_sim_objs.pkl", "rb") as f:
+        with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
             sim_objs = pickle.load(f)
-            # print(sim_objs[0])
 
-            raise Exception("just looking at systems")
-            # print("type of sim_objs:", type(sim_objs))
-            # print("shape of sim_objs:", sim_objs.shape)
-            # print("len sim_objs", len(sim_objs))
-
-        # raise Exception("Just checking the shape of ys")
-
+    #Transformer Predictions
+    start = time.time() #start the timer for transformer predictions
     with torch.no_grad():  # no gradients
         I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)   # get the inputs (observations without the last one)
         # if config.dataset_typ == "drone":  # if the dataset type is drone
@@ -290,27 +265,27 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             # print("preds_tf.shape:", preds_tf.shape)
             preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf], axis=-2)  # concatenate the predictions
             # print("preds_tf.shape:", preds_tf.shape)
+    end = time.time() #end the timer for transformer predictions
+    print("time elapsed:", (end - start)/60, "min") #print the time elapsed for transformer predictions
 
-    # print("preds_tf.shape:", preds_tf.shape)
     errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
+
+    #zero predictor predictions
     errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2     # get the errors of zero predictions
-    # print("errs_tf.shape:", errs_tf.shape)
 
     n_noise = config.n_noise
 
-    # if config.dataset_typ == "drone":
-    #     preds_kf = np.array([apply_ekf_drone(dsim, _ys, _us) for dsim, _ys, _us in zip(sim_objs, ys, us)])
+    if run_deg_kf_test: #degenerate system KF Predictions
+        #Kalman Filter Predictions
+        preds_kf_list = []
+        for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)):
+            inner_list = []
+            for __ys in _ys:
+                result = apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
+                inner_list.append(result)
+            preds_kf_list.append(inner_list)
 
-    if run_deg_kf_test:
-        # preds_kf_list = []
-        # for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)):
-        #     inner_list = []
-        #     for __ys in _ys:
-        #         result = apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-        #         inner_list.append(result)
-        #     preds_kf_list.append(inner_list)
-
-        # preds_kf = np.array(preds_kf_list)  # get kalman filter predictions
+        preds_kf = np.array(preds_kf_list)  # get kalman filter predictions
 
         #create an array of zeros to hold the kalman filter predictions
         preds_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1, config.ny)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
@@ -325,9 +300,8 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
                     preds_kf[kf_index, sys, trial,:,:] = apply_kf(sim_obj, ys[sys,trial,:-1,:], sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise)) #get the kalman filter predictions for the test system and the training system
                 errs_kf[kf_index, sys] = np.linalg.norm((ys[sys] - preds_kf[kf_index, sys]), axis=-1) ** 2 #get the errors of the kalman filter predictions for the test system and the training system
             kf_index += 1
-        # errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
 
-    else:
+    else: #Kalman Predictions
         preds_kf = np.array([[
                 apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
                 for __ys in _ys
@@ -341,48 +315,52 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         ("Zero", errs_zero)
     ])
 
+    err_lss = collections.OrderedDict([
+        ("Zero", errs_zero)
+    ])
+
+    #Analytical Kalman Predictions
     analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     print("analytical_kf.shape:", analytical_kf.shape)
     err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
     print("err_lss[Analytical_Kalman].shape:", err_lss["Analytical_Kalman"].shape)
 
-
+    #OLS and OLS_analytical
     ir_length = 2
     if config.dataset_typ != "drone":
-    #     preds_rls = []
-    #     preds_rls_analytical = []
-    #     for sim_obj, _ys in zip(sim_objs, ys):
-    #         _preds_rls = []
-    #         _preds_rls_analytical = []
-    #         for __ys in _ys:
-    #             ls = [np.zeros(config.ny)]
-    #             ls_analytical = [np.linalg.norm(__ys[0], axis=-1) ** 2]
+        preds_rls = []
+        preds_rls_analytical = []
+        for sim_obj, _ys in zip(sim_objs, ys):
+            _preds_rls = []
+            _preds_rls_analytical = []
+            for __ys in _ys:
+                ls = [np.zeros(config.ny)]
+                ls_analytical = [np.linalg.norm(__ys[0], axis=-1) ** 2]
+                rls = RLS(config.nx, config.ny)
+                for i in range(_ys.shape[-2] - 1):
+                    if i < 2:
+                        ls.append(__ys[i])
+                        ls_analytical.append(np.linalg.norm(__ys[i + 1], axis=-1) ** 2)
+                    else:
+                        rls.add_data(__ys[i - 2:i].flatten(), __ys[i])
+                        _cnn_rls = CnnKF(config.ny, ir_length)
+                        _cnn_rls.observation_IR.data = torch.from_numpy(np.stack([_rls.mu for _rls in rls.rlss], axis=-1)
+                                                                        .reshape(ir_length, config.ny, config.ny)
+                                                                        .transpose(1, 0, 2)[:, ::-1].copy())
 
-    #             rls = RLS(config.nx, config.ny)
-    #             for i in range(_ys.shape[-2] - 1):
-    #                 if i < 2:
-    #                     ls.append(__ys[i])
-    #                     ls_analytical.append(np.linalg.norm(__ys[i + 1], axis=-1) ** 2)
-    #                 else:
-    #                     rls.add_data(__ys[i - 2:i].flatten(), __ys[i])
-    #                     _cnn_rls = CnnKF(config.ny, ir_length)
-    #                     _cnn_rls.observation_IR.data = torch.from_numpy(np.stack([_rls.mu for _rls in rls.rlss], axis=-1)
-    #                                                                     .reshape(ir_length, config.ny, config.ny)
-    #                                                                     .transpose(1, 0, 2)[:, ::-1].copy())
+                        ls.append(rls.predict(__ys[i - 1:i + 1].flatten()))
+                        ls_analytical.append(_cnn_rls.analytical_error(sim_obj).item())
 
-    #                     ls.append(rls.predict(__ys[i - 1:i + 1].flatten()))
-    #                     ls_analytical.append(_cnn_rls.analytical_error(sim_obj).item())
+                _preds_rls.append(ls)
+                _preds_rls_analytical.append(ls_analytical)
 
-    #             _preds_rls.append(ls)
-    #             _preds_rls_analytical.append(ls_analytical)
+            preds_rls.append(_preds_rls)
+            preds_rls_analytical.append(_preds_rls_analytical)
 
-    #         preds_rls.append(_preds_rls)
-    #         preds_rls_analytical.append(_preds_rls_analytical)
+        err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
+        err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
 
-        # err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
-        # err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
-
-        # Debugging implemented OLS
+       # OLS Wentinn
         errs_rls_wentinn = []
         for sim_obj, _ys in zip(sim_objs, ys):
             _errs_rls_wentinn = []
@@ -399,129 +377,128 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
                 _errs_rls_wentinn.append(ls)
             errs_rls_wentinn.append(_errs_rls_wentinn)
         err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
+
+    #Original OLS
+    for ir_length in range(1, 4):
+        start = time.time()
+        print(f"\n\nIR length: {ir_length}")
+        preds_rls_wentinn = []
+        preds_rls_wentinn_analytical = []
+        for sim_obj, _ys in zip(sim_objs, ys):
+            _preds_rls_wentinn = []
+            _preds_rls_wentinn_analytical = []
+            for __ys in _ys:
+                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+                ls = list(np.zeros((2, config.ny)))
+                ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+
+                rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
+                for i in range(config.n_positions - 1):
+                    rls_wentinn.update(
+                        torch.from_numpy(padded_ys[i:i + ir_length]),
+                        torch.from_numpy(padded_ys[i + ir_length])
+                    )
+
+                    ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
+                    ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+
+                _preds_rls_wentinn.append(ls)
+                _preds_rls_wentinn_analytical.append(ls_analytical)
+
+            preds_rls_wentinn.append(_preds_rls_wentinn)
+            preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
+
+        err_lss[f"OLS_ir_length{ir_length}_orig"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+        end = time.time()
+        print("time elapsed:", (end - start)/60, "min")
+
+    # #Revised OLS
+    # print("\n\nREVISED OLS")
+    # sim_obj_td = torch.stack([
+    #     TensorDict({
+    #         'F': torch.Tensor(sim.A),                              # [N x S_D x S_D]
+    #         'H': torch.Tensor(sim.C),                              # [N x O_D x S_D]
+    #         'sqrt_S_W': sim.sigma_w * torch.eye(sim.C.shape[-1]),  # [N x S_D x S_D]
+    #         'sqrt_S_V': sim.sigma_v * torch.eye(sim.C.shape[-2])   # [N x O_D x O_D]
+    #     }, batch_size=())
+    #     for sim in sim_objs
+    # ])
+
     # for ir_length in range(1, 4):
     #     print(f"IR length: {ir_length}")
-    #     preds_rls_wentinn = []
-    #     preds_rls_wentinn_analytical = []
-    #     for sim_obj, _ys in zip(sim_objs, ys):
-    #         _preds_rls_wentinn = []
-    #         _preds_rls_wentinn_analytical = []
-    #         for __ys in _ys:
-    #             padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-    #             ls = list(np.zeros((2, config.ny)))
-    #             ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+    #     start = time.time()
+    #     rls_preds, rls_analytical_error = [], []
 
-    #             rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
-    #             for i in range(config.n_positions - 1):
-    #                 rls_wentinn.update(
-    #                     torch.from_numpy(padded_ys[i:i + ir_length]),
-    #                     torch.from_numpy(padded_ys[i + ir_length])
-    #                 )
+    #     torch_ys = torch.Tensor(ys)         # [N x E x L x O_D]
+    #     print("torch_ys.shape:", torch_ys.shape)
+    #     padded_torch_ys = torch.cat([
+    #         torch_ys,
+    #         # torch.zeros((num_systems, num_trials, ir_length - 1, config.ny))
+    #         torch.zeros((num_systems, num_trials, config.n_positions +1, config.ny))
+    #     ], dim=-2)                                  # [N x E x (L + R - 1) x O_D]
 
-    #                 ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
-    #                 ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+    #     rls_wentinn = CnnKF(batch_shape=(num_systems, num_trials), ny=config.ny, ir_length=ir_length, ridge=1.0)
+    #     for i in range(config.n_positions - 1):
+    #         rls_wentinn.update(
+    #             padded_torch_ys[:, :, i:i + ir_length],
+    #             padded_torch_ys[:, :, i + ir_length]
+    #         )
+    #         rls_preds.append(rls_wentinn(padded_torch_ys[i + 1:i + ir_length + 1]))
+    #         rls_analytical_error.append(rls_wentinn.analytical_error(sim_obj_td[:, None]))
 
-    #             _preds_rls_wentinn.append(ls)
-    #             _preds_rls_wentinn_analytical.append(ls_analytical)
+    #     rls_preds = torch.stack(rls_preds, dim=2).detach().numpy()                      # [N x E x L x O_D]
+    #     rls_analytical_error = torch.stack(rls_analytical_error, dim=2).detach.numpy()  # [N x E x L]
 
-    #         preds_rls_wentinn.append(_preds_rls_wentinn)
-    #         preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
+    #     err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(rls_preds), axis=-1) ** 2
 
-    #     err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-    sim_obj_td = torch.stack([
-        TensorDict({
-            'F': torch.Tensor(sim.A),                                                   # [N x S_D x S_D]
-            'H': torch.Tensor(sim.C),                                                   # [N x O_D x S_D]
-            'sqrt_S_W': sim.sigma_w * torch.eye(sim.C.shape[-1]),                       # [N x S_D x S_D]
-            'sqrt_S_V': sim.sigma_v * torch.eye(sim.C.shape[-2])                        # [N x O_D x O_D]
-        }, batch_size=())
-        for sim in sim_objs
-    ])
-
-    for ir_length in range(1, 4):
-        print(f"IR length: {ir_length}")
-        rls_preds, rls_analytical_error = [], []
-
-        torch_ys = torch.Tensor(ys)         # [N x E x L x O_D]
-        padded_torch_ys = torch.cat([
-            torch_ys,
-            torch.zeros((num_systems, num_trials, ir_length - 1, config.ny))
-        ])                                  # [N x E x (L + R - 1) x O_D]
-
-        rls_wentinn = CnnKF((num_systems, num_trials), config.ny, ir_length, ridge=1.0)
-        for i in range(config.n_positions - 1):
-            rls_wentinn.update(
-                padded_torch_ys[:, :, i:i + ir_length],
-                padded_torch_ys[:, :, i + ir_length]
-            )
-            rls_preds.append(rls_wentinn(padded_torch_ys[i + 1:i + ir_length + 1]))
-            rls_analytical_error.append(rls_wentinn.analytical_error(sim_obj_td[:, None]))
-
-        rls_preds = torch.stack(rls_preds, dim=2).detach().numpy()                      # [N x E x L x O_D]
-        rls_analytical_error = torch.stack(rls_analytical_error, dim=2).detach.numpy()  # [N x E x L]
-
-        err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(rls_preds), axis=-1) ** 2
+    #     # err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+    #     end = time.time()
+    #     print("time elapsed:", (end - start)/60, "min")
 
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error
 
-####################################################################################################
-# main function
-if __name__ == '__main__':
-    config = Config()
+def save_preds(run_deg_kf_test, config):
+    err_lss, irreducible_error = compute_errors(config, config.C_dist, run_deg_kf_test, wentinn_data=False)  #, emb_dim)
 
-    C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
-    run_preds = True #run the predictions evaluation
-    run_deg_kf_test = False #run degenerate KF test
-    excess = False #run the excess plots
-    if excess:
-        fig = plt.figure(figsize=(30, 15))
-        ax = fig.add_subplot(111)
-    shade = False
+    #make the prediction errors directory
+    # get the parent directory of the ckpt_path
+    parent_dir = os.path.dirname(config.ckpt_path)
+    print("parent_dir:", parent_dir)
 
-    num_systems = config.num_val_tasks  # number of validation tasks
-    
-    if run_preds:
-        err_lss, irreducible_error = compute_errors(config, C_dist, run_deg_kf_test, wentinn_data=False)#, emb_dim)
+    #get the parent directory of the parent directory
+    parent_parent_dir = os.path.dirname(parent_dir)
+    print("parent_parent_dir:", parent_parent_dir)
 
-        #make the prediction errors directory
-        os.makedirs("../data/prediction_errors" + C_dist, exist_ok=True)
-        if run_deg_kf_test:
-            #save err_lss and irreducible_error to a file
-            with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss_deg_kf_test.pkl", "wb") as f:
-                pickle.dump(err_lss, f)
-        else:
-            #save err_lss and irreducible_error to a file
-            with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss.pkl", "wb") as f:
-                pickle.dump(err_lss, f)
-
-        with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
-            pickle.dump(irreducible_error, f)
-
-    #load the prediction errors from the file
-
+    os.makedirs(parent_parent_dir + "/prediction_errors" + config.C_dist, exist_ok=True)
     if run_deg_kf_test:
-        with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss_deg_kf_test.pkl", "rb") as f:
+        #save err_lss and irreducible_error to a file
+        with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss_deg_kf_test.pkl", "wb") as f:
+            pickle.dump(err_lss, f)
+    else:
+        #save err_lss and irreducible_error to a file
+        with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss.pkl", "wb") as f:
+            pickle.dump(err_lss, f)
+
+    with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
+        pickle.dump(irreducible_error, f)  
+
+def load_preds(run_deg_kf_test, excess, num_systems, config):
+
+    #make the prediction errors directory
+    # get the parent directory of the ckpt_path
+    parent_dir = os.path.dirname(config.ckpt_path)
+    print("parent_dir:", parent_dir)
+
+    #get the parent directory of the parent directory
+    parent_parent_dir = os.path.dirname(parent_dir)
+    print("parent_parent_dir:", parent_parent_dir)
+    if run_deg_kf_test:
+        with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss_deg_kf_test.pkl", "rb") as f:
             err_lss_load = pickle.load(f)
             print("len(err_lss_load):", len(err_lss_load))
-        #create a square array of zeros that is the size of the number of systems to hold the cosine similarities
-        cos_sims = np.zeros((num_systems, num_systems))
-        err_ratios = np.zeros((num_systems, num_systems))
-        zero_ratios = np.zeros((num_systems, num_systems))
-
-        deg_fig = plt.figure(figsize=(40, 40))
-        ax1 = deg_fig.add_subplot(331)  # This creates the first subplot
-        ax2 = deg_fig.add_subplot(332)  # This creates the second subplot
-        ax3 = deg_fig.add_subplot(333)  # This creates the third subplot
-        ax4 = deg_fig.add_subplot(334)  # This creates the third subplot
-        ax5 = deg_fig.add_subplot(335)  # This creates the third subplot
-        ax6 = deg_fig.add_subplot(336)  # This creates the third subplot
-        ax7 = deg_fig.add_subplot(337)  # This creates the third subplot
-        ax8 = deg_fig.add_subplot(338)  # This creates the third subplot
-        ax9 = deg_fig.add_subplot(339)  # This creates the third subplot
-        axs = [[ax1, ax2, ax3],[ax4, ax5, ax6],[ax7, ax8, ax9]]
     else:
-        with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
+        with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
             err_lss_load = pickle.load(f)
             print("shape of analytical kalman error:", err_lss_load["Analytical_Kalman"].shape)
             if excess == True:
@@ -529,18 +506,17 @@ if __name__ == '__main__':
             print("shape of analytical kalman error:", err_lss_load["Analytical_Kalman"][:,0:3])
             irreducible_error = [err_lss_load["Analytical_Kalman"][i][i] for i in range(num_systems)]
             print("irreducible_error:", irreducible_error)
-            with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
+            with open("../data/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
                 pickle.dump(irreducible_error, f)
 
-    # print("irreducible_error:", irreducible_error)
     print("err_lss_load[Analytical_Kalman] shape:", err_lss_load["Analytical_Kalman"].shape)
 
-    with open("../data/prediction_errors" + C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "rb") as f:
+    with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "rb") as f:
         irreducible_error_load = pickle.load(f)
     
     print(irreducible_error_load)
 
-    if C_dist == "_unif_C" and config.dataset_typ == "ypred":
+    if config.C_dist == "_unif_C" and config.dataset_typ == "ypred":
         with open(f"../data/prediction_errors_unif_C/fir_bounds.pt", "rb") as f:
             fir_bounds = torch.load(f, map_location=torch.device('cpu'))
             fir_bounds = fir_bounds.T
@@ -559,6 +535,49 @@ if __name__ == '__main__':
         with open(f"../data/wentinn_12_04_24/analytical_errors.pt", "rb") as f:
             rnn_an_errors = torch.load(f, map_location=torch.device('cpu'))
             rnn_an_errors = rnn_an_errors.permute(1,2,0)
+    else:
+        fir_bounds = np.zeros((num_systems, 1))
+        rnn_errors = np.zeros((num_systems, 1, 32))
+        rnn_an_errors = np.zeros((num_systems, 1, 32))
+    
+    return err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors
+
+def setup_deg_kf_axs_arrs(num_systems):
+    #create a square array of zeros that is the size of the number of systems to hold the cosine similarities
+        cos_sims = np.zeros((num_systems, num_systems))
+        err_ratios = np.zeros((num_systems, num_systems))
+        zero_ratios = np.zeros((num_systems, num_systems))
+
+        deg_fig = plt.figure(figsize=(40, 40))
+        ax1 = deg_fig.add_subplot(331)  # This creates the first subplot
+        ax2 = deg_fig.add_subplot(332)  # This creates the second subplot
+        ax3 = deg_fig.add_subplot(333)  # This creates the third subplot
+        ax4 = deg_fig.add_subplot(334)  # This creates the third subplot
+        ax5 = deg_fig.add_subplot(335)  # This creates the third subplot
+        ax6 = deg_fig.add_subplot(336)  # This creates the third subplot
+        ax7 = deg_fig.add_subplot(337)  # This creates the third subplot
+        ax8 = deg_fig.add_subplot(338)  # This creates the third subplot
+        ax9 = deg_fig.add_subplot(339)  # This creates the third subplot
+        axs = [[ax1, ax2, ax3],[ax4, ax5, ax6],[ax7, ax8, ax9]]
+        return cos_sims, err_ratios, zero_ratios, deg_fig, axs
+
+def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade):
+
+    C_dist = config.C_dist
+    if excess:
+        fig = plt.figure(figsize=(30, 15))
+        ax = fig.add_subplot(111)
+
+    if run_preds:
+        print("config path:", config.ckpt_path)
+        save_preds(run_deg_kf_test, config) #save the predictions to a file
+
+
+    #load the prediction errors from the file
+    err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
+
+    if run_deg_kf_test:
+        cos_sims, err_ratios, zero_ratios, deg_fig, axs = setup_deg_kf_axs_arrs(num_systems)
 
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#A80000', '#bcbd22']
 
@@ -616,13 +635,15 @@ if __name__ == '__main__':
                 # axs[i][sys].set_xlim(left=0, right=10)
 
             if sys == num_systems - 1 and i == num_systems - 1:
-                os.makedirs("../figures", exist_ok=True)
-                deg_fig.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + ("-changing_deg_kf_test" if config.changing else "deg_kf_test"))
-        else:
-            # if not excess:
-            #     fig = plt.figure(figsize=(15, 9))
-            #     ax = fig.add_subplot(111)
+                # get the parent directory of the ckpt_path
+                parent_dir = os.path.dirname(config.ckpt_path)
+                print("parent_dir:", parent_dir)
 
+                #get the parent directory of the parent directory
+                parent_parent_dir = os.path.dirname(parent_dir)
+                os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+                deg_fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + ("-changing_deg_kf_test" if config.changing else "deg_kf_test"))
+        else:
             fig = plt.figure(figsize=(15, 9))
             ax = fig.add_subplot(111)
             #plot transformer, KF and FIR errors
@@ -705,8 +726,13 @@ if __name__ == '__main__':
                 ax.set_title("System " + str(sys)+ (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (": Upper Triangular A " if config.dataset_typ == "upperTriA" else (": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
                 # ax.set_xlim(left=0, right=10)
 
-                os.makedirs("../figures", exist_ok=True)
-                fig.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else "_excess"))
+                #get the parent directory of the ckpt_path
+                parent_dir = os.path.dirname(config.ckpt_path)
+
+                #get the parent directory of the parent directory
+                parent_parent_dir = os.path.dirname(parent_dir)
+                os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+                fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else "_excess"))
             else:
                 ax.legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/4))
                 ax.set_xlabel("t", fontsize=30)
@@ -718,8 +744,13 @@ if __name__ == '__main__':
                 ax.set_title("System " + str(sys)+ (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (": Upper Triangular A " if config.dataset_typ == "upperTriA" else (": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")), fontsize=20)
                 # ax.set_xlim(left=0, right=10)
 
-                os.makedirs("../figures", exist_ok=True)
-                fig.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else ""))
+                #get the parent directory of the ckpt_path
+                parent_dir = os.path.dirname(config.ckpt_path)
+
+                #get the parent directory of the parent directory
+                parent_parent_dir = os.path.dirname(parent_dir)
+                os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+                fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else ""))
 
     if run_deg_kf_test:
         # Create a DataFrame from the numpy array
@@ -738,8 +769,13 @@ if __name__ == '__main__':
         tbl = table(ax, df, loc='center', cellLoc='center')
         tbl.scale(1, 1.5)
 
-        os.makedirs("../figures", exist_ok=True)
-        plt.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_cosine_similarities_deg_kf_test")
+        #get the parent directory of the ckpt_path
+        parent_dir = os.path.dirname(config.ckpt_path)
+
+        #get the parent directory of the parent directory
+        parent_parent_dir = os.path.dirname(parent_dir)
+        os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_cosine_similarities_deg_kf_test")
 
         # Create a new figure
         fig, ax = plt.subplots(figsize=(12, 2)) # set size frame
@@ -750,7 +786,7 @@ if __name__ == '__main__':
         tbl = table(ax, df2, loc='center', cellLoc='center')
         tbl.scale(1, 1.5)
 
-        plt.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_error_ratios_deg_kf_test")
+        plt.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_error_ratios_deg_kf_test")
 
         print("zero_ratios:", zero_ratios)
         fig, ax = plt.subplots(figsize=(12, 2)) # set size frame
@@ -761,7 +797,7 @@ if __name__ == '__main__':
         tbl = table(ax, df3, loc='center', cellLoc='center')
         tbl.scale(1, 1.5)
 
-        plt.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_zero_ratios_deg_kf_test")
+        plt.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_zero_ratios_deg_kf_test")
 
     if excess:
         ncol = 1 if len(handles) < 4 else math.floor(len(handles)/2)
@@ -776,5 +812,270 @@ if __name__ == '__main__':
         # ax.set_ylim(bottom=-1, top=2*10**(-1))
         ax.set_title(("Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else ("Upper Triangular A " if config.dataset_typ == "upperTriA" else ("N(0,0.33) A " if config.dataset_typ == "gaussA" else "Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
         # ax.set_xlim(left=0, right=10)
-        os.makedirs("../figures", exist_ok=True)
-        fig.savefig(f"../figures/{config.dataset_typ}" + C_dist + "_system_cutoff" + ("-changing" if config.changing else "_excess"))
+        os.makedirs(parent_parent_dir + f"/figures", exist_ok=True)
+        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff" + ("-changing" if config.changing else "_excess"))
+    
+    return None
+
+####################################################################################################
+# main function
+if __name__ == '__main__':
+    config = Config()
+
+    C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
+    run_preds = True #run the predictions evaluation
+    run_deg_kf_test = False #run degenerate KF test
+    excess = False #run the excess plots
+    if excess:
+        fig = plt.figure(figsize=(30, 15))
+        ax = fig.add_subplot(111)
+    shade = False
+
+    num_systems = config.num_val_tasks  # number of validation tasks
+    
+    if run_preds:
+        print("config path:", config.ckpt_path)
+        save_preds(run_deg_kf_test, config) #save the predictions to a file
+
+
+    #load the prediction errors from the file
+    err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
+
+    if run_deg_kf_test:
+        cos_sims, err_ratios, zero_ratios, deg_fig, axs = setup_deg_kf_axs_arrs(num_systems)
+
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#A80000', '#bcbd22']
+
+    print("len(err_lss_load):", len(err_lss_load))
+    for sys in range(len(irreducible_error_load)):
+        
+        if run_deg_kf_test:
+            for i in range(num_systems):
+                err_lss_copy = copy.deepcopy(err_lss_load)
+                err_lss_copy["Kalman"] = err_lss_copy["Kalman"][i]
+                
+                print("KF trained on system", i, "testing on system", sys)
+
+                #plot transformer, KF and FIR errors
+                handles, err_rat = plot_errs(colors, sys, err_lss_copy, irreducible_error_load, ax=axs[i][sys], shade=True, normalized=excess)
+                print("err_rat:", err_rat)
+
+                err_ratios[i, sys] = err_rat[0]
+                zero_ratios[i, sys] = err_rat[1]
+
+                #compute the cosine similarity between the err_lss_load["Kalman"][i][sys] and err_lss_load[i][i]
+                cos_sim = np.dot(err_lss_load["Kalman"][i][sys].flatten(), err_lss_load["Kalman"][i][i].flatten()) / (np.linalg.norm(err_lss_load["Kalman"][i][sys]) * np.linalg.norm(err_lss_load["Kalman"][sys][sys]))
+                print("cosine similarity between KF trained on system", i, "testing on system", sys, "and KF trained and tested on system", sys, ":", cos_sim)
+                cos_sims[i, sys] = cos_sim
+
+                if C_dist == "_unif_C" and config.dataset_typ == "ypred":
+                #plot fir bounds
+                    for j in range(fir_bounds.shape[1] - 2):
+                        handles.extend(axs[i][sys].plot(np.array(range(config.n_positions)), fir_bounds[sys,j]*np.ones(config.n_positions), label="IR Analytical Length " + str(j + 1), linewidth=3, linestyle='--', color = colors[j + 5]))
+
+                    #plot RNN errors
+                    avg, std = rnn_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_errors.shape[1]))*rnn_errors.std(axis=(0, 1))
+                    avg_numpy = avg.detach().numpy()
+                    std_numpy = std.detach().numpy()
+                    handles.append(axs[i][sys].scatter(np.arange(0,32*5,5), avg_numpy, label="RNN", linewidth=1, marker='x', s=50, color=colors[len(err_lss_copy)]))
+                    axs[i][sys].fill_between(np.arange(rnn_errors.shape[-1]), avg_numpy - std_numpy, avg_numpy + std_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+
+                    avg_an, std_an = rnn_an_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_an_errors.shape[1]))*rnn_an_errors.std(axis=(0, 1))
+                    avg_an_numpy = avg_an.detach().numpy()
+                    std_an_numpy = std_an.detach().numpy()
+                    handles.append(axs[i][sys].scatter(np.arange(0,251,5), avg_an_numpy, label="RNN Analytical", linewidth=1, marker='o', s=100, color=colors[len(err_lss_copy)], zorder=10))
+                    axs[i][sys].fill_between(np.arange(rnn_an_errors.shape[-1]), avg_an_numpy - std_an_numpy, avg_an_numpy + std_an_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+
+                del err_lss_copy  # Delete the variable
+                gc.collect()  # Start the garbage collector
+
+                axs[i][sys].legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/4))
+                axs[i][sys].set_xlabel("t", fontsize=30)
+                axs[i][sys].set_ylabel("Prediction Error", fontsize=30)
+                axs[i][sys].grid(which="both")
+                axs[i][sys].tick_params(axis='both', which='major', labelsize=30)
+                axs[i][sys].tick_params(axis='both', which='minor', labelsize=20)
+                axs[i][sys].set_title("KF system " + str(i) + " testing on system " + str(sys) + (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (": Upper Triangular A " if config.dataset_typ == "upperTriA" else ": Dense A ")) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
+                axs[i][sys].set_ylim(bottom=10**(-0.7), top=2*10**(0))
+                # axs[i][sys].set_xlim(left=0, right=10)
+
+            if sys == num_systems - 1 and i == num_systems - 1:
+                # get the parent directory of the ckpt_path
+                parent_dir = os.path.dirname(config.ckpt_path)
+                print("parent_dir:", parent_dir)
+
+                #get the parent directory of the parent directory
+                parent_parent_dir = os.path.dirname(parent_dir)
+                os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+                deg_fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + ("-changing_deg_kf_test" if config.changing else "deg_kf_test"))
+        else:
+            fig = plt.figure(figsize=(15, 9))
+            ax = fig.add_subplot(111)
+            #plot transformer, KF and FIR errors
+            handles, err_rat = plot_errs(colors, sys, err_lss_load, irreducible_error_load, ax=ax, shade=shade, normalized=excess)
+
+            if C_dist == "_unif_C" and config.dataset_typ == "ypred":
+                if excess:
+                    #plot fir bounds
+                    for i in range(fir_bounds.shape[1] - 2):
+                        handles.extend(ax.plot(np.array(range(config.n_positions)), (fir_bounds[sys,i] - irreducible_error_load[sys])*np.ones(config.n_positions), label="IR Analytical Length " + str(i + 1) + " sys: " + str(sys), linewidth=3, linestyle='--'))#, color = colors[i + 5]))
+
+                    # #plot RNN errors
+                    # rnn_er = rnn_errors[sys].detach().numpy()
+                    # kalman_err = err_lss_load["Kalman"][sys,:, ::5].mean(axis=(0))
+                    # #figure out how to take median and quantiles of the rnn errors
+                    # rnn_q1, rnn_median, rnn_q3 = np.quantile((rnn_er -kalman_err), [0.25, 0.5, 0.75], axis=-2)
+                    # scale = rnn_median[1]
+                    # rnn_median = rnn_median/scale
+                    # rnn_q1 = rnn_q1/scale
+                    # rnn_q3 = rnn_q3/scale
+                    # N = rnn_median.shape[0]
+                    # # Adjust the range of np.arange function
+                    # x = np.arange(1, (N-1)*5 + 1, 5)
+                    # handles.append(ax.scatter(x, rnn_median[1:], label="RNN sys: " + str(sys), linewidth=3, marker='x', s=50))#, color=colors[len(err_lss_load)]))
+                    # if shade:
+                    #     ax.fill_between(x, rnn_q1[1:], rnn_q3[1:], facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+
+                    print("rnn_an_errors.shape:", rnn_an_errors.shape)
+                    #plot Analytical RNN errors
+                    rnn_an_er = rnn_an_errors[sys].detach().numpy()
+                    print("shape of err_lss_load[Kalman]:", err_lss_load["Kalman"][sys,:, ::5].shape)
+                    kalman_err = err_lss_load["Kalman"][sys,:, ::5].mean(axis=(0))
+                    #figure out how to take median and quantiles of the rnn errors
+                    rnn_an_q1, rnn_an_median, rnn_an_q3 = np.quantile((rnn_an_er - kalman_err), [0.25, 0.5, 0.75], axis=-2)
+                    scale = rnn_an_median[1]
+                    rnn_an_median = rnn_an_median/scale
+                    rnn_an_q1 = rnn_an_q1/scale
+                    rnn_an_q3 = rnn_an_q3/scale
+                    N = rnn_an_median.shape[0]
+                    # Adjust the range of np.arange function
+                    x = np.arange(1, (N-1)*5 + 1, 5)
+                    handles.append(ax.scatter(x, rnn_an_median[1:], label="RNN Analytical sys: " + str(sys), linewidth=1, marker='o', s=100))#, color=colors[len(err_lss_load)]))
+                    if shade:
+                        ax.fill_between(x, rnn_an_q1[1:], rnn_an_q3[1:], facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+                    # avg_an, std_an = rnn_an_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_an_errors.shape[1]))*rnn_an_errors.std(axis=(0, 1))
+                    # avg_an_numpy = avg_an.detach().numpy()
+                    # std_an_numpy = std_an.detach().numpy()
+                    # handles.append(ax.scatter(np.arange(0,251,5), avg_an_numpy, label="RNN Analytical", linewidth=1, marker='o', s=100))#, color=colors[len(err_lss_load)], zorder=10))
+                    # ax.fill_between(np.arange(rnn_an_errors.shape[-1]), avg_an_numpy - std_an_numpy, avg_an_numpy + std_an_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+                else:
+                    #plot fir bounds
+                    for i in range(fir_bounds.shape[1] - 2):
+                        handles.extend(ax.plot(np.array(range(config.n_positions)), fir_bounds[sys,i]*np.ones(config.n_positions), label="IR Analytical Length " + str(i + 1), linewidth=3, linestyle='--', color = colors[i + 5]))
+
+                    #plot RNN errors
+                    print("rnn_errors.shape:", rnn_errors.shape)
+                    avg, std = rnn_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_errors.shape[1]))*rnn_errors.std(axis=(0, 1))
+                    avg_numpy = avg.detach().numpy()
+                    std_numpy = std.detach().numpy()
+                    handles.append(ax.scatter(np.arange(0,config.n_positions + 1,5), avg_numpy, label="RNN", linewidth=1, marker='x', s=50, color=colors[len(err_lss_load)]))
+                    ax.fill_between(np.arange(rnn_errors.shape[-1]), avg_numpy - std_numpy, avg_numpy + std_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+
+                    avg_an, std_an = rnn_an_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_an_errors.shape[1]))*rnn_an_errors.std(axis=(0, 1))
+                    avg_an_numpy = avg_an.detach().numpy()
+                    std_an_numpy = std_an.detach().numpy()
+                    handles.append(ax.scatter(np.arange(0,251,5), avg_an_numpy, label="RNN Analytical", linewidth=1, marker='o', s=100, color=colors[len(err_lss_load)], zorder=10))
+                    ax.fill_between(np.arange(rnn_an_errors.shape[-1]), avg_an_numpy - std_an_numpy, avg_an_numpy + std_an_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+
+            if excess:
+                ncol = 1 if len(handles) < 4 else math.floor(len(handles)/4)
+                ax.legend(fontsize=18, loc="lower left", ncol=ncol)
+                ax.set_xlabel("log(t)", fontsize=30)
+                ax.set_ylabel("log(Prediction Error - Emp Kalman Error)", fontsize=20)
+                ax.grid(which="both")
+                ax.tick_params(axis='both', which='major', labelsize=30)
+                ax.tick_params(axis='both', which='minor', labelsize=20)
+                #make the x axis log scale
+                ax.set_xscale('log')
+                # ax.set_ylim(bottom=-1, top=2*10**(-1))
+                ax.set_title("System " + str(sys)+ (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (": Upper Triangular A " if config.dataset_typ == "upperTriA" else (": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
+                # ax.set_xlim(left=0, right=10)
+
+                #get the parent directory of the ckpt_path
+                parent_dir = os.path.dirname(config.ckpt_path)
+
+                #get the parent directory of the parent directory
+                parent_parent_dir = os.path.dirname(parent_dir)
+                os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+                fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else "_excess"))
+            else:
+                ax.legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/4))
+                ax.set_xlabel("t", fontsize=30)
+                ax.set_ylabel("Prediction Error", fontsize=30)
+                ax.grid(which="both")
+                ax.tick_params(axis='both', which='major', labelsize=30)
+                ax.tick_params(axis='both', which='minor', labelsize=20)
+                ax.set_ylim(bottom=10**(-0.7), top=3*10**(0))
+                ax.set_title("System " + str(sys)+ (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (": Upper Triangular A " if config.dataset_typ == "upperTriA" else (": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")), fontsize=20)
+                # ax.set_xlim(left=0, right=10)
+
+                #get the parent directory of the ckpt_path
+                parent_dir = os.path.dirname(config.ckpt_path)
+
+                #get the parent directory of the parent directory
+                parent_parent_dir = os.path.dirname(parent_dir)
+                os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+                fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else ""))
+
+    if run_deg_kf_test:
+        # Create a DataFrame from the numpy array
+        # create a list of strings that correspond to the system numbers
+        test_col = ["Test sys " + str(i) for i in range(num_systems)]
+        train_col = ["Train sys " + str(i) for i in range(num_systems)]
+
+        df = pd.DataFrame(cos_sims, columns=test_col, index=train_col)
+
+        # Create a new figure
+        fig, ax = plt.subplots(figsize=(12, 2)) # set size frame
+        ax.axis('off')
+        ax.set_title('Cosine Similarities of KF Predictions')
+
+        # Create a table and save it as an image
+        tbl = table(ax, df, loc='center', cellLoc='center')
+        tbl.scale(1, 1.5)
+
+        #get the parent directory of the ckpt_path
+        parent_dir = os.path.dirname(config.ckpt_path)
+
+        #get the parent directory of the parent directory
+        parent_parent_dir = os.path.dirname(parent_dir)
+        os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_cosine_similarities_deg_kf_test")
+
+        # Create a new figure
+        fig, ax = plt.subplots(figsize=(12, 2)) # set size frame
+        ax.axis('off')
+        ax.set_title('Error Ratios of KF Predictions')
+        # Create a table and save it as an image
+        df2 = pd.DataFrame(err_ratios, columns=test_col, index=train_col)
+        tbl = table(ax, df2, loc='center', cellLoc='center')
+        tbl.scale(1, 1.5)
+
+        plt.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_error_ratios_deg_kf_test")
+
+        print("zero_ratios:", zero_ratios)
+        fig, ax = plt.subplots(figsize=(12, 2)) # set size frame
+        ax.axis('off')
+        ax.set_title('Error Ratios of Zero Predictions')
+        # Create a table and save it as an image
+        df3 = pd.DataFrame(zero_ratios[0,:].reshape(1, -1), columns=test_col)
+        tbl = table(ax, df3, loc='center', cellLoc='center')
+        tbl.scale(1, 1.5)
+
+        plt.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_zero_ratios_deg_kf_test")
+
+    if excess:
+        ncol = 1 if len(handles) < 4 else math.floor(len(handles)/2)
+        ax.legend(fontsize=14, loc="lower left", ncol=ncol)
+        ax.set_xlabel("log(t)", fontsize=30)
+        ax.set_ylabel("log(Prediction Error - Emp Kalman Error)", fontsize=20)
+        ax.grid(which="both")
+        ax.tick_params(axis='both', which='major', labelsize=30)
+        ax.tick_params(axis='both', which='minor', labelsize=20)
+        #make the x axis log scale
+        ax.set_xscale('log')
+        # ax.set_ylim(bottom=-1, top=2*10**(-1))
+        ax.set_title(("Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else ("Upper Triangular A " if config.dataset_typ == "upperTriA" else ("N(0,0.33) A " if config.dataset_typ == "gaussA" else "Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
+        # ax.set_xlim(left=0, right=10)
+        os.makedirs(parent_parent_dir + f"/figures", exist_ok=True)
+        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff" + ("-changing" if config.changing else "_excess"))

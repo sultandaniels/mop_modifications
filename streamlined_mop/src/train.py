@@ -8,6 +8,7 @@ from datasources import FilterDataset, DataModuleWrapper
 import os
 import time
 import pickle
+from lightning.pytorch.loggers import WandbLogger
 
 
 def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the embed dim experiment plots
@@ -35,10 +36,21 @@ def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the
     ckpt_path = config.ckpt_path if config.ckpt_path != '' else None
     print("ckpt_path:", config.ckpt_path)
     
+    # trainer = pl.Trainer(
+    #     accelerator="gpu",
+    #     callbacks=callbacks,
+    #     logger=loggers,
+    #     gradient_clip_algorithm=config.gradient_clip_algorithm,
+    #     gradient_clip_val=config.gradient_clip_val,
+    #     log_every_n_steps=50,
+    #     max_epochs=config.num_epochs
+    # )
+
+    wandb_logger = WandbLogger(log_model="all")
     trainer = pl.Trainer(
         accelerator="gpu",
         callbacks=callbacks,
-        logger=loggers,
+        logger=wandb_logger,
         gradient_clip_algorithm=config.gradient_clip_algorithm,
         gradient_clip_val=config.gradient_clip_val,
         log_every_n_steps=50,

@@ -33,6 +33,7 @@ def collect_data(model, config, output_dir):
             repeated_C = np.repeat(sample["C"][np.newaxis,:,:], config.num_traces[name], axis=0) #repeat the C matrix for each trace
             sample["C"] = repeated_C #repeat the C matrix for each trace
             samples.extend([{k: v[i] for k, v in sample.items()} for i in range(config.num_traces[name])])
+            # raise Exception("just checking fsim type umich_meta_output_predictor/src/collect_data.py")
             sim_objs.append(fsim)
         print("Saving", len(samples), "samples for", name)
 

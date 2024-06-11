@@ -1,0 +1,80 @@
+2024-06-07 16:46:30,670 INFO    StreamThr :84781 [internal.py:wandb_internal():85] W&B internal server running at pid: 84781, started at: 2024-06-07 16:46:30.669241
+2024-06-07 16:46:30,670 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: status
+2024-06-07 16:46:30,674 INFO    WriterThread:84781 [datastore.py:open_for_write():87] open: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/run-esgoxjtf.wandb
+2024-06-07 16:46:30,674 DEBUG   SenderThread:84781 [sender.py:send():378] send: header
+2024-06-07 16:46:30,690 DEBUG   SenderThread:84781 [sender.py:send():378] send: run
+2024-06-07 16:46:30,995 INFO    SenderThread:84781 [dir_watcher.py:__init__():211] watching files in: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files
+2024-06-07 16:46:30,995 INFO    SenderThread:84781 [sender.py:_start_run_threads():1123] run started: esgoxjtf with start time 1717803990.669767
+2024-06-07 16:46:31,006 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: check_version
+2024-06-07 16:46:31,006 DEBUG   SenderThread:84781 [sender.py:send_request():405] send_request: check_version
+2024-06-07 16:46:31,146 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: run_start
+2024-06-07 16:46:31,152 DEBUG   HandlerThread:84781 [system_info.py:__init__():26] System info init
+2024-06-07 16:46:31,152 DEBUG   HandlerThread:84781 [system_info.py:__init__():41] System info init done
+2024-06-07 16:46:31,152 INFO    HandlerThread:84781 [system_monitor.py:start():194] Starting system monitor
+2024-06-07 16:46:31,152 INFO    SystemMonitor:84781 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-06-07 16:46:31,152 INFO    HandlerThread:84781 [system_monitor.py:probe():214] Collecting system info
+2024-06-07 16:46:31,153 INFO    SystemMonitor:84781 [interfaces.py:start():188] Started cpu monitoring
+2024-06-07 16:46:31,154 INFO    SystemMonitor:84781 [interfaces.py:start():188] Started disk monitoring
+2024-06-07 16:46:31,155 INFO    SystemMonitor:84781 [interfaces.py:start():188] Started gpuapple monitoring
+2024-06-07 16:46:31,157 INFO    SystemMonitor:84781 [interfaces.py:start():188] Started memory monitoring
+2024-06-07 16:46:31,158 INFO    SystemMonitor:84781 [interfaces.py:start():188] Started network monitoring
+2024-06-07 16:46:31,691 DEBUG   HandlerThread:84781 [system_info.py:probe():150] Probing system
+2024-06-07 16:46:31,695 DEBUG   HandlerThread:84781 [system_info.py:_probe_git():135] Probing git
+2024-06-07 16:46:31,710 DEBUG   HandlerThread:84781 [system_info.py:_probe_git():143] Probing git done
+2024-06-07 16:46:31,711 DEBUG   HandlerThread:84781 [system_info.py:probe():198] Probing system done
+2024-06-07 16:46:31,711 DEBUG   HandlerThread:84781 [system_monitor.py:probe():223] {'os': 'macOS-13.3.1-arm64-arm-64bit', 'python': '3.12.2', 'heartbeatAt': '2024-06-07T23:46:31.692050', 'startedAt': '2024-06-07T23:46:30.664775', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': '/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/streamlined_mop/src/data_train.py', 'codePathLocal': 'streamlined_mop/src/data_train.py', 'codePath': 'streamlined_mop/src/data_train.py', 'git': {'remote': 'https://github.com/sultandaniels/mop_modifications.git', 'commit': '5455665fee8c7f954268ce29e9e6208dcc798b03'}, 'email': '63972349+sultandaniels@users.noreply.github.com', 'root': '/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications', 'host': 'wifi-10-41-192-84.wifi.berkeley.edu', 'username': 'sultandaniels', 'executable': '/Users/sultandaniels/anaconda3/envs/mop/bin/python', 'cpu_count': 8, 'cpu_count_logical': 8, 'cpu_freq': {'current': 3504, 'min': 600, 'max': 3504}, 'cpu_freq_per_core': [{'current': 3504, 'min': 600, 'max': 3504}], 'disk': {'/': {'total': 460.4317207336426, 'used': 11.351158142089844}}, 'gpuapple': {'type': 'Apple M2', 'vendor': 'sppci_vendor_Apple'}, 'memory': {'total': 8.0}}
+2024-06-07 16:46:31,711 INFO    HandlerThread:84781 [system_monitor.py:probe():224] Finished collecting system info
+2024-06-07 16:46:31,711 INFO    HandlerThread:84781 [system_monitor.py:probe():227] Publishing system info
+2024-06-07 16:46:31,711 DEBUG   HandlerThread:84781 [system_info.py:_save_conda():207] Saving list of conda packages installed into the current environment
+2024-06-07 16:46:32,001 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/conda-environment.yaml
+2024-06-07 16:46:37,368 DEBUG   HandlerThread:84781 [system_info.py:_save_conda():222] Saving conda packages done
+2024-06-07 16:46:37,369 INFO    HandlerThread:84781 [system_monitor.py:probe():229] Finished publishing system info
+2024-06-07 16:46:37,377 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: status_report
+2024-06-07 16:46:37,377 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: keepalive
+2024-06-07 16:46:37,378 DEBUG   SenderThread:84781 [sender.py:send():378] send: files
+2024-06-07 16:46:37,378 INFO    SenderThread:84781 [sender.py:_save_file():1389] saving file wandb-metadata.json with policy now
+2024-06-07 16:46:37,447 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: python_packages
+2024-06-07 16:46:37,447 DEBUG   SenderThread:84781 [sender.py:send_request():405] send_request: python_packages
+2024-06-07 16:46:37,451 DEBUG   SenderThread:84781 [sender.py:send():378] send: telemetry
+2024-06-07 16:46:37,451 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: stop_status
+2024-06-07 16:46:37,451 DEBUG   SenderThread:84781 [sender.py:send_request():405] send_request: stop_status
+2024-06-07 16:46:37,845 INFO    wandb-upload_0:84781 [upload_job.py:push():130] Uploaded file /var/folders/h_/wy6y3sfs1254rd40kbxmvsw00000gn/T/tmp6twuuhczwandb/pe20tz3w-wandb-metadata.json
+2024-06-07 16:46:38,027 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/conda-environment.yaml
+2024-06-07 16:46:38,492 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/requirements.txt
+2024-06-07 16:46:38,538 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:46:38,538 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/wandb-metadata.json
+2024-06-07 16:46:40,037 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:46:41,848 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: status_report
+2024-06-07 16:46:41,850 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: partial_history
+2024-06-07 16:46:41,852 DEBUG   SenderThread:84781 [sender.py:send():378] send: history
+2024-06-07 16:46:41,852 DEBUG   SenderThread:84781 [sender.py:send_request():405] send_request: summary_record
+2024-06-07 16:46:41,853 INFO    SenderThread:84781 [sender.py:_save_file():1389] saving file wandb-summary.json with policy end
+2024-06-07 16:46:42,048 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/wandb-summary.json
+2024-06-07 16:46:44,514 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:46:47,492 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: status_report
+2024-06-07 16:46:48,533 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:46:50,542 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:46:52,454 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: stop_status
+2024-06-07 16:46:52,454 DEBUG   SenderThread:84781 [sender.py:send_request():405] send_request: stop_status
+2024-06-07 16:46:52,552 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:46:52,610 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: status_report
+2024-06-07 16:46:54,564 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:46:55,782 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: log_artifact
+2024-06-07 16:46:55,788 DEBUG   SenderThread:84781 [sender.py:send_request():405] send_request: log_artifact
+2024-06-07 16:46:56,565 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:46:56,950 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: partial_history
+2024-06-07 16:46:58,680 INFO    wandb-upload_0:84781 [upload_job.py:push():88] Uploaded file /Users/sultandaniels/Library/Application Support/wandb/artifacts/staging/tmpsjwke3x9
+2024-06-07 16:46:59,241 INFO    SenderThread:84781 [sender.py:send_request_log_artifact():1455] logged artifact model-esgoxjtf - {'id': 'QXJ0aWZhY3Q6ODY0MjI3NTE3', 'state': 'PENDING', 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjE4MzQ4NjI1Mw==', 'latestArtifact': None}}
+2024-06-07 16:46:59,241 DEBUG   SenderThread:84781 [sender.py:send():378] send: history
+2024-06-07 16:46:59,247 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: status_report
+2024-06-07 16:46:59,249 DEBUG   SenderThread:84781 [sender.py:send_request():405] send_request: summary_record
+2024-06-07 16:46:59,258 INFO    SenderThread:84781 [sender.py:_save_file():1389] saving file wandb-summary.json with policy end
+2024-06-07 16:46:59,581 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/wandb-summary.json
+2024-06-07 16:47:00,582 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:47:04,599 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:47:04,865 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: status_report
+2024-06-07 16:47:05,604 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/config.yaml
+2024-06-07 16:47:06,618 INFO    Thread-12 :84781 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_164630-esgoxjtf/files/output.log
+2024-06-07 16:47:08,957 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: stop_status
+2024-06-07 16:47:09,066 DEBUG   SenderThread:84781 [sender.py:send_request():405] send_request: stop_status
+2024-06-07 16:47:10,786 DEBUG   HandlerThread:84781 [handler.py:handle_request():158] handle_request: status_report
