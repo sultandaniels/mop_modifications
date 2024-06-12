@@ -11,3 +11,8 @@ sympy=1.11.1
 scipy=1.8.0
 filterpy=1.4.5
 transformers=4.27.4
+lightning
+pandas
+tensordict
+wandb
+
