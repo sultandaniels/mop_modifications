@@ -32,7 +32,7 @@ def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the
     # Define model
     # output_dir = training.setup_train(model)
     print("output_dir:", output_dir)
-    callbacks, loggers = training.get_callbacks_and_loggers(model, output_dir, config.batch_size, config.n_positions, config.train_steps)#, config.n_embd)
+    callbacks, loggers = training.get_callbacks_and_loggers(output_dir, config.train_int)#, config.n_embd)
     ckpt_path = config.ckpt_path if config.ckpt_path != '' else None
     print("ckpt_path:", config.ckpt_path)
     

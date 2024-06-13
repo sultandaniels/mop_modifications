@@ -83,7 +83,6 @@ if __name__ == '__main__':
 
         # add ckpt_path to config_dict
         config_dict["ckpt_path"] = config.ckpt_path
-        print("config_dict", config_dict)
 
         # 🐝 1️⃣ Start a new run to track this script
         run = wandb.init(
