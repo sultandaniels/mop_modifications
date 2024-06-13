@@ -314,16 +314,11 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         ("MOP", errs_tf),
         ("Zero", errs_zero)
     ])
-
-    err_lss = collections.OrderedDict([
-        ("Zero", errs_zero)
-    ])
+    print("err_lss keys:", err_lss.keys())
 
     #Analytical Kalman Predictions
     analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
-    print("analytical_kf.shape:", analytical_kf.shape)
     err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
-    print("err_lss[Analytical_Kalman].shape:", err_lss["Analytical_Kalman"].shape)
 
     #OLS and OLS_analytical
     ir_length = 2
@@ -455,11 +450,15 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     #     end = time.time()
     #     print("time elapsed:", (end - start)/60, "min")
 
+
+    print("err_lss keys end", err_lss.keys())
+
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error
 
 def save_preds(run_deg_kf_test, config):
     err_lss, irreducible_error = compute_errors(config, config.C_dist, run_deg_kf_test, wentinn_data=False)  #, emb_dim)
+    print("err_lss keys:", err_lss.keys())
 
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
@@ -509,7 +508,7 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
             with open("../data/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
                 pickle.dump(irreducible_error, f)
 
-    print("err_lss_load[Analytical_Kalman] shape:", err_lss_load["Analytical_Kalman"].shape)
+    print("err_lss_load keys:", err_lss_load.keys())
 
     with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "rb") as f:
         irreducible_error_load = pickle.load(f)
@@ -579,7 +578,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
     if run_deg_kf_test:
         cos_sims, err_ratios, zero_ratios, deg_fig, axs = setup_deg_kf_axs_arrs(num_systems)
 
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#A80000', '#bcbd22']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#bcbd00', '#d00960']
 
     print("len(err_lss_load):", len(err_lss_load))
     for sys in range(len(irreducible_error_load)):

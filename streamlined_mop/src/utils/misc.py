@@ -83,6 +83,7 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                     ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
         else:
             if name != "Analytical_Kalman":
+                print("name", name)
                 avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
                 handles.extend(ax.plot(avg, label=name if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[i]))
                 if shade:
