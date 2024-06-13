@@ -1,0 +1,164 @@
+batch_size: 28
+train_steps: 40000
+context length: 250
+num_tasks: 40000
+output_dir: ../outputs/GPT2/240612_175830.45e2d3_unifA_unif_C
+checkpoint_callback /Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240612_175830.45e2d3_unifA_unif_C/checkpoints
+ckpt_path: ../outputs/GPT2/240612_175830.45e2d3_unifA_unif_C/checkpoints/step=40000.ckpt
+Checkpoint file ../outputs/GPT2/240612_175830.45e2d3_unifA_unif_C/checkpoints/step=40000.ckpt does not exist.
+GPU available: True (mps), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/configuration_validator.py:74: You defined a `validation_step` but have no `val_dataloader`. Skipping val loop.
+/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/lightning/pytorch/loggers/wandb.py:391: There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse this run. If this is not desired, call `wandb.finish()` before instantiating `WandbLogger`.
+  | Name      | Type      | Params
+----------------------------------------
+0 | _read_in  | Linear    | 768
+1 | _backbone | GPT2Model | 9.1 M
+2 | _read_out | Linear    | 645
+----------------------------------------
+9.1 M     Trainable params
+0         Non-trainable params
+9.1 M     Total params
+36.304    Total estimated model params size (MB)
+/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/connectors/data_connector.py:441: The 'train_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=7` in the `DataLoader` to improve performance.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Epoch 0:   0%| | 149/40000 [02:45<12:18:31,  0.90it/s, v_num=5m42, train_loss_mse_step=0.344, train_metric_mse_ts0_dim_0_step=0.481, train_metric_mse_ts0_di
+Traceback (most recent call last):
+  File "/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/streamlined_mop/src/data_train.py", line 94, in <module>
+    train_gpt2(model, config, output_dir) # train the model
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/streamlined_mop/src/train.py", line 65, in train_gpt2
+    trainer.fit(model, datamodule=datamodule)
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 544, in fit
+    call._call_and_handle_interrupt(
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py", line 44, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 580, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 987, in _run
+    results = self._run_stage()
+              ^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 1033, in _run_stage
+    self.fit_loop.run()
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/fit_loop.py", line 205, in run
+    self.advance()
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/fit_loop.py", line 363, in advance
+    self.epoch_loop.run(self._data_fetcher)
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 140, in run
+    self.advance(data_fetcher)
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 212, in advance
+    batch, _, __ = next(data_fetcher)
+                   ^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/fetchers.py", line 133, in __next__
+    batch = super().__next__()
+            ^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/fetchers.py", line 60, in __next__
+    batch = next(self.iterator)
+            ^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/utilities/combined_loader.py", line 341, in __next__
+    out = next(self._iterator)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/utilities/combined_loader.py", line 78, in __next__
+    out[i] = next(self.iterators[i])
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/torch/utils/data/dataloader.py", line 631, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/torch/utils/data/dataloader.py", line 1329, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/torch/utils/data/dataloader.py", line 1295, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/torch/utils/data/dataloader.py", line 1133, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/multiprocessing/queues.py", line 122, in get
+    return _ForkingPickler.loads(res)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/torch/multiprocessing/reductions.py", line 514, in rebuild_storage_filename
+    storage = torch.UntypedStorage._new_shared_filename_cpu(manager, handle, size)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Shared memory manager connection has timed out

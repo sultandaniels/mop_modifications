@@ -17,13 +17,16 @@ if __name__ == '__main__':
 
     # Add the arguments
     parser.add_argument('--saved_preds', help='Boolean. Just plot the errors for a previously evaluated checkpoint', action='store_true')
+    parser.add_argument('--make_preds', help='Boolean. Run predictions and plot the errors for a previously trained checkpoint', action='store_true')
 
     # Parse the arguments
     args = parser.parse_args()
 
     # Now you can use the flag
-    print(args.saved_preds)
+    print("saved preds arg", args.saved_preds)
     saved_preds = args.saved_preds
+    print("make preds arg", args.make_preds)
+    make_preds = args.make_preds
 
 
     config = Config() # create a config object
@@ -60,11 +63,11 @@ if __name__ == '__main__':
 
     if saved_preds:
         # create prediction plots
-        run_preds = False #run the predictions evaluation
+        run_preds = make_preds #run the predictions evaluation
         run_deg_kf_test = False #run degenerate KF test
         excess = False #run the excess plots
         shade = True
-        config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240602_152926.3b8b85_unifA_unif_C/checkpoints" + "/step=7.ckpt")
+        config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240612_190702.45e2d3_unifA_unif_C/checkpoints" + "/step=40000.ckpt")
         print("ckpt_path", config.ckpt_path)
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
     else:
