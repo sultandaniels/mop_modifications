@@ -195,7 +195,6 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     # a function to compute the test errors for the GPT2 model, kalman filter, and zero predictions
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
     logger = logging.getLogger(__name__)  # get the logger
-    config.parse_args()  # parse the arguments
 
     num_systems = config.num_val_tasks  # number of validation tasks
     print("Number of validation systems:", num_systems)
@@ -492,6 +491,8 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
     print("parent_parent_dir:", parent_parent_dir)
+
+    #FIGURE OUT WHAT'S GOING ON HERE
     if run_deg_kf_test:
         with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss_deg_kf_test.pkl", "rb") as f:
             err_lss_load = pickle.load(f)
