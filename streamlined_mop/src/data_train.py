@@ -67,7 +67,7 @@ if __name__ == '__main__':
         run_deg_kf_test = False #run degenerate KF test
         excess = False #run the excess plots
         shade = True
-        config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240612_190702.45e2d3_unifA_unif_C/checkpoints" + "/step=40000.ckpt")
+        config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240613_152144.dd8344_unifA_gauss_C/checkpoints/step=40000.ckpt")
         print("ckpt_path", config.ckpt_path)
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
     else:
