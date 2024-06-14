@@ -258,9 +258,12 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             # print("batch_shape:", batch_shape)
             flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
             # print("flattened_I.shape:", flattened_I.shape)
-            _, flattened_preds_tf = model.predict_step({"xs": torch.from_numpy(flattened_I).to(device)}) #.float().to(device)})    # predict using the model
-            # print("flattened_preds_tf:", flattened_preds_tf)
-            preds_tf = np.reshape(flattened_preds_tf["preds"].cpu().numpy(), (*batch_shape, *I.shape[-2:])) # get the predictions
+            validation_loader = torch.utils.data.DataLoader(torch.from_numpy(flattened_I), batch_size=config.test_batch_size)
+            preds_arr = [] # Store the predictions for all batches 
+            for validation_batch in iter(validation_loader):
+                _, flattened_preds_tf = model.predict_step({"xs": validation_batch.to(device)}) #.float().to(device)})    # predict using the model
+                preds_arr.append(flattened_preds_tf["preds"].cpu().numpy())
+            preds_tf = np.reshape(np.concatenate(preds_arr, axis=0), (*batch_shape, *I.shape[-2:])) # Combine the predictions for all batches
             # print("preds_tf.shape:", preds_tf.shape)
             preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf], axis=-2)  # concatenate the predictions
             # print("preds_tf.shape:", preds_tf.shape)
@@ -506,8 +509,9 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
             print("shape of analytical kalman error:", err_lss_load["Analytical_Kalman"][:,0:3])
             irreducible_error = [err_lss_load["Analytical_Kalman"][i][i] for i in range(num_systems)]
             print("irreducible_error:", irreducible_error)
-            with open("../data/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
-                pickle.dump(irreducible_error, f)
+            # The two commented lines below cause an error:
+            # with open("../data/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f: 
+            #     pickle.dump(irreducible_error, f)
 
     print("err_lss_load keys:", err_lss_load.keys())
 
