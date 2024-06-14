@@ -18,6 +18,7 @@ if __name__ == '__main__':
     # Add the arguments
     parser.add_argument('--saved_preds', help='Boolean. Just plot the errors for a previously evaluated checkpoint', action='store_true')
     parser.add_argument('--make_preds', help='Boolean. Run predictions and plot the errors for a previously trained checkpoint', action='store_true')
+    parser.add_argument('--resume_train', help='Boolean. Resume training from a specific checkpoint', action='store_true')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -27,6 +28,8 @@ if __name__ == '__main__':
     saved_preds = args.saved_preds
     print("make preds arg", args.make_preds)
     make_preds = args.make_preds
+    print("resume train arg", args.resume_train)
+    resume_train = args.resume_train
 
 
     config = Config() # create a config object
@@ -69,6 +72,28 @@ if __name__ == '__main__':
         shade = True
         config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240613_152144.dd8344_unifA_gauss_C/checkpoints/step=40000.ckpt")
         print("ckpt_path", config.ckpt_path)
+
+        if resume_train:
+            #get the parent directory of the ckpt_path
+            parent_dir = os.path.dirname(config.ckpt_path)
+            #get the parent directory of the parent directory
+            output_dir = os.path.dirname(parent_dir)
+            # instantiate gpt2 model
+            model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
+                    n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
+        
+            # add ckpt_path to config_dict
+            config_dict["ckpt_path"] = config.ckpt_path
+
+            # 🐝 1️⃣ Start a new run to track this script
+            run = wandb.init(
+                # Set the project where this run will be logged
+                project="transformer_kalman_no_sweep",
+                # Track hyperparameters and run metadata
+                config=config_dict,
+            )
+            train_gpt2(model, config, output_dir) # train the model
+
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
     else:
         # instantiate gpt2 model
