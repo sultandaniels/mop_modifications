@@ -1,0 +1,49 @@
+{
+    "os": "macOS-13.3.1-arm64-arm-64bit",
+    "python": "3.12.2",
+    "heartbeatAt": "2024-06-16T22:30:43.522509",
+    "startedAt": "2024-06-16T22:30:42.567923",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/streamlined_mop/src/data_train.py",
+    "codePathLocal": "streamlined_mop/src/data_train.py",
+    "codePath": "streamlined_mop/src/data_train.py",
+    "git": {
+        "remote": "https://github.com/sultandaniels/mop_modifications.git",
+        "commit": "1364e6c1b29c654a52cfe3a30430f8ff5efc7b3a"
+    },
+    "email": "63972349+sultandaniels@users.noreply.github.com",
+    "root": "/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications",
+    "host": "Sultans-MacBook-Pro.local",
+    "username": "sultandaniels",
+    "executable": "/Users/sultandaniels/anaconda3/envs/mop/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 3504,
+        "min": 600,
+        "max": 3504
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3504,
+            "min": 600,
+            "max": 3504
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 460.4317207336426,
+            "used": 11.351158142089844
+        }
+    },
+    "gpuapple": {
+        "type": "Apple M2",
+        "vendor": "sppci_vendor_Apple"
+    },
+    "memory": {
+        "total": 8.0
+    }
+}
