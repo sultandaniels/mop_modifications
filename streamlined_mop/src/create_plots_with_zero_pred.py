@@ -503,13 +503,13 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
     else:
         with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
             err_lss_load = pickle.load(f)
-            print("shape of analytical kalman error:", err_lss_load["Analytical_Kalman"].shape)
-            if excess == True:
-                err_lss_load["Analytical_Kalman"] = np.append(err_lss_load["Analytical_Kalman"],err_lss_load["Analytical_Kalman"][:,-1, np.newaxis], axis=-1)
-            print("shape of analytical kalman error:", err_lss_load["Analytical_Kalman"][:,0:3])
-            irreducible_error = [err_lss_load["Analytical_Kalman"][i][i] for i in range(num_systems)]
-            print("irreducible_error:", irreducible_error)
-            # The two commented lines below cause an error:
+            # print("shape of analytical kalman error:", err_lss_load["Analytical_Kalman"].shape)
+            # if excess == True:
+            #     err_lss_load["Analytical_Kalman"] = np.append(err_lss_load["Analytical_Kalman"],err_lss_load["Analytical_Kalman"][:,-1, np.newaxis], axis=-1)
+            # print("shape of analytical kalman error:", err_lss_load["Analytical_Kalman"][:,0:3])
+            # irreducible_error = [err_lss_load["Analytical_Kalman"][i][i] for i in range(num_systems)]
+            # print("irreducible_error:", irreducible_error)
+            #The two commented lines below cause an error:
             # with open("../data/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f: 
             #     pickle.dump(irreducible_error, f)
 
