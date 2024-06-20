@@ -26,3 +26,4 @@ config: {'seed': 0, 'fully_reproducible': False, 'num_tasks': 40, 'num_val_tasks
 2024-06-19 07:10:58,490 INFO    MainThread:30444 [wandb_run.py:_redirect():2294] Wrapping output streams.
 2024-06-19 07:10:58,490 INFO    MainThread:30444 [wandb_run.py:_redirect():2319] Redirects installed.
 2024-06-19 07:10:58,492 INFO    MainThread:30444 [wandb_init.py:init():838] run started, returning control to user process
+2024-06-19 22:42:58,606 WARNING MsgRouterThr:30444 [router.py:message_loop():77] message_loop has been closed

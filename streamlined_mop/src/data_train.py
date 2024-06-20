@@ -70,7 +70,7 @@ if __name__ == '__main__':
         run_deg_kf_test = False #run degenerate KF test
         excess = False #run the excess plots
         shade = True
-        config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240613_185537.cfa37a_unifA_unif_C_viktor/checkpoints/step=18000.ckpt")
+        config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240618_101949.96f4c1_upperTriA_unif_C/checkpoints/step=40000.ckpt")
         print("ckpt_path", config.ckpt_path)
 
         if resume_train:
