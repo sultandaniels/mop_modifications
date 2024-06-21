@@ -1,0 +1,72 @@
+GPU available: True (mps), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/configuration_validator.py:74: You defined a `validation_step` but have no `val_dataloader`. Skipping val loop.
+/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/lightning/pytorch/loggers/wandb.py:391: There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse this run. If this is not desired, call `wandb.finish()` before instantiating `WandbLogger`.
+  | Name      | Type      | Params
+----------------------------------------
+0 | _read_in  | Linear    | 768
+1 | _backbone | GPT2Model | 9.1 M
+2 | _read_out | Linear    | 645
+----------------------------------------
+9.1 M     Trainable params
+0         Non-trainable params
+9.1 M     Total params
+36.304    Total estimated model params size (MB)
+/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/connectors/data_connector.py:441: The 'train_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=7` in the `DataLoader` to improve performance.
+batch_size: 28
+train_steps: 400
+context length: 250
+num_tasks: 1000
+output_dir: ../outputs/GPT2/240620_132144.cdfa3a_upperTriA_gauss_C
+checkpoint_callback /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/streamlined_mop/outputs/GPT2/240620_132144.cdfa3a_upperTriA_gauss_C/checkpoints
+ckpt_path: ../outputs/GPT2/240620_132144.cdfa3a_upperTriA_gauss_C/checkpoints/step=400.ckpt
+Checkpoint file ../outputs/GPT2/240620_132144.cdfa3a_upperTriA_gauss_C/checkpoints/step=400.ckpt does not exist.
+
+
+
+
+
+
+Epoch 0:   3%| | 11/400 [00:13<08:12,  0.79it/s, v_num=vnyc, train_loss_mse_step
+/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py:54: Detected KeyboardInterrupt, attempting graceful shutdown...
+Traceback (most recent call last):
+  File "/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/streamlined_mop/src/data_train.py", line 131, in <module>
+    create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
+  File "/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/streamlined_mop/src/create_plots_with_zero_pred.py", line 577, in create_plots
+    save_preds(run_deg_kf_test, config) #save the predictions to a file
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/streamlined_mop/src/create_plots_with_zero_pred.py", line 462, in save_preds
+    err_lss, irreducible_error = compute_errors(config, config.C_dist, run_deg_kf_test, wentinn_data=False)  #, emb_dim)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/streamlined_mop/src/create_plots_with_zero_pred.py", line 205, in compute_errors
+    model = GPT2.load_from_checkpoint(config.ckpt_path,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/utilities/model_helpers.py", line 125, in wrapper
+    return self.method(cls, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/core/module.py", line 1581, in load_from_checkpoint
+    loaded = _load_from_checkpoint(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/pytorch_lightning/core/saving.py", line 63, in _load_from_checkpoint
+    checkpoint = pl_load(checkpoint_path, map_location=map_location)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/lightning_fabric/utilities/cloud_io.py", line 56, in _load
+    with fs.open(path_or_url, "rb") as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/fsspec/spec.py", line 1307, in open
+    f = self._open(
+        ^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/fsspec/implementations/local.py", line 180, in _open
+    return LocalFileOpener(path, mode, fs=self, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/fsspec/implementations/local.py", line 302, in __init__
+    self._open()
+  File "/Users/sultandaniels/anaconda3/envs/mop/lib/python3.12/site-packages/fsspec/implementations/local.py", line 307, in _open
+    self.f = open(self.path, mode=self.mode)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Epoch 0:   3%| | 12/400 [00:14<08:03,  0.80it/s, v_num=vnyc, train_loss_mse_stepckpt_path ../outputs/GPT2/240620_132144.cdfa3a_upperTriA_gauss_C/checkpoints/step=400.ckpt
+config path: ../outputs/GPT2/240620_132144.cdfa3a_upperTriA_gauss_C/checkpoints/step=400.ckpt
+Number of validation systems: 3
+Number of traces: 2000
