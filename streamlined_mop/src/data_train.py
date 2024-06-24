@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     config = Config() # create a config object
     # Get the class variables in dictionary format
-    config_dict = config_dict = {
+    config_dict  = {
         "seed": 0,
         "fully_reproducible": False,
         "num_tasks": 40,
@@ -63,6 +63,10 @@ if __name__ == '__main__':
         "gradient_clip_algorithm": 'norm',
         "gradient_clip_val": 1.0
     }
+    #change the num_tasks, num_val_tasks, dataset_typ, C_dist, nx, ny, n_noise, num_traces, train_steps, batch_size, train_data_workers, test_batch_size, test_data_workers, num_epochs, n_positions, n_embd, n_layer, n_head, n_dims_in, n_dims_out, changing, learning_rate, weight_decay, gradient_clip_algorithm, gradient_clip_val in config_dict to the values in config
+    config_attributes = list(config_dict.keys())
+    for key in config_attributes:
+        config_dict[key] = config.__getattribute__(key)
 
     if saved_preds:
         # create prediction plots
