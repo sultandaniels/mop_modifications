@@ -268,7 +268,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf], axis=-2)  # concatenate the predictions
             # print("preds_tf.shape:", preds_tf.shape)
     end = time.time() #end the timer for transformer predictions
-    print("time elapsed:", (end - start)/60, "min") #print the time elapsed for transformer predictions
+    print("time elapsed for MOP Pred:", (end - start)/60, "min") #print the time elapsed for transformer predictions
 
     errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
 
@@ -277,6 +277,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
     n_noise = config.n_noise
 
+    start = time.time() #start the timer for kalman filter predictions
     if run_deg_kf_test: #degenerate system KF Predictions
         #Kalman Filter Predictions
         preds_kf_list = []
@@ -310,6 +311,9 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
         ])  # get kalman filter predictions
         errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
+    
+    end = time.time() #end the timer for kalman filter predictions
+    print("time elapsed for KF Pred:", (end - start)/60, "min") #print the time elapsed for kalman filter predictions
 
     err_lss = collections.OrderedDict([
         ("Kalman", errs_kf),
@@ -323,6 +327,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
 
     #OLS and OLS_analytical
+    start = time.time() #start the timer for OLS predictions
     ir_length = 2
     if config.dataset_typ != "drone":
         preds_rls = []
@@ -356,24 +361,29 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
         err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
         err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
+    end = time.time() #end the timer for OLS predictions
+    print("time elapsed for OLS and OLS Analytical Pred:", (end - start)/60, "min") #print the time elapsed for OLS predictions
 
-       # OLS Wentinn
-        errs_rls_wentinn = []
-        for sim_obj, _ys in zip(sim_objs, ys):
-            _errs_rls_wentinn = []
-            for __ys in _ys:
-                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-                ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
-                rls_wentinn = CnnKF(config.ny, ir_length)
-                for i in range(config.n_positions - 1):
-                    rls_wentinn.update(
-                        torch.from_numpy(padded_ys[i:i + ir_length]),
-                        torch.from_numpy(padded_ys[i + ir_length])
-                    )
-                    ls.append(rls_wentinn.analytical_error(sim_obj).item())
-                _errs_rls_wentinn.append(ls)
-            errs_rls_wentinn.append(_errs_rls_wentinn)
-        err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
+    # OLS Wentinn
+    start = time.time() #start the timer for OLS Wentinn predictions
+    errs_rls_wentinn = []
+    for sim_obj, _ys in zip(sim_objs, ys):
+        _errs_rls_wentinn = []
+        for __ys in _ys:
+            padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+            ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+            rls_wentinn = CnnKF(config.ny, ir_length)
+            for i in range(config.n_positions - 1):
+                rls_wentinn.update(
+                    torch.from_numpy(padded_ys[i:i + ir_length]),
+                    torch.from_numpy(padded_ys[i + ir_length])
+                )
+                ls.append(rls_wentinn.analytical_error(sim_obj).item())
+            _errs_rls_wentinn.append(ls)
+        errs_rls_wentinn.append(_errs_rls_wentinn)
+    err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
+    end = time.time() #end the timer for OLS Wentinn predictions
+    print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
 
     #Original OLS
     for ir_length in range(1, 4):
