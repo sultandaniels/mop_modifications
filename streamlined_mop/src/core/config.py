@@ -20,7 +20,7 @@ class Config(object, metaclass=Singleton):
     fully_reproducible = False
 
     # Dataset settings
-    num_tasks = 1000 #number of training systems
+    num_tasks = 40000 #number of training systems
     num_val_tasks = 3 #number of test systems
     dataset_typ = "upperTriA" #"unifA" #"gaussA" #"rotDiagA" #"upperTriA"
     C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
@@ -30,8 +30,8 @@ class Config(object, metaclass=Singleton):
     num_traces = {"train": 1, "val": 2000}
 
     # Training settings
-    train_steps = 400 #number of training steps
-    train_int = 100 #number of steps between logging
+    train_steps = 40000 #number of training steps
+    train_int = 4000 #number of steps between logging
     batch_size = 28 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
     train_data_workers = 1 #set to 1 (check if it changes the speed of the training process)
     test_batch_size = 16 #256
