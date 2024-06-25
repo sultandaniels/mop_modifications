@@ -1,0 +1,54 @@
+batch_size: 28
+train_steps: 8
+context length: 250
+num_tasks: 40
+File size: 97266637 bytes
+File loaded successfully
+File size: 648612 bytes
+File loaded successfully
+output_dir: ../outputs/GPT2/240620_204702.f0a506_upperTriA_gauss_C
+checkpoint_callback /home/sultand/mop_modifications/outputs/GPT2/240620_204702.f0a506_upperTriA_gauss_C/checkpoints
+ckpt_path: ../outputs/GPT2/240620_204702.f0a506_upperTriA_gauss_C/checkpoints/step=8.ckpt
+Checkpoint file ../outputs/GPT2/240620_204702.f0a506_upperTriA_gauss_C/checkpoints/step=8.ckpt does not exist.
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/4
+LOCAL_RANK: 1 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+ckpt_path ../outputs/GPT2/240620_204702.f0a506_upperTriA_gauss_C/checkpoints/step=8.ckpt
+config path: ../outputs/GPT2/240620_204702.f0a506_upperTriA_gauss_C/checkpoints/step=8.ckpt
+Number of validation systems: 3
+Number of traces: 2000
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/sultand/mop_modifications/streamlined_mop/src/data_train.py", line 131, in <module>
+[rank1]:     create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
+[rank1]:   File "/home/sultand/mop_modifications/streamlined_mop/src/create_plots_with_zero_pred.py", line 577, in create_plots
+[rank1]:     save_preds(run_deg_kf_test, config) #save the predictions to a file
+[rank1]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/sultand/mop_modifications/streamlined_mop/src/create_plots_with_zero_pred.py", line 462, in save_preds
+[rank1]:     err_lss, irreducible_error = compute_errors(config, config.C_dist, run_deg_kf_test, wentinn_data=False)  #, emb_dim)
+[rank1]:                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/sultand/mop_modifications/streamlined_mop/src/create_plots_with_zero_pred.py", line 205, in compute_errors
+[rank1]:     model = GPT2.load_from_checkpoint(config.ckpt_path,
+[rank1]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/utilities/model_helpers.py", line 125, in wrapper
+[rank1]:     return self.method(cls, *args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/core/module.py", line 1586, in load_from_checkpoint
+[rank1]:     loaded = _load_from_checkpoint(
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/core/saving.py", line 63, in _load_from_checkpoint
+[rank1]:     checkpoint = pl_load(checkpoint_path, map_location=map_location)
+[rank1]:                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/lightning_fabric/utilities/cloud_io.py", line 56, in _load
+[rank1]:     with fs.open(path_or_url, "rb") as f:
+[rank1]:          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/fsspec/spec.py", line 1303, in open
+[rank1]:     f = self._open(
+[rank1]:         ^^^^^^^^^^^
+[rank1]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/fsspec/implementations/local.py", line 191, in _open
+[rank1]:     return LocalFileOpener(path, mode, fs=self, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/fsspec/implementations/local.py", line 355, in __init__
+[rank1]:     self._open()
+[rank1]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/fsspec/implementations/local.py", line 360, in _open
+[rank1]:     self.f = open(self.path, mode=self.mode)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]: FileNotFoundError: [Errno 2] No such file or directory: '/home/sultand/mop_modifications/streamlined_mop/../outputs/GPT2/240620_204702.f0a506_upperTriA_gauss_C/checkpoints/step=8.ckpt'
