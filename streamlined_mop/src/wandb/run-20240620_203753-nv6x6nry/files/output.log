@@ -1,0 +1,17 @@
+batch_size: 28
+train_steps: 8
+context length: 250
+num_tasks: 40
+Traceback (most recent call last):
+  File "/home/sultand/mop_modifications/streamlined_mop/src/data_train.py", line 122, in <module>
+    train_gpt2(model, config, output_dir) # train the model
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/mop_modifications/streamlined_mop/src/train.py", line 28, in train_gpt2
+    val_dset = FilterDataset(output_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", use_true_len=True) if os.path.exists(output_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl") else None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/mop_modifications/streamlined_mop/src/datasources/filter_dataset.py", line 13, in __init__
+    self.load(path)
+  File "/home/sultand/mop_modifications/streamlined_mop/src/datasources/filter_dataset.py", line 18, in load
+    file_size = os.path.getsize(path)
+                ^^
+NameError: name 'os' is not defined. Did you forget to import 'os'
