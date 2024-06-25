@@ -27,10 +27,10 @@ class Config(object, metaclass=Singleton):
     nx = 10
     ny = 5
     n_noise = 1
-    num_traces = {"train": 1, "val": 2}
+    num_traces = {"train": 1, "val": 2000}
 
     # Training settings
-    train_steps = 10 #number of training steps
+    train_steps = 40 #number of training steps
     train_int = 10 #number of steps between logging
     batch_size = 28 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
     train_data_workers = 1 #set to 1 (check if it changes the speed of the training process)
