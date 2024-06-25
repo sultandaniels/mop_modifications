@@ -1,0 +1,22 @@
+batch_size: 28
+train_steps: 200
+context length: 250
+num_tasks: 40000
+output_dir: ../outputs/GPT2/240619_200757.535c3c_upperTriA_gauss_C
+Traceback (most recent call last):
+  File "/home/sultand/mop_modifications/streamlined_mop/src/data_train.py", line 122, in <module>
+    train_gpt2(model, config, output_dir) # train the model
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/mop_modifications/streamlined_mop/src/train.py", line 35, in train_gpt2
+    callbacks, loggers = training.get_callbacks_and_loggers(output_dir, config.train_int)#, config.n_embd)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/mop_modifications/streamlined_mop/src/core/training.py", line 115, in get_callbacks_and_loggers
+    tb_logger = pl_loggers.TensorBoardLogger(output_dir)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loggers/tensorboard.py", line 99, in __init__
+    super().__init__(
+  File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/lightning_fabric/loggers/tensorboard.py", line 95, in __init__
+    raise ModuleNotFoundError(
+ModuleNotFoundError: Neither `tensorboard` nor `tensorboardX` is available. Try `pip install`ing either.
+DistributionNotFound: The 'tensorboardX' distribution was not found and is required by the application. HINT: Try running `pip install -U 'tensorboardX'`
+DistributionNotFound: The 'tensorboard' distribution was not found and is required by the application. HINT: Try running `pip install -U 'tensorboard'`

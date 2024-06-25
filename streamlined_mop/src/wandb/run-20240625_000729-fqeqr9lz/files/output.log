@@ -1,0 +1,107 @@
+batch_size: 28
+train_steps: 40
+context length: 250
+num_tasks: 40
+output_dir: ../outputs/GPT2/240625_000729.f97d3c_upperTriA_gauss_C
+checkpoint_callback /home/sultand/mop_modifications/streamlined_mop/outputs/GPT2/240625_000729.f97d3c_upperTriA_gauss_C/checkpoints
+ckpt_path: ../outputs/GPT2/240625_000729.f97d3c_upperTriA_gauss_C/checkpoints/step=40.ckpt
+Checkpoint file ../outputs/GPT2/240625_000729.f97d3c_upperTriA_gauss_C/checkpoints/step=40.ckpt does not exist.
+Initializing distributed: GLOBAL_RANK: 3, MEMBER: 4/4
+LOCAL_RANK: 3 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/sultand/mop_modifications/streamlined_mop/src/data_train.py", line 126, in <module>
+[rank3]:     train_gpt2(model, config, output_dir) # train the model
+[rank3]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/mop_modifications/streamlined_mop/src/train.py", line 67, in train_gpt2
+[rank3]:     trainer.fit(model, datamodule=datamodule)
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 543, in fit
+[rank3]:     call._call_and_handle_interrupt(
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py", line 43, in _call_and_handle_interrupt
+[rank3]:     return trainer.strategy.launcher.launch(trainer_fn, *args, trainer=trainer, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/strategies/launchers/subprocess_script.py", line 105, in launch
+[rank3]:     return function(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 579, in _fit_impl
+[rank3]:     self._run(model, ckpt_path=ckpt_path)
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 986, in _run
+[rank3]:     results = self._run_stage()
+[rank3]:               ^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 1030, in _run_stage
+[rank3]:     self.fit_loop.run()
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/fit_loop.py", line 205, in run
+[rank3]:     self.advance()
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/fit_loop.py", line 363, in advance
+[rank3]:     self.epoch_loop.run(self._data_fetcher)
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 140, in run
+[rank3]:     self.advance(data_fetcher)
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 250, in advance
+[rank3]:     batch_output = self.automatic_optimization.run(trainer.optimizers[0], batch_idx, kwargs)
+[rank3]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 190, in run
+[rank3]:     self._optimizer_step(batch_idx, closure)
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 268, in _optimizer_step
+[rank3]:     call._call_lightning_module_hook(
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py", line 159, in _call_lightning_module_hook
+[rank3]:     output = fn(*args, **kwargs)
+[rank3]:              ^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/core/module.py", line 1308, in optimizer_step
+[rank3]:     optimizer.step(closure=optimizer_closure)
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/core/optimizer.py", line 153, in step
+[rank3]:     step_output = self._strategy.optimizer_step(self._optimizer, closure, **kwargs)
+[rank3]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/strategies/ddp.py", line 270, in optimizer_step
+[rank3]:     optimizer_output = super().optimizer_step(optimizer, closure, model, **kwargs)
+[rank3]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/strategies/strategy.py", line 238, in optimizer_step
+[rank3]:     return self.precision_plugin.optimizer_step(optimizer, model=model, closure=closure, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/plugins/precision/precision.py", line 122, in optimizer_step
+[rank3]:     return optimizer.step(closure=closure, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/torch/optim/optimizer.py", line 391, in wrapper
+[rank3]:     out = func(*args, **kwargs)
+[rank3]:           ^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/torch/optim/optimizer.py", line 76, in _use_grad
+[rank3]:     ret = func(self, *args, **kwargs)
+[rank3]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/torch/optim/adamw.py", line 165, in step
+[rank3]:     loss = closure()
+[rank3]:            ^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/plugins/precision/precision.py", line 108, in _wrap_closure
+[rank3]:     closure_result = closure()
+[rank3]:                      ^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 144, in __call__
+[rank3]:     self._result = self.closure(*args, **kwargs)
+[rank3]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+[rank3]:     return func(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 129, in closure
+[rank3]:     step_output = self._step_fn()
+[rank3]:                   ^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 317, in _training_step
+[rank3]:     training_step_output = call._call_strategy_hook(trainer, "training_step", *kwargs.values())
+[rank3]:                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py", line 311, in _call_strategy_hook
+[rank3]:     output = fn(*args, **kwargs)
+[rank3]:              ^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/strategies/strategy.py", line 389, in training_step
+[rank3]:     return self._forward_redirection(self.model, self.lightning_module, "training_step", *args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/strategies/strategy.py", line 640, in __call__
+[rank3]:     wrapper_output = wrapper_module(*args, **kwargs)
+[rank3]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1589, in forward
+[rank3]:     inputs, kwargs = self._pre_forward(*inputs, **kwargs)
+[rank3]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1480, in _pre_forward
+[rank3]:     if torch.is_grad_enabled() and self.reducer._rebuild_buckets():
+[rank3]:                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]: RuntimeError: It looks like your LightningModule has parameters that were not used in producing the loss returned by training_step. If this is intentional, you must enable the detection of unused parameters in DDP, either by setting the string value `strategy='ddp_find_unused_parameters_true'` or by setting the flag in the strategy with `strategy=DDPStrategy(find_unused_parameters=True)`.

@@ -50,13 +50,14 @@ def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the
     wandb_logger = WandbLogger(log_model="all")
     trainer = pl.Trainer(
         accelerator="gpu",
+        devices =2,
         callbacks=callbacks,
         logger=wandb_logger,
         gradient_clip_algorithm=config.gradient_clip_algorithm,
         gradient_clip_val=config.gradient_clip_val,
         log_every_n_steps=50,
         max_epochs=config.num_epochs,
-        # strategy=DDPStrategy(find_unused_parameters=True) #only for BLISS GPUs
+        strategy=DDPStrategy(find_unused_parameters=True) #only for BLISS GPUs
     )
     # time how long it takes to train the model
     time_start = time.time()

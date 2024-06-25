@@ -1,0 +1,69 @@
+batch_size: 28
+train_steps: 200
+context length: 250
+num_tasks: 25
+output_dir: ../outputs/GPT2/240619_211427.2079cd_upperTriA_gauss_C
+checkpoint_callback /home/sultand/mop_modifications/streamlined_mop/outputs/GPT2/240619_211427.2079cd_upperTriA_gauss_C/checkpoints
+ckpt_path: ../outputs/GPT2/240619_211427.2079cd_upperTriA_gauss_C/checkpoints/step=200.ckpt
+Checkpoint file ../outputs/GPT2/240619_211427.2079cd_upperTriA_gauss_C/checkpoints/step=200.ckpt does not exist.
+Epoch 0:   0%|                                                                                                                                       | 0/200 [00:00<?, ?it/s]
+GPU available: False, used: False
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/configuration_validator.py:70: You defined a `validation_step` but have no `val_dataloader`. Skipping val loop.
+/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/lightning/pytorch/loggers/wandb.py:396: There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse this run. If this is not desired, call `wandb.finish()` before instantiating `WandbLogger`.
+  | Name      | Type      | Params | Mode
+------------------------------------------------
+0 | _read_in  | Linear    | 768    | train
+1 | _backbone | GPT2Model | 9.1 M  | train
+2 | _read_out | Linear    | 645    | train
+------------------------------------------------
+9.1 M     Trainable params
+0         Non-trainable params
+9.1 M     Total params
+36.304    Total estimated model params size (MB)
+
+
+
+
+Epoch 0:   2%| | 4/200 [00:33<27:06,  0.12it/s, v_num=inia, train_loss_mse_step=6.380, train_metric_mse_ts0_dim_0_step=2.380, train_metric_mse_ts0_dim_1_step=9.140, train_me
+/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py:54: Detected KeyboardInterrupt, attempting graceful shutdown...
+Traceback (most recent call last):
+  File "/home/sultand/mop_modifications/streamlined_mop/src/data_train.py", line 131, in <module>
+    create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
+  File "/home/sultand/mop_modifications/streamlined_mop/src/create_plots_with_zero_pred.py", line 577, in create_plots
+    save_preds(run_deg_kf_test, config) #save the predictions to a file
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/mop_modifications/streamlined_mop/src/create_plots_with_zero_pred.py", line 462, in save_preds
+    err_lss, irreducible_error = compute_errors(config, config.C_dist, run_deg_kf_test, wentinn_data=False)  #, emb_dim)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/mop_modifications/streamlined_mop/src/create_plots_with_zero_pred.py", line 205, in compute_errors
+    model = GPT2.load_from_checkpoint(config.ckpt_path,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/utilities/model_helpers.py", line 125, in wrapper
+    return self.method(cls, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/core/module.py", line 1586, in load_from_checkpoint
+    loaded = _load_from_checkpoint(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/pytorch_lightning/core/saving.py", line 63, in _load_from_checkpoint
+    checkpoint = pl_load(checkpoint_path, map_location=map_location)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/lightning_fabric/utilities/cloud_io.py", line 56, in _load
+    with fs.open(path_or_url, "rb") as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/fsspec/spec.py", line 1303, in open
+    f = self._open(
+        ^^^^^^^^^^^
+  File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/fsspec/implementations/local.py", line 191, in _open
+    return LocalFileOpener(path, mode, fs=self, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/fsspec/implementations/local.py", line 355, in __init__
+    self._open()
+  File "/home/sultand/.conda/envs/mop/lib/python3.12/site-packages/fsspec/implementations/local.py", line 360, in _open
+    self.f = open(self.path, mode=self.mode)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Epoch 0:   2%| | 4/200 [00:33<27:06,  0.12it/s, v_num=inia, train_loss_mse_step=6.380, train_metric_mse_ts0_dim_0_step=2.380, train_metric_mse_ts0_dim_1_step=9.140, train_meckpt_path ../outputs/GPT2/240619_211427.2079cd_upperTriA_gauss_C/checkpoints/step=200.ckpt
+config path: ../outputs/GPT2/240619_211427.2079cd_upperTriA_gauss_C/checkpoints/step=200.ckpt
+Number of validation systems: 3
+Number of traces: 2000
