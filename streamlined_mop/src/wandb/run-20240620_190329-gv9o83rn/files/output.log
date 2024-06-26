@@ -1,8 +1,0 @@
-batch_size: 28
-train_steps: 40000
-context length: 250
-num_tasks: 40000
-output_dir: ../outputs/GPT2/240620_185917.1e49ad_upperTriA_gauss_C
-checkpoint_callback /home/sultand/mop_modifications/streamlined_mop/outputs/GPT2/240620_185917.1e49ad_upperTriA_gauss_C/checkpoints
-ckpt_path: ../outputs/GPT2/240620_185917.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt
-Checkpoint file ../outputs/GPT2/240620_185917.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt does not exist.

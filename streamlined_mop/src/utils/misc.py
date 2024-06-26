@@ -97,6 +97,29 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                 print("Zero (time avergaged mean)/(irreducible): ", err_rat[1])
     return handles, err_rat
 
+def plot_errs_conv(colors, sys, err_lss, err_irreducible, train_steps, legend_loc="upper right", ax=None, shade=True, normalized=True):
+    print("\n\n\nSYS", sys)
+    err_rat = np.zeros(2)
+    if ax is None:
+        fig = plt.figure(figsize=(15, 9))
+        ax = fig.add_subplot(111)
+    ax.set_yscale('log')
+    ax.grid()
+    handles = []
+    count = 0
+    for i, (name, err_ls) in enumerate(err_lss.items()):
+        print("name", name)
+        print("err_ls.shape", err_ls.shape)
+        if name == "MOP":
+            count += 1
+            print("count:", count)
+            print("\n\nplotting MOP at step:", train_steps, "\n\n")
+            avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
+            handles.extend(ax.plot(avg, label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else "."))#, color = colors[i]))
+            if shade:
+                ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
+    return handles, err_rat
+
 
 def spectrum(A, k):
     spec_rad = np.max(np.abs(np.linalg.eigvals(A)))

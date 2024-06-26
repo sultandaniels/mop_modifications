@@ -14,7 +14,7 @@ import gc
 from core import Config
 from dyn_models import apply_kf, generate_lti_sample, generate_changing_lti_sample
 from models import GPT2, CnnKF
-from utils import RLS, plot_errs
+from utils import RLS, plot_errs, plot_errs_conv
 import pickle
 import math
 from tensordict import TensorDict
@@ -200,7 +200,6 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     print("Number of validation systems:", num_systems)
     num_trials = config.num_traces["val"]  # number of traces
     print("Number of traces:", num_trials)
-
 
     model = GPT2.load_from_checkpoint(config.ckpt_path,
                                       n_dims_in=config.n_dims_in, n_positions=config.n_positions,
@@ -481,17 +480,21 @@ def save_preds(run_deg_kf_test, config):
     parent_parent_dir = os.path.dirname(parent_dir)
     print("parent_parent_dir:", parent_parent_dir)
 
-    os.makedirs(parent_parent_dir + "/prediction_errors" + config.C_dist, exist_ok=True)
+    #get the step size from the ckpt_path
+    step_size = config.ckpt_path.split("/")[-1].split("_")[-1]
+    print("step_size:", step_size)
+
+    os.makedirs(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size, exist_ok=True)
     if run_deg_kf_test:
         #save err_lss and irreducible_error to a file
         with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss_deg_kf_test.pkl", "wb") as f:
             pickle.dump(err_lss, f)
     else:
         #save err_lss and irreducible_error to a file
-        with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss.pkl", "wb") as f:
+        with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl", "wb") as f:
             pickle.dump(err_lss, f)
 
-    with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
+    with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
         pickle.dump(irreducible_error, f)  
 
 def load_preds(run_deg_kf_test, excess, num_systems, config):
@@ -505,27 +508,21 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
     parent_parent_dir = os.path.dirname(parent_dir)
     print("parent_parent_dir:", parent_parent_dir)
 
-    #FIGURE OUT WHAT'S GOING ON HERE
+    #get the step size from the ckpt_path
+    step_size = config.ckpt_path.split("/")[-1].split("_")[-1]
+    print("step_size:", step_size)
+
     if run_deg_kf_test:
         with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss_deg_kf_test.pkl", "rb") as f:
             err_lss_load = pickle.load(f)
             print("len(err_lss_load):", len(err_lss_load))
     else:
-        with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
+        with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
             err_lss_load = pickle.load(f)
-            # print("shape of analytical kalman error:", err_lss_load["Analytical_Kalman"].shape)
-            # if excess == True:
-            #     err_lss_load["Analytical_Kalman"] = np.append(err_lss_load["Analytical_Kalman"],err_lss_load["Analytical_Kalman"][:,-1, np.newaxis], axis=-1)
-            # print("shape of analytical kalman error:", err_lss_load["Analytical_Kalman"][:,0:3])
-            # irreducible_error = [err_lss_load["Analytical_Kalman"][i][i] for i in range(num_systems)]
-            # print("irreducible_error:", irreducible_error)
-            #The two commented lines below cause an error:
-            # with open("../data/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f: 
-            #     pickle.dump(irreducible_error, f)
 
     print("err_lss_load keys:", err_lss_load.keys())
 
-    with open(parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_irreducible_error.pkl", "rb") as f:
+    with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl", "rb") as f:
         irreducible_error_load = pickle.load(f)
     
     print(irreducible_error_load)
@@ -586,14 +583,13 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
         print("config path:", config.ckpt_path)
         save_preds(run_deg_kf_test, config) #save the predictions to a file
 
-
     #load the prediction errors from the file
     err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
 
     if run_deg_kf_test:
         cos_sims, err_ratios, zero_ratios, deg_fig, axs = setup_deg_kf_axs_arrs(num_systems)
 
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#bcbd00', '#d00960']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#00ced1', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#7D00BD', '#d00960']
 
     print("len(err_lss_load):", len(err_lss_load))
     for sys in range(len(irreducible_error_load)):
@@ -754,7 +750,9 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
                 ax.grid(which="both")
                 ax.tick_params(axis='both', which='major', labelsize=30)
                 ax.tick_params(axis='both', which='minor', labelsize=20)
-                ax.set_ylim(bottom=10**(-0.7), top=3*10**(0))
+
+                ax.set_ylim(bottom=10**(-0.7), top=1*10**(2)) #set the y axis limits
+
                 ax.set_title("System " + str(sys)+ (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (": Upper Triangular A " if config.dataset_typ == "upperTriA" else (": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")), fontsize=20)
                 # ax.set_xlim(left=0, right=10)
 
@@ -828,6 +826,46 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
         # ax.set_xlim(left=0, right=10)
         os.makedirs(parent_parent_dir + f"/figures", exist_ok=True)
         fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff" + ("-changing" if config.changing else "_excess"))
+    
+    return None
+
+def convergence_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade, fig, ax):
+    C_dist = config.C_dist
+    print("\n\n", "config path:", config.ckpt_path)
+    if run_preds:
+        print("\n\nRunning predictions")
+        save_preds(run_deg_kf_test, config) #save the predictions to a file
+    print("\n\nLoading predictions")
+    #load the prediction errors from the file
+    err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
+
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#bcbd00', '#d00960']
+    print("\n\nPlotting predictions")
+    for sys in range(len(irreducible_error_load)):            
+        #plot transformer, KF and FIR errors
+        #get the checkpoint steps number from the checkpoint path
+        ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
+        print("\n\nckpt_steps:", ckpt_steps)
+        handles, err_rat = plot_errs_conv(colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, ax=ax[sys], shade=shade, normalized=excess)
+        print("len of handles:", len(handles))
+        # ax.legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/1))
+        ax[sys].legend(fontsize=18, loc="upper right", ncol=1)
+        ax[sys].set_xlabel("t", fontsize=30)
+        ax[sys].set_ylabel("Prediction Error", fontsize=30)
+        ax[sys].grid(which="both")
+        ax[sys].tick_params(axis='both', which='major', labelsize=30)
+        ax[sys].tick_params(axis='both', which='minor', labelsize=20)
+        ax[sys].set_ylim(bottom=10**(-0.7), top=3*10**(0))
+        ax[sys].set_title("System " + str(sys)+ (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (": Upper Triangular A " if config.dataset_typ == "upperTriA" else (": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")), fontsize=20)
+        # ax.set_xlim(left=0, right=10)
+
+        #get the parent directory of the ckpt_path
+        parent_dir = os.path.dirname(config.ckpt_path)
+
+        #get the parent directory of the parent directory
+        parent_parent_dir = os.path.dirname(parent_dir)
+        os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_conv_" + str(sys) + ("-changing" if config.changing else ""))
     
     return None
 
