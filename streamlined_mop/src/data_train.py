@@ -4,9 +4,10 @@ from core import Config
 from train import train_gpt2
 from core import setup_train
 import os
-from create_plots_with_zero_pred import create_plots
+from create_plots_with_zero_pred import create_plots, convergence_plots
 import argparse
 import wandb
+import matplotlib.pyplot as plt
 
 # main function
 
@@ -19,6 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--saved_preds', help='Boolean. Just plot the errors for a previously evaluated checkpoint', action='store_true')
     parser.add_argument('--make_preds', help='Boolean. Run predictions and plot the errors for a previously trained checkpoint', action='store_true')
     parser.add_argument('--resume_train', help='Boolean. Resume training from a specific checkpoint', action='store_true')
+    parser.add_argument('--train_conv', help='Boolean. make predictions for all checkpoints', action='store_true')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -30,6 +32,8 @@ if __name__ == '__main__':
     make_preds = args.make_preds
     print("resume train arg", args.resume_train)
     resume_train = args.resume_train
+    print("train conv arg", args.train_conv)
+    train_conv = args.train_conv
 
 
     config = Config() # create a config object
@@ -74,7 +78,7 @@ if __name__ == '__main__':
         run_deg_kf_test = False #run degenerate KF test
         excess = False #run the excess plots
         shade = True
-        config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240618_101949.96f4c1_upperTriA_unif_C/checkpoints/step=40000.ckpt")
+        config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
         print("ckpt_path", config.ckpt_path)
 
         if resume_train:
@@ -97,8 +101,24 @@ if __name__ == '__main__':
                 config=config_dict,
             )
             train_gpt2(model, config, output_dir) # train the model
-
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
+    elif train_conv:
+        # create prediction plots
+        run_preds = make_preds
+        run_deg_kf_test = False
+        excess = False
+        shade = True
+
+        #for loop to iterate through all the checkpoints in the output directory
+        output_dir = "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
+        fig, axs = plt.subplots(1, 3, figsize=(40, 5))  # 1 row, 3 columns, with a figure size of 15x5 inches
+        filecount = 0
+        for filename in os.listdir(output_dir + "/checkpoints/"):
+            filecount += 1
+            print("filecount:", filecount)
+            config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
+            print("\n\n\nckpt_path", config.ckpt_path)
+            convergence_plots(config, run_preds, run_deg_kf_test, excess, config.num_val_tasks, shade, fig, axs)
     else:
         # instantiate gpt2 model
         model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,

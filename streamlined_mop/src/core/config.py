@@ -22,12 +22,12 @@ class Config(object, metaclass=Singleton):
     # Dataset settings
     num_tasks = 400 #number of training systems
     num_val_tasks = 3 #number of test systems
-    dataset_typ = "gaussA" #"unifA" #"gaussA" #"rotDiagA" #"upperTriA"
+    dataset_typ = "upperTriA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA"
     C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
     nx = 10
     ny = 5
     n_noise = 1
-    num_traces = {"train": 1, "val": 2}
+    num_traces = {"train": 1, "val": 2000}
 
     # Training settings
     train_steps = 10 #number of training steps
