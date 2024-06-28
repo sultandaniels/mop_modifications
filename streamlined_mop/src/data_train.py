@@ -110,7 +110,7 @@ if __name__ == '__main__':
         shade = True
 
         #for loop to iterate through all the checkpoints in the output directory
-        output_dir = "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
+        output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
         fig, axs = plt.subplots(1, 3, figsize=(40, 5))  # 1 row, 3 columns, with a figure size of 15x5 inches
         filecount = 0
         for filename in os.listdir(output_dir + "/checkpoints/"):

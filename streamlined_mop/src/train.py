@@ -50,7 +50,7 @@ def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the
     wandb_logger = WandbLogger(log_model="all")
     trainer = pl.Trainer(
         accelerator="gpu",
-        devices =2,
+        devices =1,
         callbacks=callbacks,
         logger=wandb_logger,
         gradient_clip_algorithm=config.gradient_clip_algorithm,
