@@ -25,7 +25,7 @@ def collect_data(model, config, output_dir):
         sim_objs = [] #make sure that train and val sim_objs are different
         print("Generating", num_tasks, "samples for", name)
         for i in tqdm(range(num_tasks)):
-            fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ, config.num_traces[name], config.n_positions, config.nx, config.ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
+            fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ, config.num_traces[name], config.n_positions, config.nx, config.ny, sigma_w=config.sigma_w, sigma_v=config.sigma_v, n_noise=config.n_noise)
                     
             repeated_A = np.repeat(sample["A"][np.newaxis,:,:], config.num_traces[name], axis=0) #repeat the A matrix for each trace
             sample["A"] = repeated_A #repeat the A matrix for each trace
@@ -43,3 +43,9 @@ def collect_data(model, config, output_dir):
         #save fsim to pickle file
         with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "wb") as f:
             pickle.dump(sim_objs, f)
+
+if __name__ == "__main__":
+    config = Config()
+    output_dir = "streamlined_mop/src/kalman_exploration"
+
+    collect_data(None, config, output_dir)
