@@ -111,7 +111,7 @@ class FilterSim:
             A /= np.max(np.abs(np.linalg.eigvals(A)))
             self.A = A * 0.95 #scale the matrix
         elif tri == "gaussA_noscale":
-            A = np.sqrt(0.33)*np.random.randn(nx, nx) #same second moment as uniform(-1,1)
+            self.A = np.sqrt(0.33)*np.random.randn(nx, nx) #same second moment as uniform(-1,1)
         else:
             if new_eig:
                 self.A = gen_A(0.97, 0.99, nx)
