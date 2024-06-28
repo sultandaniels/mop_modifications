@@ -49,35 +49,17 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
     for i, (name, err_ls) in enumerate(err_lss.items()):
         print("name", name)
         print("err_ls.shape", err_ls.shape)
-        # if name != "Analytical_Kalman":
-        #     traj_errs = err_ls.sum(axis=-1)
-        #     print("traj_errs.shape", traj_errs.shape)
-        #     print(name, "{:.2f}".format(traj_errs.mean(axis=(0, 1))))
-        # else:
-        #     print(name, "{:.2f}".format(err_ls[0]))
         if normalized:
             t = np.arange(1, err_ls.shape[-1])
             # if name != "Kalman" and name != "Analytical_Kalman":
             if name == "OLS_ir_length1" or name == "OLS_ir_length2" or name == "OLS_ir_length3" or name == "MOP": 
-                normalized_err = (err_ls - err_lss["Kalman"])#np.repeat(err_lss["Analytical_Kalman"][:,np.newaxis,:], err_ls.shape[1], axis=1 )) #/ np.expand_dims(err_irreducible, axis=tuple(range(1, err_ls.ndim)))
-
-                # #bootstrapping normalized_err
-                # np.random.choice(normalized_err, size=None, replace=True, p=None)
+                normalized_err = (err_ls - err_lss["Kalman"])
 
                 q1, median, q3 = np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2)
-                print("q1[10]", q1[10])
-                print("median[10]", median[10])
-                print("q3[10]", q3[10])
-                # print("shape of np.quantile(normalized_err, [0.25, 0.5, 0.75], axis=-2)", np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2).shape)
-                # print("shape of np.quantile(normalized_err, [0.25, 0.5, 0.75], axis=-2).mean(axis=1)", np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2).mean(axis=1).shape)
-                #scale by the median of the first index
                 scale = median[1]
                 q1 = q1/scale
                 median = median/scale
                 q3 = q3/scale
-                print("q1[10]", q1[10])
-                print("median[10]", median[10])
-                print("q3[10]", q3[10])
                 handles.extend(ax.plot(t, median[1:], label=name + " sys: " + str(sys), linewidth=3))
                 if shade:
                     ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
@@ -125,11 +107,11 @@ def spectrum(A, k):
     spec_rad = np.max(np.abs(np.linalg.eigvals(A)))
     return np.linalg.norm(np.linalg.matrix_power(A, k)) / spec_rad ** k
 
-
 def batch_trace(x: torch.Tensor) -> torch.Tensor:
+    # Ensure x has at least two dimensions
+    if x.ndim < 2:
+        raise ValueError("Input tensor x must have at least two dimensions")
     return x.diagonal(dim1=-2, dim2=-1).sum(dim=-1)
-
-
 class RLSSingle:
     def __init__(self, ni, lam=1):
         self.lam = lam
@@ -143,6 +125,30 @@ class RLSSingle:
         self.mu = self.mu + z * (y - alpha * x.T @ wp)
         self.P -= alpha * np.outer(z, z)
 
+    def add_data_tensor(self, x, y):
+        # Convert self.P to a torch.Tensor
+        P_tensor = torch.tensor(self.P, dtype=x.dtype, device=x.device)
+        # Perform matrix multiplication
+        z = P_tensor @ x / self.lam
+        # Before performing the matrix operation, ensure x is a 2-D tensor
+        x = x.unsqueeze(0) if x.ndim == 1 else x
+        # Ensure x is a 2-D tensor, for example, of shape (10, 1) so that x.mT will be (1, 10)
+        x = x.reshape(-1, 1) if x.ndim == 1 else x
+
+        # Ensure z is a 2-D tensor of shape (10, 1) if it's not already
+        z = z.reshape(-1, 1) if z.ndim == 1 else z
+
+        # Now perform the matrix multiplication
+        result = x.mT @ z
+        # Ensure the result of x.T @ z has at least two dimensions
+        if result.ndim < 2:
+            # Reshape result to have at least two dimensions
+            result = result.unsqueeze(0)
+            print("shape of result", result.shape)
+        alpha = 1 / (1 + batch_trace(result))
+        wp = self.mu + y * z
+        self.mu = self.mu + z * (y - alpha * batch_trace(x.T @ wp))
+        self.P -= alpha * torch.ger(z, z)
 
 class RLS:
     def __init__(self, ni, no, lam=1):
@@ -151,6 +157,10 @@ class RLS:
     def add_data(self, x, y):
         for _y, rls in zip(y, self.rlss):
             rls.add_data(x, _y)
+
+    def add_data_tensor(self, x, y):
+        for _y, rls in zip(y, self.rlss):
+            rls.add_data_tensor(x, _y)
 
     def predict(self, x):
         return np.array([rls.mu @ x for rls in self.rlss])
