@@ -191,6 +191,143 @@ def wentinn_compute_errors(config):
 
 ####################################################################################################
 
+def compute_OLS_and_OLS_analytical(config, ys, sim_objs, ir_length, err_lss):
+    preds_rls = []
+    preds_rls_analytical = []
+    for sim_obj, _ys in zip(sim_objs, ys):
+        _preds_rls = []
+        _preds_rls_analytical = []
+        for __ys in _ys:
+            ls = [np.zeros(config.ny)]
+            ls_analytical = [np.linalg.norm(__ys[0], axis=-1) ** 2]
+            rls = RLS(config.nx, config.ny)
+            for i in range(_ys.shape[-2] - 1):
+                if i < 2:
+                    ls.append(__ys[i])
+                    ls_analytical.append(np.linalg.norm(__ys[i + 1], axis=-1) ** 2)
+                else:
+                    rls.add_data(__ys[i - 2:i].flatten(), __ys[i])
+                    _cnn_rls = CnnKF(config.ny, ir_length)
+                    _cnn_rls.observation_IR.data = torch.from_numpy(np.stack([_rls.mu for _rls in rls.rlss], axis=-1)
+                                                                    .reshape(ir_length, config.ny, config.ny)
+                                                                    .transpose(1, 0, 2)[:, ::-1].copy())
+                    ls.append(rls.predict(__ys[i - 1:i + 1].flatten()))
+                    ls_analytical.append(_cnn_rls.analytical_error(sim_obj).item())
+
+            _preds_rls.append(ls)
+            _preds_rls_analytical.append(ls_analytical)
+
+        preds_rls.append(_preds_rls)
+        preds_rls_analytical.append(_preds_rls_analytical)
+
+    err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
+    err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
+    return err_lss
+
+def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_lss):
+    # Ensure PyTorch version supports MPS and MPS is available
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")  # Fallback to CPU if MPS is not available
+    preds_rls = []
+    preds_rls_analytical = []
+    for sim_obj, _ys in zip(sim_objs, ys):
+        _preds_rls = []
+        _preds_rls_analytical = []
+        for __ys in _ys:
+            # Convert numpy arrays to tensors and move to MPS
+            __ys_tensor = torch.from_numpy(__ys).to(device)
+            ls = [torch.zeros(config.ny, device=device)]
+            ls_analytical = [torch.linalg.norm(__ys_tensor[0], axis=-1) ** 2]
+            rls = RLS(config.nx, config.ny)  # Assuming RLS can handle MPS tensors
+            for i in range(__ys_tensor.shape[-2] - 1):
+                if i < 2:
+                    ls.append(__ys_tensor[i])
+                    ls_analytical.append(torch.linalg.norm(__ys_tensor[i + 1], axis=-1) ** 2)
+                else:
+                    rls.add_data_tensor(__ys_tensor[i - 2:i].flatten(), __ys_tensor[i])
+                    _cnn_rls = CnnKF(config.ny, ir_length)
+                    # Ensure _cnn_rls can handle MPS tensors
+                    _cnn_rls.observation_IR.data = torch.stack([_rls.mu for _rls in rls.rlss], axis=-1).reshape(ir_length, config.ny, config.ny).transpose(1, 0, 2)[:, ::-1].copy().to(device)
+                    ls.append(rls.predict(__ys_tensor[i - 1:i + 1].flatten()))
+                    ls_analytical.append(_cnn_rls.analytical_error(sim_obj).item())
+
+            _preds_rls.append(ls)
+            _preds_rls_analytical.append(ls_analytical)
+
+        preds_rls.append(_preds_rls)
+        preds_rls_analytical.append(_preds_rls_analytical)
+
+    # Convert predictions back to CPU and numpy for final operations
+    preds_rls = [torch.stack(pred).cpu().numpy() for pred in preds_rls]
+    preds_rls_analytical = [torch.tensor(pred).cpu().numpy() for pred in preds_rls_analytical]
+
+    err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
+    err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
+    return err_lss
+
+def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
+    for ir_length in range(1, max_ir_length + 1):
+        start = time.time()
+        print(f"\n\nIR length: {ir_length}")
+        preds_rls_wentinn = []
+        preds_rls_wentinn_analytical = []
+        for sim_obj, _ys in zip(sim_objs, ys):
+            _preds_rls_wentinn = []
+            _preds_rls_wentinn_analytical = []
+            for __ys in _ys:
+                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+                ls = list(np.zeros((2, config.ny)))
+                ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+
+                rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
+                for i in range(config.n_positions - 1):
+                    rls_wentinn.update(
+                        torch.from_numpy(padded_ys[i:i + ir_length]),
+                        torch.from_numpy(padded_ys[i + ir_length])
+                    )
+
+                    ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
+                    ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+
+                _preds_rls_wentinn.append(ls)
+                _preds_rls_wentinn_analytical.append(ls_analytical)
+
+            preds_rls_wentinn.append(_preds_rls_wentinn)
+            preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
+
+        err_lss[f"OLS_ir_length{ir_length}_orig"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+        end = time.time()
+        print("time elapsed:", (end - start)/60, "min")
+        return err_lss
+    
+def compute_OLS_wentinn(config, ys, sim_objs, ir_length, err_lss):
+    errs_rls_wentinn = []
+    for sim_obj, _ys in zip(sim_objs, ys):
+        _errs_rls_wentinn = []
+        for __ys in _ys:
+            padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+            ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+            rls_wentinn = CnnKF(config.ny, ir_length)
+            for i in range(config.n_positions - 1):
+                rls_wentinn.update(
+                    torch.from_numpy(padded_ys[i:i + ir_length]),
+                    torch.from_numpy(padded_ys[i + ir_length])
+                )
+                ls.append(rls_wentinn.analytical_error(sim_obj).item())
+            _errs_rls_wentinn.append(ls)
+        errs_rls_wentinn.append(_errs_rls_wentinn)
+    err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
+    return err_lss
+
+def batch_trace(x):
+    # Ensure x has at least two dimensions
+    if x.ndim < 2:
+        raise ValueError("Input tensor x must have at least two dimensions")
+    return x.diagonal(dim1=-2, dim2=-1).sum(dim=-1)
+
+
 def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     # a function to compute the test errors for the GPT2 model, kalman filter, and zero predictions
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
@@ -327,96 +464,18 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
     #OLS and OLS_analytical
     start = time.time() #start the timer for OLS predictions
-    ir_length = 2
-    if config.dataset_typ != "drone":
-        preds_rls = []
-        preds_rls_analytical = []
-        for sim_obj, _ys in zip(sim_objs, ys):
-            _preds_rls = []
-            _preds_rls_analytical = []
-            for __ys in _ys:
-                ls = [np.zeros(config.ny)]
-                ls_analytical = [np.linalg.norm(__ys[0], axis=-1) ** 2]
-                rls = RLS(config.nx, config.ny)
-                for i in range(_ys.shape[-2] - 1):
-                    if i < 2:
-                        ls.append(__ys[i])
-                        ls_analytical.append(np.linalg.norm(__ys[i + 1], axis=-1) ** 2)
-                    else:
-                        rls.add_data(__ys[i - 2:i].flatten(), __ys[i])
-                        _cnn_rls = CnnKF(config.ny, ir_length)
-                        _cnn_rls.observation_IR.data = torch.from_numpy(np.stack([_rls.mu for _rls in rls.rlss], axis=-1)
-                                                                        .reshape(ir_length, config.ny, config.ny)
-                                                                        .transpose(1, 0, 2)[:, ::-1].copy())
-
-                        ls.append(rls.predict(__ys[i - 1:i + 1].flatten()))
-                        ls_analytical.append(_cnn_rls.analytical_error(sim_obj).item())
-
-                _preds_rls.append(ls)
-                _preds_rls_analytical.append(ls_analytical)
-
-            preds_rls.append(_preds_rls)
-            preds_rls_analytical.append(_preds_rls_analytical)
-
-        err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
-        err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
+    err_lss = compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
     end = time.time() #end the timer for OLS predictions
     print("time elapsed for OLS and OLS Analytical Pred:", (end - start)/60, "min") #print the time elapsed for OLS predictions
 
     # OLS Wentinn
     start = time.time() #start the timer for OLS Wentinn predictions
-    errs_rls_wentinn = []
-    for sim_obj, _ys in zip(sim_objs, ys):
-        _errs_rls_wentinn = []
-        for __ys in _ys:
-            padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-            ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
-            rls_wentinn = CnnKF(config.ny, ir_length)
-            for i in range(config.n_positions - 1):
-                rls_wentinn.update(
-                    torch.from_numpy(padded_ys[i:i + ir_length]),
-                    torch.from_numpy(padded_ys[i + ir_length])
-                )
-                ls.append(rls_wentinn.analytical_error(sim_obj).item())
-            _errs_rls_wentinn.append(ls)
-        errs_rls_wentinn.append(_errs_rls_wentinn)
-    err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
+    err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
     end = time.time() #end the timer for OLS Wentinn predictions
     print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
 
     #Original OLS
-    for ir_length in range(1, 4):
-        start = time.time()
-        print(f"\n\nIR length: {ir_length}")
-        preds_rls_wentinn = []
-        preds_rls_wentinn_analytical = []
-        for sim_obj, _ys in zip(sim_objs, ys):
-            _preds_rls_wentinn = []
-            _preds_rls_wentinn_analytical = []
-            for __ys in _ys:
-                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-                ls = list(np.zeros((2, config.ny)))
-                ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
-
-                rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
-                for i in range(config.n_positions - 1):
-                    rls_wentinn.update(
-                        torch.from_numpy(padded_ys[i:i + ir_length]),
-                        torch.from_numpy(padded_ys[i + ir_length])
-                    )
-
-                    ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
-                    ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
-
-                _preds_rls_wentinn.append(ls)
-                _preds_rls_wentinn_analytical.append(ls_analytical)
-
-            preds_rls_wentinn.append(_preds_rls_wentinn)
-            preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
-
-        err_lss[f"OLS_ir_length{ir_length}_orig"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-        end = time.time()
-        print("time elapsed:", (end - start)/60, "min")
+    err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=3, err_lss=err_lss)
 
     # #Revised OLS
     # print("\n\nREVISED OLS")
@@ -461,15 +520,11 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     #     end = time.time()
     #     print("time elapsed:", (end - start)/60, "min")
 
-
-    print("err_lss keys end", err_lss.keys())
-
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error
 
 def save_preds(run_deg_kf_test, config):
     err_lss, irreducible_error = compute_errors(config, config.C_dist, run_deg_kf_test, wentinn_data=False)  #, emb_dim)
-    print("err_lss keys:", err_lss.keys())
 
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
@@ -496,6 +551,39 @@ def save_preds(run_deg_kf_test, config):
 
     with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
         pickle.dump(irreducible_error, f)  
+
+def save_preds_conv(run_deg_kf_test, config):
+
+    #get the step size from the ckpt_path
+    step_size = config.ckpt_path.split("/")[-1].split("_")[-1]
+    print("step_size:", step_size)
+
+    # a boolean for whether the below directory exists
+    if not os.path.exists(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size):
+        os.makedirs(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size, exist_ok=False)
+        
+
+        err_lss, irreducible_error = compute_errors(config, config.C_dist, run_deg_kf_test, wentinn_data=False)  #, emb_dim)
+
+        #make the prediction errors directory
+        # get the parent directory of the ckpt_path
+        parent_dir = os.path.dirname(config.ckpt_path)
+        print("parent_dir:", parent_dir)
+
+        #get the parent directory of the parent directory
+        parent_parent_dir = os.path.dirname(parent_dir)
+        print("parent_parent_dir:", parent_parent_dir)
+
+        #save err_lss and irreducible_error to a file
+        with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl", "wb") as f:
+            pickle.dump(err_lss, f)
+
+        with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
+            pickle.dump(irreducible_error, f) 
+        return
+    else:
+        print("The directory for ", step_size, " already exists") 
+        return
 
 def load_preds(run_deg_kf_test, excess, num_systems, config):
 
@@ -834,7 +922,7 @@ def convergence_plots(config, run_preds, run_deg_kf_test, excess, num_systems, s
     print("\n\n", "config path:", config.ckpt_path)
     if run_preds:
         print("\n\nRunning predictions")
-        save_preds(run_deg_kf_test, config) #save the predictions to a file
+        save_preds_conv(run_deg_kf_test, config) #save the predictions to a file
     print("\n\nLoading predictions")
     #load the prediction errors from the file
     err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
@@ -855,17 +943,20 @@ def convergence_plots(config, run_preds, run_deg_kf_test, excess, num_systems, s
         ax[sys].grid(which="both")
         ax[sys].tick_params(axis='both', which='major', labelsize=30)
         ax[sys].tick_params(axis='both', which='minor', labelsize=20)
-        ax[sys].set_ylim(bottom=10**(-0.7), top=3*10**(0))
+
+        #set y axis limits
+        ax[sys].set_ylim(bottom=10**(-0.7), top=5*10**(1))
+
         ax[sys].set_title("System " + str(sys)+ (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (": Upper Triangular A " if config.dataset_typ == "upperTriA" else (": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")), fontsize=20)
         # ax.set_xlim(left=0, right=10)
 
-        #get the parent directory of the ckpt_path
-        parent_dir = os.path.dirname(config.ckpt_path)
+    #get the parent directory of the ckpt_path
+    parent_dir = os.path.dirname(config.ckpt_path)
 
-        #get the parent directory of the parent directory
-        parent_parent_dir = os.path.dirname(parent_dir)
-        os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_conv_" + str(sys) + ("-changing" if config.changing else ""))
+    #get the parent directory of the parent directory
+    parent_parent_dir = os.path.dirname(parent_dir)
+    os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_conv" + ("-changing" if config.changing else ""))
     
     return None
 
