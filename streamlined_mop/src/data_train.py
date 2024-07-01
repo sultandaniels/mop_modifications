@@ -109,6 +109,30 @@ if __name__ == '__main__':
         excess = False
         shade = True
 
+        if resume_train:
+            config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
+            print("ckpt_path", config.ckpt_path)
+            
+            #get the parent directory of the ckpt_path
+            parent_dir = os.path.dirname(config.ckpt_path)
+            #get the parent directory of the parent directory
+            output_dir = os.path.dirname(parent_dir)
+            # instantiate gpt2 model
+            model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
+                    n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
+        
+            # add ckpt_path to config_dict
+            config_dict["ckpt_path"] = config.ckpt_path
+
+            # 🐝 1️⃣ Start a new run to track this script
+            run = wandb.init(
+                # Set the project where this run will be logged
+                project="transformer_kalman_no_sweep",
+                # Track hyperparameters and run metadata
+                config=config_dict,
+            )
+            train_gpt2(model, config, output_dir) # train the model
+
         #for loop to iterate through all the checkpoints in the output directory
         output_dir = "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
         fig, axs = plt.subplots(1, 3, figsize=(40, 20))  # 1 row, 3 columns, with a figure size of 15x5 inches
