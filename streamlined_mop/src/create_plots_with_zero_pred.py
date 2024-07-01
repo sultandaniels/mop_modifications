@@ -1008,7 +1008,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
     
     return None
 
-def convergence_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade, fig, ax):
+def convergence_plots(j, config, run_preds, run_deg_kf_test, excess, num_systems, shade, fig, ax):
     C_dist = config.C_dist
     print("\n\n", "config path:", config.ckpt_path)
     if run_preds:
@@ -1018,17 +1018,29 @@ def convergence_plots(config, run_preds, run_deg_kf_test, excess, num_systems, s
     #load the prediction errors from the file
     err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
 
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#bcbd00', '#d00960']
+    colors = ['#00429d', '#964b00', '#009292', '#ff6db6', '#ffb6db', '#490092', '#006ddb', '#b66dff', '#6db6ff', '#b6dbff', '#920000', '#924900', '#db6d00']
     print("\n\nPlotting predictions")
     for sys in range(len(irreducible_error_load)):            
         #plot transformer, KF and FIR errors
         #get the checkpoint steps number from the checkpoint path
         ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
         print("\n\nckpt_steps:", ckpt_steps)
-        handles, err_rat = plot_errs_conv(colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, ax=ax[sys], shade=shade, normalized=excess)
+        handles, err_rat = plot_errs_conv(j,colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, ax=ax[sys], shade=shade, normalized=excess)
         print("len of handles:", len(handles))
-        # ax.legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/1))
-        ax[sys].legend(fontsize=18, loc="upper right", ncol=1)
+        
+        
+        # Step 1: Collect legend handles and labels
+        handles, labels = ax[sys].get_legend_handles_labels()
+
+        # Step 2: Sort handles and labels based on "MOP" part
+        # Extracting the number after "MOP" and using it for sorting
+        sorted_handles_labels = sorted(zip(handles, labels), key=lambda hl: int(hl[1].split("MOP")[1]))
+        sorted_handles, sorted_labels = zip(*sorted_handles_labels)
+
+        # Step 3: Create the legend with sorted handles and labels
+        ax[sys].legend(sorted_handles, sorted_labels, fontsize=18, loc="upper right", ncol=1)
+
+        #ax[sys].legend(fontsize=18, loc="upper right", ncol=1)
         ax[sys].set_xlabel("t", fontsize=30)
         ax[sys].set_ylabel("Prediction Error", fontsize=30)
         ax[sys].grid(which="both")

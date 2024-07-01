@@ -78,7 +78,7 @@ if __name__ == '__main__':
         run_deg_kf_test = False #run degenerate KF test
         excess = False #run the excess plots
         shade = True
-        config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
+        config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
         print("ckpt_path", config.ckpt_path)
 
         if resume_train:
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         shade = True
 
         if resume_train:
-            config.override("ckpt_path", "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
+            config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
             print("ckpt_path", config.ckpt_path)
             
             #get the parent directory of the ckpt_path
@@ -134,7 +134,7 @@ if __name__ == '__main__':
             train_gpt2(model, config, output_dir) # train the model
 
         #for loop to iterate through all the checkpoints in the output directory
-        output_dir = "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
+        output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
         fig, axs = plt.subplots(1, 3, figsize=(40, 20))  # 1 row, 3 columns, with a figure size of 15x5 inches
         filecount = 0
         for filename in os.listdir(output_dir + "/checkpoints/"):
@@ -142,7 +142,7 @@ if __name__ == '__main__':
             print("filecount:", filecount)
             config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
             print("\n\n\nckpt_path", config.ckpt_path)
-            convergence_plots(config, run_preds, run_deg_kf_test, excess, config.num_val_tasks, shade, fig, axs)
+            convergence_plots(filecount, config, run_preds, run_deg_kf_test, excess, config.num_val_tasks, shade, fig, axs)
     else:
         # instantiate gpt2 model
         model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
