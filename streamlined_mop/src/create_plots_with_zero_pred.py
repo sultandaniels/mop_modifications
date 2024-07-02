@@ -1018,7 +1018,7 @@ def convergence_plots(config, run_preds, run_deg_kf_test, excess, num_systems, s
     #load the prediction errors from the file
     err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
 
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#bcbd00', '#d00960']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#17becf', '#7f7f7f', '#d00960', '#393b79']
     print("\n\nPlotting predictions")
     for sys in range(len(irreducible_error_load)):            
         #plot transformer, KF and FIR errors
