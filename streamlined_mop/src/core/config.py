@@ -19,6 +19,9 @@ class Config(object, metaclass=Singleton):
     seed = 0
     fully_reproducible = False
 
+    Ms = [2**i for i in range(1,4)]
+    total_training_traces = 1000
+
     # Dataset settings
     num_tasks = 40000 #number of training systems
     num_val_tasks = 3 #number of test systems

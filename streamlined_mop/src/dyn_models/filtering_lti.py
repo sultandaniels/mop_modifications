@@ -87,16 +87,34 @@ class FilterSim:
 
     # ####################################################################################################
     # #code that I added
-    def __init__(self, nx, ny, sigma_w, sigma_v, tri, C_dist, n_noise, new_eig):
+    def __init__(self, nx, ny, sigma_w, sigma_v, tri, C_dist, n_noise, new_eig, A=None, C=None):
         self.sigma_w = sigma_w
         self.sigma_v = sigma_v
 
         self.n_noise = n_noise
 
+        if A is not None and C is not None:
+            self.A = A
+            self.C = C
+        else:
+            self.A = FilterSim.construct_A(tri, nx)
+            if C_dist == "_gauss_C":
+                normC = True
+            else:
+                normC = False
+            self.C = np.eye(nx) if nx == ny else self.construct_C(self.A, ny, normC)
+
+        self.S_state_inf = solve_ricc(self.A, np.eye(nx) * sigma_w ** 2)
+        S_state_inf_intermediate = sc.linalg.solve_discrete_are(self.A.T, self.C.T, np.eye(nx) * sigma_w ** 2, np.eye(ny) * sigma_v ** 2)
+        self.S_observation_inf = self.C @ S_state_inf_intermediate @ self.C.T + np.eye(ny) * sigma_v ** 2
+
+    # ####################################################################################################
+    # Code by Viktor for Ganguli experiment
+    @staticmethod
+    def construct_A(tri, nx):
         if tri == "upperTriA":
             A = np.diag(np.random.uniform(-1, 1, nx)) * 0.95
             A[np.triu_indices(nx, 1)] = np.random.uniform(-1, 1, (nx ** 2 + nx) // 2 - nx)
-            self.A = A
         elif tri == "rotDiagA":
             A = np.diag([0.99,0.98,0.97,0.96,0.95,0.94,0.93,0.92,0.91,0.9]) * 0.95 #generate a random diagonal matrix
             # Generate a random 10x10 matrix
@@ -105,33 +123,24 @@ class FilterSim:
             # Use QR decomposition to get a random rotation matrix
             Q, R = np.linalg.qr(random_matrix)
                          
-            self.A = Q @ A @ Q.T 
+            A = Q @ A @ Q.T 
         elif tri == "gaussA":
             A = np.sqrt(0.33)*np.random.randn(nx, nx) #same second moment as uniform(-1,1)
             A /= np.max(np.abs(np.linalg.eigvals(A)))
-            self.A = A * 0.95 #scale the matrix
+            A = A * 0.95 #scale the matrix
         elif tri == "gaussA_noscale":
             A = np.sqrt(0.33)*np.random.randn(nx, nx) #same second moment as uniform(-1,1)
         else:
             if new_eig:
-                self.A = gen_A(0.97, 0.99, nx)
+                A = gen_A(0.97, 0.99, nx)
             else:
                 A = np.random.uniform(-1, 1, (nx, nx))  # fixed the sampling of A to be between -1 and 1
                 A /= np.max(np.abs(np.linalg.eigvals(A)))
-                self.A = A * 0.95
+                A = A * 0.95
                 # A = np.zeros((nx, nx))
                 # A[0,0] = 0.95
                 # self.A = A
-
-        if C_dist == "_gauss_C":
-            normC = True
-        else:
-            normC = False
-        self.C = np.eye(nx) if nx == ny else self.construct_C(self.A, ny, normC)
-
-        self.S_state_inf = solve_ricc(self.A, np.eye(nx) * sigma_w ** 2)
-        S_state_inf_intermediate = sc.linalg.solve_discrete_are(self.A.T, self.C.T, np.eye(nx) * sigma_w ** 2, np.eye(ny) * sigma_v ** 2)
-        self.S_observation_inf = self.C @ S_state_inf_intermediate @ self.C.T + np.eye(ny) * sigma_v ** 2
+        return A
 
     # ####################################################################################################
 
@@ -237,8 +246,8 @@ def apply_kf(fsim, ys, sigma_w=None, sigma_v=None, return_obj=False):
 # code that I added
 
 
-def _generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
-    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri=dataset_typ, C_dist=C_dist, n_noise=n_noise, new_eig = False)
+def _generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1, A=None, C=None):
+    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri=dataset_typ, C_dist=C_dist, n_noise=n_noise, new_eig = False, A=A, C=C)
     states, obs = fsim.simulate_steady(batch_size, n_positions)
     return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
 
@@ -248,9 +257,9 @@ def _generate_lti_sample_new_eig(C_dist, dataset_typ, batch_size, n_positions, n
     return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
 
 
-def generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
+def generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1, A=None, C=None):
     while True:
-        fsim, entry = _generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w, sigma_v, n_noise=n_noise)
+        fsim, entry = _generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w, sigma_v, n_noise=n_noise, A=A, C=C)
         if check_validity(entry):
             return fsim, entry
         
