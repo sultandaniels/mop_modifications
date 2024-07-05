@@ -10,3 +10,4 @@ __pycache__/
 
 #remove wandb directory
 streamlined_mop/src/wandb
+wandb

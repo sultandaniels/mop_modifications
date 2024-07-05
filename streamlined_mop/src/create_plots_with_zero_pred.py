@@ -190,7 +190,6 @@ def wentinn_compute_errors(config):
     plt.show()
 
 ####################################################################################################
-
 def compute_OLS_and_OLS_analytical(config, ys, sim_objs, ir_length, err_lss):
     preds_rls = []
     preds_rls_analytical = []
@@ -213,7 +212,6 @@ def compute_OLS_and_OLS_analytical(config, ys, sim_objs, ir_length, err_lss):
                                                                     .transpose(1, 0, 2)[:, ::-1].copy())
                     ls.append(rls.predict(__ys[i - 1:i + 1].flatten()))
                     ls_analytical.append(_cnn_rls.analytical_error(sim_obj).item())
-
             _preds_rls.append(ls)
             _preds_rls_analytical.append(ls_analytical)
 
@@ -268,6 +266,7 @@ def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_
     return err_lss
 
 def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
+    print("\n\n max_ir_length + 1:", max_ir_length+1)
     for ir_length in range(1, max_ir_length + 1):
         start = time.time()
         print(f"\n\nIR length: {ir_length}")
@@ -298,9 +297,9 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
             preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
 
         err_lss[f"OLS_ir_length{ir_length}_orig"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-        end = time.time()
-        print("time elapsed:", (end - start)/60, "min")
-        return err_lss
+    end = time.time()
+    print("time elapsed:", (end - start)/60, "min")
+    return err_lss
     
 def compute_OLS_wentinn(config, ys, sim_objs, ir_length, err_lss):
     errs_rls_wentinn = []
@@ -640,6 +639,7 @@ def save_preds(run_deg_kf_test, config):
         #save err_lss and irreducible_error to a file
         with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl", "wb") as f:
             pickle.dump(err_lss, f)
+            print("err_lss keys", err_lss.keys())
 
     with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
         pickle.dump(irreducible_error, f)  
@@ -764,6 +764,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
 
     #load the prediction errors from the file
     err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
+    print("err_lss_load keys:", err_lss_load.keys())
 
     if run_deg_kf_test:
         cos_sims, err_ratios, zero_ratios, deg_fig, axs = setup_deg_kf_axs_arrs(num_systems)
@@ -782,7 +783,6 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
 
                 #plot transformer, KF and FIR errors
                 handles, err_rat = plot_errs(colors, sys, err_lss_copy, irreducible_error_load, ax=axs[i][sys], shade=True, normalized=excess)
-                print("err_rat:", err_rat)
 
                 err_ratios[i, sys] = err_rat[0]
                 zero_ratios[i, sys] = err_rat[1]
@@ -1008,7 +1008,8 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
     
     return None
 
-def convergence_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade, fig, ax):
+def convergence_plots(config, run_preds, run_deg_kf_test, kfnorm, num_systems, shade, fig, ax):
+    excess = False
     C_dist = config.C_dist
     print("\n\n", "config path:", config.ckpt_path)
     if run_preds:
@@ -1025,7 +1026,7 @@ def convergence_plots(config, run_preds, run_deg_kf_test, excess, num_systems, s
         #get the checkpoint steps number from the checkpoint path
         ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
         print("\n\nckpt_steps:", ckpt_steps)
-        handles, err_rat = plot_errs_conv(colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, ax=ax[sys], shade=shade, normalized=excess)
+        handles, err_rat = plot_errs_conv(colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, normalized=kfnorm, ax=ax[sys], shade=shade)
         print("len of handles:", len(handles))
         # ax.legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/1))
         ax[sys].legend(fontsize=18, loc="upper right", ncol=1)

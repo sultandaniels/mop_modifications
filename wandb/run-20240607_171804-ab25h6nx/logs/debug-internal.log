@@ -1,8 +1,0 @@
-2024-06-07 17:18:04,709 INFO    StreamThr :2642 [internal.py:wandb_internal():85] W&B internal server running at pid: 2642, started at: 2024-06-07 17:18:04.708586
-2024-06-07 17:18:04,709 DEBUG   HandlerThread:2642 [handler.py:handle_request():158] handle_request: status
-2024-06-07 17:18:04,712 INFO    WriterThread:2642 [datastore.py:open_for_write():87] open: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_171804-ab25h6nx/run-ab25h6nx.wandb
-2024-06-07 17:18:04,712 DEBUG   SenderThread:2642 [sender.py:send():378] send: header
-2024-06-07 17:18:04,887 DEBUG   HandlerThread:2642 [handler.py:handle_request():158] handle_request: shutdown
-2024-06-07 17:18:04,887 INFO    HandlerThread:2642 [handler.py:finish():882] shutting down handler
-2024-06-07 17:18:05,717 INFO    WriterThread:2642 [datastore.py:close():296] close: /Users/sultandaniels/Documents/Transformer_Kalman/mop_modifications/wandb/run-20240607_171804-ab25h6nx/run-ab25h6nx.wandb
-2024-06-07 17:18:05,718 INFO    SenderThread:2642 [sender.py:finish():1545] shutting down sender
