@@ -21,6 +21,7 @@ if __name__ == '__main__':
     parser.add_argument('--make_preds', help='Boolean. Run predictions and plot the errors for a previously trained checkpoint', action='store_true')
     parser.add_argument('--resume_train', help='Boolean. Resume training from a specific checkpoint', action='store_true')
     parser.add_argument('--train_conv', help='Boolean. make predictions for all checkpoints', action='store_true')
+    parser.add_argument('--kfnorm', help='Boolean. subtract kalman performance from error', action='store_true')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -34,6 +35,8 @@ if __name__ == '__main__':
     resume_train = args.resume_train
     print("train conv arg", args.train_conv)
     train_conv = args.train_conv
+    print("kfnorm arg", args.kfnorm)
+    kfnorm = args.kfnorm
 
 
     config = Config() # create a config object
@@ -142,7 +145,7 @@ if __name__ == '__main__':
             print("filecount:", filecount)
             config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
             print("\n\n\nckpt_path", config.ckpt_path)
-            convergence_plots(filecount, config, run_preds, run_deg_kf_test, excess, config.num_val_tasks, shade, fig, axs)
+            convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs)
     else:
         # instantiate gpt2 model
         model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
