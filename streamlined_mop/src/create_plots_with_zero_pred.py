@@ -200,17 +200,22 @@ def compute_OLS_and_OLS_analytical(config, ys, sim_objs, ir_length, err_lss):
             ls = [np.zeros(config.ny)]
             ls_analytical = [np.linalg.norm(__ys[0], axis=-1) ** 2]
             rls = RLS(config.nx, config.ny)
+
+            #print("shape __ys:", __ys.shape)
+            #print("range of for loop:", range(__ys.shape[-2] - 1))
             for i in range(_ys.shape[-2] - 1):
-                if i < 2:
+                if i < 3:
                     ls.append(__ys[i])
                     ls_analytical.append(np.linalg.norm(__ys[i + 1], axis=-1) ** 2)
                 else:
-                    rls.add_data(__ys[i - 2:i].flatten(), __ys[i])
+                    if __ys[i-3:i].shape[0] == 0:
+                        print("i:", i)
+                    rls.add_data(__ys[i - ir_length:i].flatten(), __ys[i])
                     _cnn_rls = CnnKF(config.ny, ir_length)
                     _cnn_rls.observation_IR.data = torch.from_numpy(np.stack([_rls.mu for _rls in rls.rlss], axis=-1)
                                                                     .reshape(ir_length, config.ny, config.ny)
                                                                     .transpose(1, 0, 2)[:, ::-1].copy())
-                    ls.append(rls.predict(__ys[i - 1:i + 1].flatten()))
+                    ls.append(rls.predict(__ys[i - (ir_length-1):i + 1].flatten()))
                     ls_analytical.append(_cnn_rls.analytical_error(sim_obj).item())
             _preds_rls.append(ls)
             _preds_rls_analytical.append(ls_analytical)
@@ -239,6 +244,7 @@ def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_
             ls = [torch.zeros(config.ny, device=device)]
             ls_analytical = [torch.linalg.norm(__ys_tensor[0], axis=-1) ** 2]
             rls = RLS(config.nx, config.ny)  # Assuming RLS can handle MPS tensors
+
             for i in range(__ys_tensor.shape[-2] - 1):
                 if i < 2:
                     ls.append(__ys_tensor[i])
@@ -463,7 +469,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
     #OLS and OLS_analytical
     start = time.time() #start the timer for OLS predictions
-    err_lss = compute_OLS_and_OLS_analytical(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
+    err_lss = compute_OLS_and_OLS_analytical(config, ys, sim_objs, ir_length=3, err_lss=err_lss)
     end = time.time() #end the timer for OLS predictions
     print("time elapsed for OLS and OLS Analytical Pred:", (end - start)/60, "min") #print the time elapsed for OLS predictions
 
@@ -1026,7 +1032,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
         #get the checkpoint steps number from the checkpoint path
         ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
         print("\n\nckpt_steps:", ckpt_steps)
-        handles, err_rat = plot_errs_conv(j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, normalized=kfnorm, ax=ax[sys], shade=shade)
+        handles, err_rat = plot_errs_conv(j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade)
         print("len of handles:", len(handles))
         
         
@@ -1037,6 +1043,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
         # Extracting the number after "MOP" and using it for sorting
         sorted_handles_labels = sorted(zip(handles, labels), key=lambda hl: int(hl[1].split("MOP")[1]))
         sorted_handles, sorted_labels = zip(*sorted_handles_labels)
+        print("sorted labels", sorted_labels)
 
         # Step 3: Create the legend with sorted handles and labels
         ax[sys].legend(sorted_handles, sorted_labels, fontsize=18, loc="upper right", ncol=1)
@@ -1049,9 +1056,9 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
         ax[sys].tick_params(axis='both', which='minor', labelsize=20)
 
         #set y axis limits
-        ax[sys].set_ylim(bottom=10**(-0.7), top=5*10**(1))
+        ax[sys].set_ylim(bottom=10**(-2), top=5*10**(1))
 
-        ax[sys].set_title("System " + str(sys)+ (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (": Upper Triangular A " if config.dataset_typ == "upperTriA" else (": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")), fontsize=20)
+        ax[sys].set_title("System " + str(sys)+ (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (": Upper Triangular A " if config.dataset_typ == "upperTriA" else (": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + ("Uniform C" if C_dist == "_unif_C" else ("N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")) + (" Normalized" if kfnorm else ""), fontsize=20)
         # ax.set_xlim(left=0, right=10)
 
     #get the parent directory of the ckpt_path

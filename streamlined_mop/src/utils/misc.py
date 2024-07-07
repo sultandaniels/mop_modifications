@@ -79,9 +79,9 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                 print("Zero (time avergaged mean)/(irreducible): ", err_rat[1])
     return handles, err_rat
 
-def plot_errs_conv(colors, sys, err_lss, err_irreducible, train_steps, normalized, legend_loc="upper right", ax=None, shade=True):
+def plot_errs_conv(j, colors, sys, err_lss, err_irreducible, train_steps, normalized, legend_loc="upper right", ax=None, shade=True):
     print("\n\n\nSYS", sys)
-    print("shape of err_irreducible", err_irreducible.shape)
+    #print("shape of err_irreducible", err_irreducible.shape)
     err_rat = np.zeros(2)
     if ax is None:
         fig = plt.figure(figsize=(15, 9))
@@ -99,7 +99,7 @@ def plot_errs_conv(colors, sys, err_lss, err_irreducible, train_steps, normalize
                 print("count:", count)
                 print("\n\nplotting MOP at step:", train_steps, "\n\n")
                 avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
-                handles.extend(ax.plot(avg, label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else "."))#, color = colors[i]))
+                handles.extend(ax.plot(avg, label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j]))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
     else:
@@ -111,9 +111,9 @@ def plot_errs_conv(colors, sys, err_lss, err_irreducible, train_steps, normalize
                 print("count:", count)
                 print("\n\nplotting MOP at step:", train_steps, "\n\n")
                 avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
-                handles.extend(ax.plot(avg - err_irreducible[sys], label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else "."))#, color = colors[i]))
+                handles.extend(ax.plot(avg - err_irreducible[sys], label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j])) #subtract analytical kalman
                 if shade:
-                    ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
+                    ax.fill_between(np.arange(err_ls.shape[-1]), avg - err_irreducible[sys] - std, avg-err_irreducible[sys] + std, facecolor=handles[-1].get_color(), alpha=0.2) #subtract analytical Kalman
     return handles, err_rat
 
 
@@ -129,14 +129,15 @@ def batch_trace(x: torch.Tensor) -> torch.Tensor:
 class RLSSingle:
     def __init__(self, ni, lam=1):
         self.lam = lam
-        self.P = np.eye(ni)
-        self.mu = np.zeros(ni)
+        self.P = np.eye(ni+5)
+        self.mu = np.zeros(ni+5)
 
     def add_data(self, x, y):
         z = self.P @ x / self.lam
         alpha = 1 / (1 + x.T @ z)
         wp = self.mu + y * z
         self.mu = self.mu + z * (y - alpha * x.T @ wp)
+        #print("self.mu.shape:", self.mu.shape)
         self.P -= alpha * np.outer(z, z)
 
     def add_data_tensor(self, x, y):
@@ -177,4 +178,5 @@ class RLS:
             rls.add_data_tensor(x, _y)
 
     def predict(self, x):
+        #print("shape of x:", x.shape)
         return np.array([rls.mu @ x for rls in self.rlss])
