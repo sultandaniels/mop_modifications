@@ -40,6 +40,29 @@ def collect_data(config, output_dirs):
             pickle.dump(sim_objs, f)
         
 
+        samples = []
+        sim_objs = []
+
+        num_val_systems = min(config.num_val_tasks, M)
+        for i in tqdm(range(num_val_systems)):
+            num_traces = config.num_traces["val"] #number of traces per system must depend on number of systems to have constant total number of traces
+            fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ, num_traces, config.n_positions, config.nx, config.ny, sigma_w=config.sigma_w, sigma_v=config.sigma_v, n_noise=config.n_noise, A=systems[i]["A"], C=systems[i]["C"])
+
+            repeated_A = np.repeat(sample["A"][np.newaxis,:,:], num_traces, axis=0) #repeat the A matrix for each trace
+            sample["A"] = repeated_A #repeat the A matrix for each trace
+
+            repeated_C = np.repeat(sample["C"][np.newaxis,:,:], num_traces, axis=0) #repeat the C matrix for each trace
+            sample["C"] = repeated_C #repeat the C matrix for each trace
+            samples.extend([{k: v[i] for k, v in sample.items()} for i in range(num_traces)])
+            sim_objs.append(fsim)
+
+        with open(output_dirs[M] + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "wb") as f:
+            pickle.dump(samples, f)
+
+        with open(output_dirs[M] + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "wb") as f:
+            pickle.dump(sim_objs, f)
+        
+
     ## Code to generate validation data below
     # samples = [] #make sure that train and val samples are different
     # sim_objs = [] #make sure that train and val sim_objs are different

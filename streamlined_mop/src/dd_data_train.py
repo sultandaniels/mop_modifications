@@ -50,15 +50,11 @@ if __name__ == '__main__':
         config_dict[key] = config.__getattribute__(key)
     
 
-    suite_identifier = time.strftime('%y%m%d_%H%M%S') + '.' + hashlib.md5(config.get_full_yaml().encode('utf-8')).hexdigest()[:6]
+    suite_identifier = time.strftime('%y%m%d_%H%M%S') + '.' + hashlib.md5(config.get_full_yaml().encode('utf-8')).hexdigest()[:6] +  f"_{config.dataset_typ}{config.C_dist}"
     output_dirs = {}
 
     for num_tasks in config.Ms:
-        identifier = (time.strftime('%y%m%d_%H%M%S') + '.' +
-                    hashlib.md5(config.get_full_yaml().encode('utf-8')).hexdigest()[:6]
-                    )
-
-        output_dirs[num_tasks] = '../dd_outputs/' + suite_identifier + '/' + identifier + f"_{config.dataset_typ}{config.C_dist}_dd{num_tasks}"
+        output_dirs[num_tasks] = f"../dd_outputs/{suite_identifier}/{num_tasks}"
         os.makedirs(output_dirs[num_tasks] + f"/data/", exist_ok=True)
 
     collect_data(config, output_dirs)
