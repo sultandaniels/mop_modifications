@@ -190,7 +190,7 @@ def wentinn_compute_errors(config):
     plt.show()
 
 ####################################################################################################
-def compute_OLS_and_OLS_analytical(config, ys, sim_objs, ir_length, err_lss):
+def compute_OLS_and_OLS_analytical(config, ys, sim_objs, ir_length, err_lss): #PENDING DELETION
     preds_rls = []
     preds_rls_analytical = []
     for sim_obj, _ys in zip(sim_objs, ys):
@@ -296,7 +296,8 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
             preds_rls_wentinn.append(_preds_rls_wentinn)
             preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
 
-        err_lss[f"OLS_ir_length{ir_length}_orig"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+        err_lss[f"OLS_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+        err_lss[f"OLS_analytical_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
     end = time.time()
     print("time elapsed:", (end - start)/60, "min")
     return err_lss
@@ -461,12 +462,6 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
 
-    #OLS and OLS_analytical
-    start = time.time() #start the timer for OLS predictions
-    err_lss = compute_OLS_and_OLS_analytical(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
-    end = time.time() #end the timer for OLS predictions
-    print("time elapsed for OLS and OLS Analytical Pred:", (end - start)/60, "min") #print the time elapsed for OLS predictions
-
     # OLS Wentinn
     start = time.time() #start the timer for OLS Wentinn predictions
     err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
@@ -474,7 +469,10 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
 
     #Original OLS
+    start = time.time() #start the timer for OLS predictions
     err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=3, err_lss=err_lss)
+    end = time.time() #end the timer for OLS predictions
+    print("time elapsed for OLS Pred:", (end - start)/60, "min") #print the time elapsed for OLS predictions
 
     # #Revised OLS
     # print("\n\nREVISED OLS")
@@ -1026,7 +1024,7 @@ def convergence_plots(config, run_preds, run_deg_kf_test, kfnorm, num_systems, s
         #get the checkpoint steps number from the checkpoint path
         ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
         print("\n\nckpt_steps:", ckpt_steps)
-        handles, err_rat = plot_errs_conv(colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, normalized=kfnorm, ax=ax[sys], shade=shade)
+        handles, err_rat = plot_errs_conv(colors=colors, sys=sys, err_lss=err_lss_load, err_irreducible=irreducible_error_load, train_steps=ckpt_steps, normalized=kfnorm, ax=ax[sys], shade=shade)
         print("len of handles:", len(handles))
         # ax.legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/1))
         ax[sys].legend(fontsize=18, loc="upper right", ncol=1)
