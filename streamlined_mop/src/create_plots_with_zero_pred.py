@@ -1006,7 +1006,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
     
     return None
 
-def convergence_plots(config, run_preds, run_deg_kf_test, kfnorm, num_systems, shade, fig, ax):
+def convergence_plots(config, run_preds, run_deg_kf_test, kfnorm, num_systems, shade, fig, ax, ts):
     excess = False
     C_dist = config.C_dist
     print("\n\n", "config path:", config.ckpt_path)
@@ -1024,7 +1024,7 @@ def convergence_plots(config, run_preds, run_deg_kf_test, kfnorm, num_systems, s
         #get the checkpoint steps number from the checkpoint path
         ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
         print("\n\nckpt_steps:", ckpt_steps)
-        handles, err_rat = plot_errs_conv(colors=colors, sys=sys, err_lss=err_lss_load, err_irreducible=irreducible_error_load, train_steps=ckpt_steps, normalized=kfnorm, ax=ax[sys], shade=shade)
+        handles, err_avg_t = plot_errs_conv(ts, colors=colors, sys=sys, err_lss=err_lss_load, err_irreducible=irreducible_error_load, train_steps=ckpt_steps, normalized=kfnorm, ax=ax[sys], shade=shade)
         print("len of handles:", len(handles))
         # ax.legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/1))
         ax[sys].legend(fontsize=18, loc="upper right", ncol=1)
@@ -1048,7 +1048,7 @@ def convergence_plots(config, run_preds, run_deg_kf_test, kfnorm, num_systems, s
     os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
     fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_conv" + ("-changing" if config.changing else ""))
     
-    return None
+    return (ckpt_steps, err_avg_t) #return the checkpoint steps number and the error average at step t
 
 ####################################################################################################
 # main function
