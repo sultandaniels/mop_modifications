@@ -20,7 +20,6 @@ class Config(object, metaclass=Singleton):
     fully_reproducible = False
 
     Ms = [2**i for i in range(1,4)]
-    total_training_traces = 1000
 
     # Dataset settings
     num_tasks = 40000 #number of training systems
@@ -30,7 +29,7 @@ class Config(object, metaclass=Singleton):
     nx = 10
     ny = 5
     n_noise = 1
-    num_traces = {"train": 1, "val": 1}
+    num_traces = {"train": 1, "val": 2000}
 
     sigma_v = 1e-1
     sigma_w = 1e-1

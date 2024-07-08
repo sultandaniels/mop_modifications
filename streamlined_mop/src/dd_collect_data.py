@@ -22,7 +22,7 @@ def collect_data(config, output_dirs):
         sim_objs = []
 
         for i in tqdm(range(M)):
-            num_traces = config.total_training_traces // M #number of traces per system must depend on number of systems to have constant total number of traces
+            num_traces = config.train_steps // M #number of traces per system must depend on number of systems to have constant total number of traces
             fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ, num_traces, config.n_positions, config.nx, config.ny, sigma_w=config.sigma_w, sigma_v=config.sigma_v, n_noise=config.n_noise, A=systems[i]["A"], C=systems[i]["C"])
 
             repeated_A = np.repeat(sample["A"][np.newaxis,:,:], num_traces, axis=0) #repeat the A matrix for each trace
