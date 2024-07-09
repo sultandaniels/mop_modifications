@@ -1030,11 +1030,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
         #get the checkpoint steps number from the checkpoint path
         ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
         print("\n\nckpt_steps:", ckpt_steps)
-<<<<<<< HEAD
         handles, err_rat = plot_errs_conv(j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade)
-=======
-        handles, err_rat = plot_errs_conv(colors=colors, sys=sys, err_lss=err_lss_load, err_irreducible=irreducible_error_load, train_steps=ckpt_steps, normalized=kfnorm, ax=ax[sys], shade=shade)
->>>>>>> main
         print("len of handles:", len(handles))
         
         
