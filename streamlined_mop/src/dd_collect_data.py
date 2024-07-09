@@ -43,10 +43,9 @@ def collect_data(config, output_dirs):
         samples = []
         sim_objs = []
 
-        num_val_systems = min(config.num_val_tasks, M)
-        for i in tqdm(range(num_val_systems)):
+        for i in tqdm(range(config.num_val_systems)):
             num_traces = config.num_traces["val"] #number of traces per system must depend on number of systems to have constant total number of traces
-            fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ, num_traces, config.n_positions, config.nx, config.ny, sigma_w=config.sigma_w, sigma_v=config.sigma_v, n_noise=config.n_noise, A=systems[i]["A"], C=systems[i]["C"])
+            fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ, num_traces, config.n_positions, config.nx, config.ny, sigma_w=config.sigma_w, sigma_v=config.sigma_v, n_noise=config.n_noise, A=systems[i%config.num_val_systems]["A"], C=systems[i%config.num_val_systems]["C"]) # Don't oob when there are more validation systems than training tasks.
 
             repeated_A = np.repeat(sample["A"][np.newaxis,:,:], num_traces, axis=0) #repeat the A matrix for each trace
             sample["A"] = repeated_A #repeat the A matrix for each trace
@@ -94,7 +93,7 @@ if __name__ == "__main__":
     output_dir = "streamlined_mop/ganguli_test"
     collect_data(config, output_dir, Ms=[1, 2, 4], total_traces=40)
 
-    with open("/home/viktor/Documents/Studier/Berkeley/mop_modifications/streamlined_mop/ganguli_test/data/M4_train_gaussA_gauss_C.pkl", "rb") as f:
+    with open("dd_outputs/240708_182434.1689c9_gaussA_gauss_C/2/checkpoints", "rb") as f:
         data = pickle.load(f)
     
     print(len(data), data[0].keys())

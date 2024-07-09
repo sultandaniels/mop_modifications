@@ -58,7 +58,7 @@ if __name__ == '__main__':
         config_dict[key] = config.__getattribute__(key)
     
     if resume_train:
-        suite_identifier = "240708_110639.88723f_gaussA_gauss_C"
+        suite_identifier = "240708_182434.1689c9_gaussA_gauss_C"
         output_dirs = {m: f"../dd_outputs/{suite_identifier}/{m}" for m in config.Ms}
         for _, output_dir in output_dirs.items():
             assert os.path.isdir(output_dir)
