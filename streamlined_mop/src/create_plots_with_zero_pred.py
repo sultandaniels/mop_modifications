@@ -244,7 +244,6 @@ def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_
             ls = [torch.zeros(config.ny, device=device)]
             ls_analytical = [torch.linalg.norm(__ys_tensor[0], axis=-1) ** 2]
             rls = RLS(config.nx, config.ny)  # Assuming RLS can handle MPS tensors
-
             for i in range(__ys_tensor.shape[-2] - 1):
                 if i < 2:
                     ls.append(__ys_tensor[i])
@@ -1012,7 +1011,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
     
     return None
 
-def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems, shade, fig, ax):
+def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems, shade, fig, ax, ts):
     excess = False
     C_dist = config.C_dist
     print("\n\n", "config path:", config.ckpt_path)
@@ -1030,7 +1029,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
         #get the checkpoint steps number from the checkpoint path
         ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
         print("\n\nckpt_steps:", ckpt_steps)
-        handles, err_rat = plot_errs_conv(j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade)
+        handles, err_avg_t = plot_errs_conv(ts, j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade)
         print("len of handles:", len(handles))
         
         
@@ -1067,7 +1066,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
     fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_conv" + ("-changing" if config.changing else ""))
     
-    return None
+    return (ckpt_steps, err_avg_t) #return the checkpoint steps number and the error average at step t
 
 ####################################################################################################
 # main function

@@ -140,12 +140,41 @@ if __name__ == '__main__':
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
         fig, axs = plt.subplots(1, 3, figsize=(40, 20))  # 1 row, 3 columns, with a figure size of 15x5 inches
         filecount = 0
+
+        error_checkpoints_tuples = []
+        ts = [50, 100, 200]
         for filename in os.listdir(output_dir + "/checkpoints/"):
             filecount += 1
             print("filecount:", filecount)
             config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
             print("\n\n\nckpt_path", config.ckpt_path)
-            convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs)
+            step_avg_tup = convergence_plots(config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts) #create the convergence plots and return the step and average error tuple
+            error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
+
+        #plot the error_checkpoints_tuples
+        #sort the list of tuples by the step
+        error_checkpoints_tuples.sort(key=lambda x: x[0])
+        print("error_checkpoints_tuples", error_checkpoints_tuples)
+        
+        #make a new figure
+        fig, ax = plt.subplots(3, 3, figsize=(15, 9))
+        #make a plot for each value of t in ts for each system
+        for t in range(len(ts)):
+            for sys in range(config.num_val_tasks):
+                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t] for x in error_checkpoints_tuples]) #, label="t = " + str(ts[t]))
+                ax[t][sys].set_title("System " + str(sys) + " t = " + str(ts[t]))
+                ax[t][sys].set_xlabel("Step")
+                ax[t][sys].set_ylabel("Error")
+                ax[t][sys].legend()
+        
+        #get the parent directory of the ckpt_path
+        parent_dir = os.path.dirname(config.ckpt_path)
+
+        #get the parent directory of the parent directory
+        parent_parent_dir = os.path.dirname(parent_dir)
+        os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("-changing" if config.changing else ""))
+
     else:
         # instantiate gpt2 model
         model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
