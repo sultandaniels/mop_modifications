@@ -12,3 +12,9 @@ streamlined_mop/src/wandb
 wandb
 
 *.json
+*.xml
+*.yaml
+*.yml
+*.gz
+*.zip
+*.dat
