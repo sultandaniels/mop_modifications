@@ -157,7 +157,7 @@ if __name__ == '__main__':
 
         print("error_checkpoints_tuples before sort", error_checkpoints_tuples)
         #sort the list of tuples by the step
-        error_checkpoints_tuples.sort(key=lambda x: x[0])
+        error_checkpoints_tuples.sort(key=lambda x: int(x[0]))
         print("error_checkpoints_tuples after sort", error_checkpoints_tuples)
         
         #make a new figure
