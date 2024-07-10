@@ -31,7 +31,7 @@ class Config(object, metaclass=Singleton):
 
     # Training settings
     train_steps = 96000 #number of training steps
-    train_int = 8000 #number of steps between logging
+    train_int = 4000 #number of steps between logging
     batch_size = 28 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
     train_data_workers = 1 #set to 1 (check if it changes the speed of the training process)
     test_batch_size = 16 #256
