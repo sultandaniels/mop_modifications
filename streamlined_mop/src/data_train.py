@@ -142,7 +142,7 @@ if __name__ == '__main__':
         fig, axs = plt.subplots(1, 3, figsize=(40, 20))  # 1 row, 3 columns, with a figure size of 15x5 inches
         filecount = 0
 
-        error_checkpoints_tuples = []
+        sys_error_checkpoints_tuples = []
         ts = [50, 100, 200]
         for filename in os.listdir(output_dir + "/checkpoints/"):
             filecount += 1
@@ -150,27 +150,23 @@ if __name__ == '__main__':
             config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
             print("\n\n\nckpt_path", config.ckpt_path)
             step_avg_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts) #create the convergence plots and return the step and average error tuple
-            error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
+            sys_error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
 
         #plot the error_checkpoints_tuples
         print("\n\nPlotting error_checkpoints_tuples")
-
-        print("error_checkpoints_tuples before sort", error_checkpoints_tuples)
-        #sort the list of tuples by the step
-        error_checkpoints_tuples.sort(key=lambda x: int(x[0]))
-        print("error_checkpoints_tuples after sort", error_checkpoints_tuples)
-        
         #make a new figure
         fig, ax = plt.subplots(3, 3, figsize=(30, 15))
+        print("\n\n\nsys_error_checkpoints_tuples", sys_error_checkpoints_tuples)
 
-        # # Create a ScalarFormatter object
-        # formatter = ScalarFormatter(useMathText=True)  # useMathText=True to use math text for scientific notation
-        # formatter.set_scientific(True)  # Enable scientific notation
-        # formatter.set_powerlimits((-1,1))  # Use scientific notation if exponent is greater than 1 or less than -1
+        for sys in range(config.num_val_tasks):
+            #set error_checkpoint_tuples to be a list of tuples of all the error_checkpoints_tuples for the system sys
+            error_checkpoints_tuples = [x for x in sys_error_checkpoints_tuples if x[1][0] == sys]
+            print("\nerror_checkpoints_tuples", error_checkpoints_tuples)
 
-        #make a plot for each value of t in ts for each system
-        for t in range(len(ts)):
-            for sys in range(config.num_val_tasks):
+            #sort the error_checkpoints_tuples by the step
+            error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
+            #make a plot for each value of t in ts for each system
+            for t in range(len(ts)):
                 ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t] for x in error_checkpoints_tuples], marker='o')
                 ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]))
                 ax[t][sys].set_xlabel("Checkpoint Step")

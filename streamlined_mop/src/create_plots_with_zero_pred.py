@@ -1049,13 +1049,14 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     '#6D4C41', # Brown 600 
     ]
     print("\n\nPlotting predictions")
+    sys_tuples = []
     for sys in range(len(irreducible_error_load)):            
         #plot transformer, KF and FIR errors
         #get the checkpoint steps number from the checkpoint path
         ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
         print("\n\nckpt_steps:", ckpt_steps)
         handles, err_avg_t = plot_errs_conv(ts, j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade)
-        print("len of handles:", len(handles))
+        sys_tuples.append((sys, err_avg_t)) #append the system number and the error average at step t
         
         
         # Step 1: Collect legend handles and labels
@@ -1091,7 +1092,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
     fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_conv" + ("_normalized" if kfnorm else "") + ("-changing" if config.changing else ""))
     
-    return (ckpt_steps, err_avg_t) #return the checkpoint steps number and the error average at step t
+    return (ckpt_steps, sys_tuples) #return the checkpoint steps number and the system tuples
 
 ####################################################################################################
 # main function
