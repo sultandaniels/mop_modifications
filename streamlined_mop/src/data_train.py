@@ -174,7 +174,7 @@ if __name__ == '__main__':
                 ax[t][sys].set_ylabel("Error")
 
                 # Apply the formatter to the x-axis
-                ax[t][sys].xaxis.set_major_formatter(formatter)
+                # ax[t][sys].xaxis.set_major_formatter(formatter)
                 # ax[t][sys].legend()
         
         #get the parent directory of the ckpt_path
