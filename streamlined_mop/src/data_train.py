@@ -154,9 +154,11 @@ if __name__ == '__main__':
 
         #plot the error_checkpoints_tuples
         print("\n\nPlotting error_checkpoints_tuples")
+
+        print("error_checkpoints_tuples before sort", error_checkpoints_tuples)
         #sort the list of tuples by the step
         error_checkpoints_tuples.sort(key=lambda x: x[0])
-        # print("error_checkpoints_tuples", error_checkpoints_tuples)
+        print("error_checkpoints_tuples after sort", error_checkpoints_tuples)
         
         #make a new figure
         fig, ax = plt.subplots(3, 3, figsize=(30, 15))
@@ -177,7 +179,7 @@ if __name__ == '__main__':
                 # Apply the formatter to the x-axis
                 # ax[t][sys].xaxis.set_major_formatter(formatter)
                 # ax[t][sys].legend()
-                
+
                 # Rotate the x-axis labels
                 ax[t][sys].tick_params(axis='x', labelrotation=45)  # Rotate labels to 45 degrees
                 # Adjust the label size if necessary
