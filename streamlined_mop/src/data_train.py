@@ -160,17 +160,17 @@ if __name__ == '__main__':
         #make a new figure
         fig, ax = plt.subplots(3, 3, figsize=(30, 15))
 
-        # Create a ScalarFormatter object
-        formatter = ScalarFormatter(useMathText=True)  # useMathText=True to use math text for scientific notation
-        formatter.set_scientific(True)  # Enable scientific notation
-        formatter.set_powerlimits((-1,1))  # Use scientific notation if exponent is greater than 1 or less than -1
+        # # Create a ScalarFormatter object
+        # formatter = ScalarFormatter(useMathText=True)  # useMathText=True to use math text for scientific notation
+        # formatter.set_scientific(True)  # Enable scientific notation
+        # formatter.set_powerlimits((-1,1))  # Use scientific notation if exponent is greater than 1 or less than -1
 
         #make a plot for each value of t in ts for each system
         for t in range(len(ts)):
             for sys in range(config.num_val_tasks):
-                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t] for x in error_checkpoints_tuples])
-                ax[t][sys].set_title("System " + str(sys) + " t = " + str(ts[t]))
-                ax[t][sys].set_xlabel("Step")
+                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t] for x in error_checkpoints_tuples], marker='o')
+                ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]))
+                ax[t][sys].set_xlabel("Checkpoint Step")
                 ax[t][sys].set_ylabel("Error")
 
                 # Apply the formatter to the x-axis
