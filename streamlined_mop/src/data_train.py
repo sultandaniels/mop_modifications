@@ -8,6 +8,7 @@ from create_plots_with_zero_pred import create_plots, convergence_plots
 import argparse
 import wandb
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 
 # main function
 
@@ -157,15 +158,24 @@ if __name__ == '__main__':
         print("error_checkpoints_tuples", error_checkpoints_tuples)
         
         #make a new figure
-        fig, ax = plt.subplots(3, 3, figsize=(15, 9))
+        fig, ax = plt.subplots(3, 3, figsize=(15,30))
+
+        # Create a ScalarFormatter object
+        formatter = ScalarFormatter(useMathText=True)  # useMathText=True to use math text for scientific notation
+        formatter.set_scientific(True)  # Enable scientific notation
+        formatter.set_powerlimits((-1,1))  # Use scientific notation if exponent is greater than 1 or less than -1
+
         #make a plot for each value of t in ts for each system
         for t in range(len(ts)):
             for sys in range(config.num_val_tasks):
-                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t] for x in error_checkpoints_tuples]) #, label="t = " + str(ts[t]))
+                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t] for x in error_checkpoints_tuples])
                 ax[t][sys].set_title("System " + str(sys) + " t = " + str(ts[t]))
                 ax[t][sys].set_xlabel("Step")
                 ax[t][sys].set_ylabel("Error")
-                ax[t][sys].legend()
+
+                # Apply the formatter to the x-axis
+                ax[t][sys].xaxis.set_major_formatter(formatter)
+                # ax[t][sys].legend()
         
         #get the parent directory of the ckpt_path
         parent_dir = os.path.dirname(config.ckpt_path)
