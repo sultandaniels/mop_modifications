@@ -159,9 +159,9 @@ if __name__ == '__main__':
         print("\n\n\nsys_error_checkpoints_tuples", sys_error_checkpoints_tuples)
 
         for sys in range(config.num_val_tasks):
-            #set error_checkpoint_tuples to be a list of tuples of all the error_checkpoints_tuples for the system sys
-            error_checkpoints_tuples = [x for x in sys_error_checkpoints_tuples if x[1][0] == sys]
-            print("\nerror_checkpoints_tuples", error_checkpoints_tuples)
+            # Filter and transform sys_error_checkpoints_tuples for the current system sys
+            error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
+            print("\nerror_checkpoints_tuples for system", sys, ":", error_checkpoints_tuples)
 
             #sort the error_checkpoints_tuples by the step
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
