@@ -1089,7 +1089,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
     os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_conv" + ("-changing" if config.changing else ""))
+    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_conv" + ("_normalized" if kfnorm else "") + ("-changing" if config.changing else ""))
     
     return (ckpt_steps, err_avg_t) #return the checkpoint steps number and the error average at step t
 

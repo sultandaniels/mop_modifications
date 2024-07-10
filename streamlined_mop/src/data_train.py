@@ -158,7 +158,7 @@ if __name__ == '__main__':
         print("error_checkpoints_tuples", error_checkpoints_tuples)
         
         #make a new figure
-        fig, ax = plt.subplots(3, 3, figsize=(15,30))
+        fig, ax = plt.subplots(3, 3, figsize=(30, 15))
 
         # Create a ScalarFormatter object
         formatter = ScalarFormatter(useMathText=True)  # useMathText=True to use math text for scientific notation
@@ -183,7 +183,7 @@ if __name__ == '__main__':
         #get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
         os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("-changing" if config.changing else ""))
+        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_normalized" if kfnorm else "") + ("-changing" if config.changing else ""))
 
     else:
         # instantiate gpt2 model
