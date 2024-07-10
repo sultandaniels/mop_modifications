@@ -1022,7 +1022,32 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     #load the prediction errors from the file
     err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
 
-    colors = ['#00429d', '#964b00', '#009292', '#ff6db6', '#ffb6db', '#490092', '#006ddb', '#b66dff', '#6db6ff', '#b6dbff', '#920000', '#924900', '#db6d00']
+    colors = [
+    '#D32F2F', # Red 700
+    '#C2185B', # Pink 700
+    '#7B1FA2', # Purple 700
+    '#512DA8', # Deep Purple 700
+    '#303F9F', # Indigo 700
+    '#1976D2', # Blue 700
+    '#0288D1', # Light Blue 700
+    '#0097A7', # Cyan 700
+    '#00796B', # Teal 700
+    '#388E3C', # Green 700
+    '#689F38', # Light Green 700
+    '#AFB42B', # Lime 700
+    '#FBC02D', # Yellow 700
+    '#FFA000', # Amber 700
+    '#F57C00', # Orange 700
+    '#E64A19', # Deep Orange 700
+    '#5D4037', # Brown 700
+    '#616161', # Grey 700
+    '#455A64', # Blue Grey 700
+    '#8E24AA', # Purple 600
+    '#D81B60', # Pink 600
+    '#3949AB', # Indigo 600
+    '#F4511E', # Deep Orange 600
+    '#6D4C41', # Brown 600 
+    ]
     print("\n\nPlotting predictions")
     for sys in range(len(irreducible_error_load)):            
         #plot transformer, KF and FIR errors
