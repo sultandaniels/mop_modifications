@@ -166,7 +166,7 @@ if __name__ == '__main__':
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
                 ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t] for x in error_checkpoints_tuples], marker='o')
-                ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]))
+                ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + ("Normalized" if kfnorm else ""))
                 ax[t][sys].set_xlabel("Checkpoint Step")
                 ax[t][sys].set_ylabel("Error")
 
