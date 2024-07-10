@@ -1011,7 +1011,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
     
     return None
 
-def convergence_plots(config, run_preds, run_deg_kf_test, kfnorm, num_systems, shade, fig, ax, ts):
+def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems, shade, fig, ax, ts):
     excess = False
     C_dist = config.C_dist
     print("\n\n", "config path:", config.ckpt_path)

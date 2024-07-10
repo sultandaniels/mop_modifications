@@ -148,7 +148,7 @@ if __name__ == '__main__':
             print("filecount:", filecount)
             config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
             print("\n\n\nckpt_path", config.ckpt_path)
-            step_avg_tup = convergence_plots(config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts) #create the convergence plots and return the step and average error tuple
+            step_avg_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts) #create the convergence plots and return the step and average error tuple
             error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
 
         #plot the error_checkpoints_tuples
