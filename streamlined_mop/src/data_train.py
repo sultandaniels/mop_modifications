@@ -156,13 +156,11 @@ if __name__ == '__main__':
         print("\n\nPlotting error_checkpoints_tuples")
         #make a new figure
         fig, ax = plt.subplots(3, 3, figsize=(30, 15))
-        print("\n\n\nsys_error_checkpoints_tuples", sys_error_checkpoints_tuples)
 
         for sys in range(config.num_val_tasks):
             # Filter and transform sys_error_checkpoints_tuples for the current system sys
             error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
-            print("\nerror_checkpoints_tuples for system", sys, ":", error_checkpoints_tuples)
-
+            
             #sort the error_checkpoints_tuples by the step
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
             #make a plot for each value of t in ts for each system
