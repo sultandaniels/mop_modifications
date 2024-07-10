@@ -6,7 +6,7 @@
 
 #remove pycache directories and pyc files
 __pycache__/
-*.py
+*.pyc
 
 #remove wandb directory
 streamlined_mop/src/wandb
