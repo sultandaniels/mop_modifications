@@ -153,9 +153,10 @@ if __name__ == '__main__':
             error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
 
         #plot the error_checkpoints_tuples
+        print("\n\nPlotting error_checkpoints_tuples")
         #sort the list of tuples by the step
         error_checkpoints_tuples.sort(key=lambda x: x[0])
-        print("error_checkpoints_tuples", error_checkpoints_tuples)
+        # print("error_checkpoints_tuples", error_checkpoints_tuples)
         
         #make a new figure
         fig, ax = plt.subplots(3, 3, figsize=(30, 15))
@@ -176,7 +177,14 @@ if __name__ == '__main__':
                 # Apply the formatter to the x-axis
                 # ax[t][sys].xaxis.set_major_formatter(formatter)
                 # ax[t][sys].legend()
-        
+                
+                # Rotate the x-axis labels
+                ax[t][sys].tick_params(axis='x', labelrotation=45)  # Rotate labels to 45 degrees
+                # Adjust the label size if necessary
+                ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
+
+        # Adjust layout to make room for the rotated x-axis labels
+        plt.tight_layout()
         #get the parent directory of the ckpt_path
         parent_dir = os.path.dirname(config.ckpt_path)
 
