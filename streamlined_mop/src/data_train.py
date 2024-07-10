@@ -82,7 +82,7 @@ if __name__ == '__main__':
         run_deg_kf_test = False #run degenerate KF test
         excess = False #run the excess plots
         shade = True
-        config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=52000.ckpt")
+        config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
         print("ckpt_path", config.ckpt_path)
 
         if resume_train:
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         shade = True
 
         if resume_train:
-            config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=52000.ckpt")
+            config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
             print("ckpt_path", config.ckpt_path)
             
             #get the parent directory of the ckpt_path
