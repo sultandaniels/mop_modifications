@@ -93,7 +93,7 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
             if name == "MOP":
                 print("\n\nplotting MOP at step:", train_steps, "\n\n")
                 avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
-                handles.extend(ax.plot(avg, label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j]))
+                handles.extend(ax.plot(avg, label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j-1]))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg -err_irreducible[sys] - std, avg -err_irreducible[sys] + std, facecolor=handles[-1].get_color(), alpha=0.2)
 
@@ -106,7 +106,7 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
             if name == "MOP":
                 print("\n\nplotting MOP at step:", train_steps, "\n\n")
                 avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
-                handles.extend(ax.plot(avg - err_irreducible[sys], label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j]))
+                handles.extend(ax.plot(avg - err_irreducible[sys], label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j-1]))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
 
