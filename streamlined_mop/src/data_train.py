@@ -180,7 +180,7 @@ if __name__ == '__main__':
                 ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
                 # set y-axis to log scale
                 ax[t][sys].set_yscale('log')
-                ax[t][sys].set_xscale('log')
+                # ax[t][sys].set_xscale('log')
 
         # Adjust layout to make room for the rotated x-axis labels
         plt.tight_layout()
