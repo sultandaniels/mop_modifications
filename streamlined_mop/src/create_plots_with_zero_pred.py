@@ -1023,30 +1023,54 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
 
     colors = [
-    '#D32F2F', # Red 700
-    '#C2185B', # Pink 700
-    '#7B1FA2', # Purple 700
-    '#512DA8', # Deep Purple 700
-    '#303F9F', # Indigo 700
-    '#1976D2', # Blue 700
-    '#0288D1', # Light Blue 700
-    '#0097A7', # Cyan 700
-    '#00796B', # Teal 700
-    '#388E3C', # Green 700
-    '#689F38', # Light Green 700
-    '#AFB42B', # Lime 700
-    '#FBC02D', # Yellow 700
-    '#FFA000', # Amber 700
-    '#F57C00', # Orange 700
-    '#E64A19', # Deep Orange 700
-    '#5D4037', # Brown 700
-    '#616161', # Grey 700
-    '#455A64', # Blue Grey 700
-    '#8E24AA', # Purple 600
-    '#D81B60', # Pink 600
-    '#3949AB', # Indigo 600
-    '#F4511E', # Deep Orange 600
-    '#6D4C41', # Brown 600 
+        '#D32F2F', # Red
+        '#C2185B', # Pink
+        '#7B1FA2', # Purple
+        '#512DA8', # Deep Purple
+        '#303F9F', # Indigo
+        '#1976D2', # Blue
+        '#0288D1', # Light Blue
+        '#0097A7', # Cyan
+        '#00796B', # Teal
+        '#388E3C', # Green
+        '#689F38', # Light Green
+        '#AFB42B', # Lime
+        '#FBC02D', # Yellow
+        '#FFA000', # Amber
+        '#F57C00', # Orange
+        '#E64A19', # Deep Orange
+        '#5D4037', # Brown
+        '#616161', # Grey
+        '#455A64', # Blue Grey
+        '#8E24AA', # Purple 600
+        '#D81B60', # Pink 600
+        '#3949AB', # Indigo 600
+        '#F4511E', # Deep Orange 600
+        '#6D4C41', # Brown 600
+        '#1B5E20', # Dark Green
+        '#33691E', # Lime Green Dark
+        '#827717', # Olive
+        '#F9A825', # Mustard
+        '#FF6F00', # Orange Deep
+        '#E65100', # Orange Dark
+        '#BF360C', # Deep Orange Dark
+        '#3E2723', # Deep Brown
+        '#212121', # Almost Black
+        '#263238', # Blue Grey Dark
+        '#004D40', # Teal Dark
+        '#006064', # Cyan Dark
+        '#01579B', # Light Blue Dark
+        '#0D47A1', # Blue Dark
+        '#1A237E', # Indigo Dark
+        '#311B92', # Deep Purple Dark
+        '#4A148C', # Purple Dark
+        '#880E4F', # Pink Dark
+        '#B71C1C', # Red Dark
+        '#D50000', # Red Accent
+        '#C51162', # Pink Accent
+        '#AA00FF', # Purple Accent
+        '#6200EA', # Deep Purple Accent
+        '#304FFE', # Indigo Accent
     ]
     print("\n\nPlotting predictions")
     sys_errs = []
