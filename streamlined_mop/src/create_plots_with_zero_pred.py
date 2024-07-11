@@ -464,15 +464,15 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     ])
     print("err_lss keys:", err_lss.keys())
 
-    # #Analytical Kalman Predictions
-    # analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
-    # err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
+    #Analytical Kalman Predictions
+    analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
+    err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
 
-    # # OLS Wentinn
-    # start = time.time() #start the timer for OLS Wentinn predictions
-    # err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
-    # end = time.time() #end the timer for OLS Wentinn predictions
-    # print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
+    # OLS Wentinn
+    start = time.time() #start the timer for OLS Wentinn predictions
+    err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
+    end = time.time() #end the timer for OLS Wentinn predictions
+    print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
 
     #Original OLS
     start = time.time() #start the timer for OLS predictions
