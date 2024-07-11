@@ -63,6 +63,7 @@ class CnnKF(nn.Module):
 
         # Highlight
         _ws_geometric = (Hs_cumQlHsLl_R.mT @ Hs_cumQlHsLl_R) * ((cll ** (R + 1)) / (1 - cll))   # [B... x S_D x S_D]
+        print("shape _ws_geometric", _ws_geometric.shape)
         ws_geometric_err = utils.batch_trace(sqrt_S_Ws.mT @ _ws_geometric @ sqrt_S_Ws)          # [B...]
 
         # Observation noise error
