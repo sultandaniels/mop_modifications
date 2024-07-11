@@ -72,7 +72,6 @@ class CnnKF(nn.Module):
         print("ws_current_err", ws_current_err.shape)
         print("ws_recent_err", ws_recent_err.shape)
         print("ws_geometric_err", ws_geometric_err.shape)
-        print("v_recent_err", v_recent_err.shape)
 
         #check if Q is zero
         if torch.all(Q == 0):
@@ -81,6 +80,7 @@ class CnnKF(nn.Module):
         # TODO: Backward pass on the above one breaks when Q = 0 for some reason
         # v_recent_err = (Q @ sqrt_S_V.unsqueeze(-3)).flatten(-3, -1).norm(dim=-1) ** 2           # [B...]
         v_recent_err = utils.batch_trace(sqrt_S_V.mT @ (Q.mT @ Q).sum(dim=-3) @ sqrt_S_V)       # [B...]
+        print("v_recent_err", v_recent_err.shape)
 
         err = ws_current_err + ws_recent_err + ws_geometric_err + v_current_err + v_recent_err  # [B...]
         print("shape of err", err.shape)
