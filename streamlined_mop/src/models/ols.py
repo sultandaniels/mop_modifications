@@ -63,16 +63,11 @@ class CnnKF(nn.Module):
 
         # Highlight
         _ws_geometric = (Hs_cumQlHsLl_R.mT @ Hs_cumQlHsLl_R) * ((cll ** (R + 1)) / (1 - cll))   # [B... x S_D x S_D]
-        print("shape _ws_geometric", _ws_geometric.shape)
         ws_geometric_err = utils.batch_trace(sqrt_S_Ws.mT @ _ws_geometric @ sqrt_S_Ws)          # [B...]
 
         # Observation noise error
         # Highlight
         v_current_err = sqrt_S_V.norm(dim=(-2, -1)) ** 2                                        # [B...]
-        print("\n\nshape of v_current_err", v_current_err.shape)
-        print("ws_current_err", ws_current_err.shape)
-        print("ws_recent_err", ws_recent_err.shape)
-        print("ws_geometric_err", ws_geometric_err.shape)
 
         #check if Q is zero
         if torch.all(Q == 0):
@@ -81,11 +76,8 @@ class CnnKF(nn.Module):
         # TODO: Backward pass on the above one breaks when Q = 0 for some reason
         # v_recent_err = (Q @ sqrt_S_V.unsqueeze(-3)).flatten(-3, -1).norm(dim=-1) ** 2           # [B...]
         v_recent_err = utils.batch_trace(sqrt_S_V.mT @ (Q.mT @ Q).sum(dim=-3) @ sqrt_S_V)       # [B...]
-        print("v_recent_err", v_recent_err.shape)
 
         err = ws_current_err + ws_recent_err + ws_geometric_err + v_current_err + v_recent_err  # [B...]
-        print("shape of err", err.shape)
-        print("type of err", type(err))
         return err.real
 
     """ forward

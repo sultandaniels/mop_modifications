@@ -293,18 +293,13 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
                     )
 
                     ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
-                    print("\n\nshape of ls:", np.array(ls).shape)
                     ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
-                    print("shape of ls_analytical:", np.array(ls_analytical).shape)
 
                 _preds_rls_wentinn.append(ls)
                 _preds_rls_wentinn_analytical.append(ls_analytical)
-                print("shape of _preds_rls_wentinn_analytical:", np.array(_preds_rls_wentinn_analytical).shape)
 
             preds_rls_wentinn.append(_preds_rls_wentinn)
             preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
-            print("shape of _preds_rls_wentinn_analytical:", np.array(_preds_rls_wentinn_analytical).shape)
-            raise Exception("Stop after shape of _preds_rls_wentinn_analytical")
 
         err_lss[f"OLS_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
         #err_lss[f"OLS_analytical_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn_analytical), axis=-1) ** 2
