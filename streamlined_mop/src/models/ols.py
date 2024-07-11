@@ -78,6 +78,7 @@ class CnnKF(nn.Module):
         v_recent_err = utils.batch_trace(sqrt_S_V.mT @ (Q.mT @ Q).sum(dim=-3) @ sqrt_S_V)       # [B...]
 
         err = ws_current_err + ws_recent_err + ws_geometric_err + v_current_err + v_recent_err  # [B...]
+        print("\n\nshape of err", err.shape)
         return err.real
 
     """ forward
