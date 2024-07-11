@@ -300,7 +300,7 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
 
             preds_rls_wentinn.append(_preds_rls_wentinn)
             preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
-            print("shape of _preds_rls_wentinn:", np.array(_preds_rls_wentinn).shape)
+            print("shape of _preds_rls_wentinn_analytical:", np.array(_preds_rls_wentinn_analytical).shape)
 
         err_lss[f"OLS_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
         err_lss[f"OLS_analytical_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn_analytical), axis=-1) ** 2
@@ -464,15 +464,15 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     ])
     print("err_lss keys:", err_lss.keys())
 
-    #Analytical Kalman Predictions
-    analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
-    err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
+    # #Analytical Kalman Predictions
+    # analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
+    # err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
 
-    # OLS Wentinn
-    start = time.time() #start the timer for OLS Wentinn predictions
-    err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
-    end = time.time() #end the timer for OLS Wentinn predictions
-    print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
+    # # OLS Wentinn
+    # start = time.time() #start the timer for OLS Wentinn predictions
+    # err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
+    # end = time.time() #end the timer for OLS Wentinn predictions
+    # print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
 
     #Original OLS
     start = time.time() #start the timer for OLS predictions
