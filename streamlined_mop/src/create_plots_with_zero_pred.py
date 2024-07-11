@@ -297,7 +297,7 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
             preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
 
         err_lss[f"OLS_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-        err_lss[f"OLS_analytical_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+        err_lss[f"OLS_analytical_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn_analytical), axis=-1) ** 2
     end = time.time()
     print("time elapsed:", (end - start)/60, "min")
     return err_lss
