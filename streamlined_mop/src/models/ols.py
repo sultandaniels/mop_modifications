@@ -68,6 +68,11 @@ class CnnKF(nn.Module):
         # Observation noise error
         # Highlight
         v_current_err = sqrt_S_V.norm(dim=(-2, -1)) ** 2                                        # [B...]
+        print("\n\nshape of v_current_err", v_current_err.shape)
+        print("ws_current_err", ws_current_err.shape)
+        print("ws_recent_err", ws_recent_err.shape)
+        print("ws_geometric_err", ws_geometric_err.shape)
+        print("v_recent_err", v_recent_err.shape)
 
         #check if Q is zero
         if torch.all(Q == 0):
@@ -78,7 +83,7 @@ class CnnKF(nn.Module):
         v_recent_err = utils.batch_trace(sqrt_S_V.mT @ (Q.mT @ Q).sum(dim=-3) @ sqrt_S_V)       # [B...]
 
         err = ws_current_err + ws_recent_err + ws_geometric_err + v_current_err + v_recent_err  # [B...]
-        print("\n\nshape of err", err.shape)
+        print("shape of err", err.shape)
         print("type of err", type(err))
         return err.real
 
