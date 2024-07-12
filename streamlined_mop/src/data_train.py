@@ -9,6 +9,7 @@ import argparse
 import wandb
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
+import numpy as np
 
 # main function
 
@@ -165,7 +166,8 @@ if __name__ == '__main__':
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
-                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t] for x in error_checkpoints_tuples], marker='o')
+                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t][0] for x in error_checkpoints_tuples], marker='o')
+                ax[t][sys].fill_between(np.arange(len(error_checkpoints_tuples)), [x[1][t][0] - x[1][t][1] for x in error_checkpoints_tuples], [x[1][t][0] + x[1][t][1] for x in error_checkpoints_tuples], alpha=0.2)
                 ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + (" Normalized" if kfnorm else ""))
                 ax[t][sys].set_xlabel("Checkpoint Step")
                 ax[t][sys].set_ylabel("Error")
