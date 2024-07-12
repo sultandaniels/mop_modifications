@@ -106,7 +106,7 @@ class CnnKF(nn.Module):
     def update(self,
                context: torch.Tensor,   # [B... x R x O_D]
                target: torch.Tensor     # [B... x O_D]
-    ) -> None:
+    ):
         # DONE: Implement online least squares for memory efficiency
         flattened_X = context.flip(-2).view((-1, self.ir_length * self.O_D))                        # [B x RO_D]
         flattened_observations = target.view((-1, self.O_D))                                        # [B x O_D]
@@ -122,6 +122,7 @@ class CnnKF(nn.Module):
             flattened_w = torch.linalg.pinv(self.X) @ self.y
 
         self.observation_IR.data = flattened_w.unflatten(0, (self.ir_length, -1)).transpose(0, 1).to(torch.float32) # [O_D x R x O_D]
+        return self.observation_IR
 
 
 
