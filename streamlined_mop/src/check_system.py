@@ -3,7 +3,7 @@ import dyn_models
 import pickle
 import numpy
 #check systems that were trained and validated
-with open("/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240618_101949.96f4c1_upperTriA_unif_C/data/train_upperTriA_unif_C_sim_objs.pkl", "rb") as f:
+with open("/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/val_upperTriA_gauss_C_sim_objs.pkl", "rb") as f:
         sim_objs = pickle.load(f)
 
 #print the first system
@@ -19,10 +19,6 @@ print("is upper triangular", numpy.allclose(sim_objs[1].A, numpy.triu(sim_objs[1
 print("diagonal elements", numpy.diagonal(sim_objs[1].A))
 print("\n\n\n")
 print("sim_objs[2].A", sim_objs[2].A)
-print("is upper triangular", numpy.allclose(sim_objs[2].A, numpy.triu(sim_objs[2].A)))
-print("diagonal elements", numpy.diagonal(sim_objs[2].A))
-print("\n\n\n")
-print("sim_objs[3].A", sim_objs[3].A)
-print("is upper triangular", numpy.allclose(sim_objs[3].A, numpy.triu(sim_objs[3].A)))
-print("diagonal elements", numpy.diagonal(sim_objs[3].A))
-
+print("\nis upper triangular", numpy.allclose(sim_objs[2].A, numpy.triu(sim_objs[2].A)))
+print("\ndiagonal elements", numpy.diagonal(sim_objs[2].A))
+print("\neigenvalues", numpy.linalg.eigvals(sim_objs[2].A))
