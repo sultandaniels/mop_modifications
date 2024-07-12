@@ -294,6 +294,8 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
                     if i == 50:
                         #save the observation_IR tensor to a file
                         with open(f"/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/observation_IR_{ir_length}.pt", "wb") as f:
+                            torch.save(obs_tensor, f)
+                            print("\n\n\nsaved observation_IR tensor to file")
 
                     ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
                     ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
