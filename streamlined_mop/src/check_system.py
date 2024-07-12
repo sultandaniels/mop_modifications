@@ -20,7 +20,7 @@ def convert_to_tensor_dicts(sim_objs):
 
 
 #check systems that were trained and validated
-with open("/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/val_upperTriA_gauss_C_sim_objs.pkl", "rb") as f:
+with open("../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/val_upperTriA_gauss_C_sim_objs.pkl", "rb") as f:
         sim_objs = pickle.load(f)
 
 print("type(sim_objs[0])", type(sim_objs[0]))
@@ -48,7 +48,7 @@ tensor_dicts = convert_to_tensor_dicts(sim_objs)
 print("tensor_dicts", tensor_dicts)
 
 #save the tensors to a file in the same directory
-with open("/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/val_upperTriA_gauss_C_tensor_dicts.pkl", "wb") as f:
+with open("../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/val_upperTriA_gauss_C_sim_objs.pkl", "wb") as f:
         pickle.dump(tensor_dicts, f)
 
 

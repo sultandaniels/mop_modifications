@@ -293,7 +293,7 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
                     )
                     if i == 50 and ir_length == 3:
                         # Inside your loop or function where you open the file
-                        file_path = f"/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/observation_IR_{ir_length}.pt"
+                        file_path = f"../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/observation_IR_{ir_length}.pt"
                         directory = os.path.dirname(file_path)
 
                         # Create the directory if it does not exist
