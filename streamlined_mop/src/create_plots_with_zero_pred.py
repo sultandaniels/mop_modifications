@@ -272,7 +272,7 @@ def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_
 
 def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
     print("\n\n max_ir_length + 1:", max_ir_length+1)
-    for ir_length in range(1, max_ir_length + 1):
+    for ir_length in range(3, max_ir_length + 1):
         start = time.time()
         print(f"\n\nIR length: {ir_length}")
         preds_rls_wentinn = []
@@ -291,9 +291,17 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
                         torch.from_numpy(padded_ys[i:i + ir_length]),
                         torch.from_numpy(padded_ys[i + ir_length])
                     )
-                    if i == 50:
-                        #save the observation_IR tensor to a file
-                        with open(f"/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/observation_IR_{ir_length}.pt", "wb") as f:
+                    if i == 50 and ir_length == 3:
+                        # Inside your loop or function where you open the file
+                        file_path = f"/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/observation_IR_{ir_length}.pt"
+                        directory = os.path.dirname(file_path)
+
+                        # Create the directory if it does not exist
+                        if not os.path.exists(directory):
+                            os.makedirs(directory)
+
+                        # Now, safely open the file for writing
+                        with open(file_path, "wb") as f:
                             torch.save(obs_tensor, f)
                             print("\n\n\nsaved observation_IR tensor to file")
 
@@ -473,11 +481,11 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
 
-    # OLS Wentinn
-    start = time.time() #start the timer for OLS Wentinn predictions
-    err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
-    end = time.time() #end the timer for OLS Wentinn predictions
-    print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
+    # # OLS Wentinn
+    # start = time.time() #start the timer for OLS Wentinn predictions
+    # err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
+    # end = time.time() #end the timer for OLS Wentinn predictions
+    # print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
 
     #Original OLS
     start = time.time() #start the timer for OLS predictions
