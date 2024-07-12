@@ -161,6 +161,7 @@ if __name__ == '__main__':
         for sys in range(config.num_val_tasks):
             # Filter and transform sys_error_checkpoints_tuples for the current system sys
             error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
+            print("error_checkpoints_tuples", error_checkpoints_tuples)
             
             #sort the error_checkpoints_tuples by the step
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
