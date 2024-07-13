@@ -272,7 +272,7 @@ def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_
 
 def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
     print("\n\n max_ir_length + 1:", max_ir_length+1)
-    for ir_length in range(3, max_ir_length + 1):
+    for ir_length in range(2, max_ir_length + 1):
         start = time.time()
         print(f"\n\nIR length: {ir_length}")
         preds_rls_wentinn = []
@@ -291,7 +291,7 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
                         torch.from_numpy(padded_ys[i:i + ir_length]),
                         torch.from_numpy(padded_ys[i + ir_length])
                     )
-                    if i == 50 and ir_length == 3:
+                    if i == 50 and ir_length == 2:
                         # Inside your loop or function where you open the file
                         file_path = f"../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/observation_IR_{ir_length}.pt"
                         directory = os.path.dirname(file_path)
@@ -307,6 +307,8 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
 
                     ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
                     ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+             
+                print("ls_analytical[50]:", ls_analytical[50])
 
                 _preds_rls_wentinn.append(ls)
                 _preds_rls_wentinn_analytical.append(ls_analytical)
