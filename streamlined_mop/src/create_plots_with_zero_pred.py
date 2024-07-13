@@ -484,6 +484,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     #Analytical Kalman Predictions
     analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
+    print("err_lss Analytical_Kalman sys 2:", err_lss["Analytical_Kalman"][2][50])
 
     # # OLS Wentinn
     # start = time.time() #start the timer for OLS Wentinn predictions
