@@ -496,8 +496,8 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     end = time.time() #end the timer for OLS predictions
     print("time elapsed for OLS Pred:", (end - start)/60, "min") #print the time elapsed for OLS predictions
     #print the value of the OLS prediction for system 2 at position 50
-    print("err_lss OLS_ir_2 shape:", err_lss["OLS_ir_2"].shape)
-    print("err_lss OLS_ir_2 sys 2:", err_lss["OLS_ir_2"][2][:,50].mean())
+    print("err_lss OLS_analutical_ir_2 shape:", err_lss["OLS_analutical_ir_2"].shape)
+    print("err_lss OLS_analutical_ir_2 sys 2:", err_lss["OLS_analutical_ir_2"][2][:,50].mean())
 
     # #Revised OLS
     # print("\n\nREVISED OLS")
