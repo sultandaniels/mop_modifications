@@ -299,24 +299,24 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
                 _preds_rls_wentinn.append(ls)
                 _preds_rls_wentinn_analytical.append(ls_analytical)
 
-                if _preds_rls_wentinn_analytical[-1][50] < 0.6 and ir_length == 2 and sys_count == 2:
+                # if _preds_rls_wentinn_analytical[-1][50] < 0.6 and ir_length == 2 and sys_count == 2:
                         
 
-                    print("len of _preds_rls_wentinn_analytical[-1]:", len(_preds_rls_wentinn_analytical[-1]))
+                #     print("len of _preds_rls_wentinn_analytical[-1]:", len(_preds_rls_wentinn_analytical[-1]))
 
-                    # Inside your loop or function where you open the file
-                    file_path = f"../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/observation_IR_{ir_length}.pt"
-                    directory = os.path.dirname(file_path)
+                #     # Inside your loop or function where you open the file
+                #     file_path = f"../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/observation_IR_{ir_length}.pt"
+                #     directory = os.path.dirname(file_path)
 
-                    # Create the directory if it does not exist
-                    if not os.path.exists(directory):
-                        os.makedirs(directory)
+                #     # Create the directory if it does not exist
+                #     if not os.path.exists(directory):
+                #         os.makedirs(directory)
 
-                    # Now, safely open the file for writing
-                    with open(file_path, "wb") as f:
-                        torch.save(obs_tensor, f)
-                        print("\n\n\nsaved observation_IR tensor to file")
-                        print("_preds_rls_wentinn_analytical[-1][50]:", _preds_rls_wentinn_analytical[-1][50])
+                #     # Now, safely open the file for writing
+                #     with open(file_path, "wb") as f:
+                #         torch.save(obs_tensor, f)
+                #         print("\n\n\nsaved observation_IR tensor to file")
+                #         print("_preds_rls_wentinn_analytical[-1][50]:", _preds_rls_wentinn_analytical[-1][50])
 
             preds_rls_wentinn.append(_preds_rls_wentinn)
             preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
