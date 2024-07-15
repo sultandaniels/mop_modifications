@@ -161,14 +161,30 @@ if __name__ == '__main__':
         for sys in range(config.num_val_tasks):
             # Filter and transform sys_error_checkpoints_tuples for the current system sys
             error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
-            print("\nerror_checkpoints_tuples[0][1]", error_checkpoints_tuples[0][1])
+            # print("\nerror_checkpoints_tuples[0][1]", error_checkpoints_tuples[0][1])
             
             #sort the error_checkpoints_tuples by the step
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
+        
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
                 ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t][0] for x in error_checkpoints_tuples], marker='o')
-                ax[t][sys].fill_between(np.arange(len(error_checkpoints_tuples)), [x[1][t][0] - x[1][t][1] for x in error_checkpoints_tuples], [x[1][t][0] + x[1][t][1] for x in error_checkpoints_tuples], alpha=0.2)
+                # Example debug print to check the structure
+
+                # Assuming the above prints confirm the lists are 1-dimensional
+                y1 = [x[1][t][0] - x[1][t][1] for x in error_checkpoints_tuples]
+
+                print("len of error_checkpoints_tuples", len(error_checkpoints_tuples))
+                print("len of error_checkpoints_tuples[0]", len(error_checkpoints_tuples[0]))
+                print("len of error_checkpoints_tuples[0][1]", len(error_checkpoints_tuples[0][1]))
+                print("len of error_checkpoints_tuples[0][1][0]", len(error_checkpoints_tuples[0][1][0]))
+
+                print("len of y1", len(y1))
+                print("shape of y1", np.shape(y1))
+                y2 = [x[1][t][0] + x[1][t][1] for x in error_checkpoints_tuples]
+                x = np.arange(len(error_checkpoints_tuples))
+
+                ax[t][sys].fill_between(x, y1, y2, alpha=0.2)
                 ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + (" Normalized" if kfnorm else ""))
                 ax[t][sys].set_xlabel("Checkpoint Step")
                 ax[t][sys].set_ylabel("Error")
@@ -183,7 +199,7 @@ if __name__ == '__main__':
                 ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
                 # set y-axis to log scale
                 ax[t][sys].set_yscale('log')
-                # ax[t][sys].set_xscale('log')
+                ax[t][sys].set_xscale('log')
 
         # Adjust layout to make room for the rotated x-axis labels
         plt.tight_layout()

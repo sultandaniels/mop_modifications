@@ -1,0 +1,1 @@
+rsync -avz --include 'prediction_errors_gauss_C*/' --exclude '*' sultand@bliss1.ist.berkeley.edu:mop_modifications/streamlined_mop/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/ /Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/
