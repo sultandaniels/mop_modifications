@@ -312,8 +312,8 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
                     # Now, safely open the file for writing
                     with open(file_path, "wb") as f:
                         torch.save(obs_tensor, f)
-                        print("\n\n\nsaved observation_IR tensor to file")
-                        print("_preds_rls_wentinn_analytical[-1][50]:", _preds_rls_wentinn_analytical[-1][50])
+                        # print("\n\n\nsaved observation_IR tensor to file")
+                        # print("_preds_rls_wentinn_analytical[-1][50]:", _preds_rls_wentinn_analytical[-1][50])
 
             preds_rls_wentinn.append(_preds_rls_wentinn)
             preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
