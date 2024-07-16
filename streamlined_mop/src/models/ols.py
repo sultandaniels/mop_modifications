@@ -69,9 +69,9 @@ class CnnKF(nn.Module):
         # Highlight
         v_current_err = sqrt_S_V.norm(dim=(-2, -1)) ** 2                                        # [B...]
 
-        #check if Q is zero
-        if torch.all(Q == 0):
-            print("Q is zero")
+        # #check if Q is zero
+        # if torch.all(Q == 0):
+        #     print("Q is zero")
         # Highlight
         # TODO: Backward pass on the above one breaks when Q = 0 for some reason
         # v_recent_err = (Q @ sqrt_S_V.unsqueeze(-3)).flatten(-3, -1).norm(dim=-1) ** 2           # [B...]
