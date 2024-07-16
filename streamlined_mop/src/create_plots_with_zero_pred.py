@@ -486,11 +486,11 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
     print("err_lss Analytical_Kalman sys 2:", err_lss["Analytical_Kalman"][2][50])
 
-    # OLS Wentinn
-    start = time.time() #start the timer for OLS Wentinn predictions
-    err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
-    end = time.time() #end the timer for OLS Wentinn predictions
-    print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
+    # # OLS Wentinn
+    # start = time.time() #start the timer for OLS Wentinn predictions
+    # err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
+    # end = time.time() #end the timer for OLS Wentinn predictions
+    # print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
 
 
     #Original OLS
