@@ -795,7 +795,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
     if run_deg_kf_test:
         cos_sims, err_ratios, zero_ratios, deg_fig, axs = setup_deg_kf_axs_arrs(num_systems)
 
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#00ced1', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#7D00BD', '#d00960']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#00ced1', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#7D00BD', '#d00960', '#006400']
 
     print("len(err_lss_load):", len(err_lss_load))
     for sys in range(len(irreducible_error_load)):
