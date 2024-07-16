@@ -316,7 +316,7 @@ def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
             ls = list(np.zeros((2, config.ny)))
             ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
 
-            ls, ls_analytical = compute_OLS_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, config, ridge)
+            ls, ls_analytical = compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, config, ridge)
 
             _preds_rls_wentinn.append(ls)
             _preds_rls_wentinn_analytical.append(ls_analytical)
