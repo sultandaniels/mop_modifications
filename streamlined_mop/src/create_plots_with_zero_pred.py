@@ -402,98 +402,95 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
             sim_objs = pickle.load(f)
 
-    # #Transformer Predictions
-    # start = time.time() #start the timer for transformer predictions
-    # with torch.no_grad():  # no gradients
-    #     I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)   # get the inputs (observations without the last one)
-    #     # if config.dataset_typ == "drone":  # if the dataset type is drone
-    #     #     I = np.concatenate([I, us], axis=-1)  # concatenate the inputs
+    #Transformer Predictions
+    start = time.time() #start the timer for transformer predictions
+    with torch.no_grad():  # no gradients
+        I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)   # get the inputs (observations without the last one)
+        # if config.dataset_typ == "drone":  # if the dataset type is drone
+        #     I = np.concatenate([I, us], axis=-1)  # concatenate the inputs
 
-    #     if config.changing:
-    #         preds_tf = model.predict_ar(ys[:, :-1])  # predict using the model
-    #     else:
-    #         # print("before model.predict_step()")
-    #         batch_shape = I.shape[:-2]
-    #         # print("batch_shape:", batch_shape)
-    #         flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
-    #         # print("flattened_I.shape:", flattened_I.shape)
-    #         validation_loader = torch.utils.data.DataLoader(torch.from_numpy(flattened_I), batch_size=config.test_batch_size)
-    #         preds_arr = [] # Store the predictions for all batches 
-    #         for validation_batch in iter(validation_loader):
-    #             _, flattened_preds_tf = model.predict_step({"xs": validation_batch.to(device)}) #.float().to(device)})    # predict using the model
-    #             preds_arr.append(flattened_preds_tf["preds"].cpu().numpy())
-    #         preds_tf = np.reshape(np.concatenate(preds_arr, axis=0), (*batch_shape, *I.shape[-2:])) # Combine the predictions for all batches
-    #         # print("preds_tf.shape:", preds_tf.shape)
-    #         preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf], axis=-2)  # concatenate the predictions
-    #         # print("preds_tf.shape:", preds_tf.shape)
-    # end = time.time() #end the timer for transformer predictions
-    # print("time elapsed for MOP Pred:", (end - start)/60, "min") #print the time elapsed for transformer predictions
+        if config.changing:
+            preds_tf = model.predict_ar(ys[:, :-1])  # predict using the model
+        else:
+            # print("before model.predict_step()")
+            batch_shape = I.shape[:-2]
+            # print("batch_shape:", batch_shape)
+            flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
+            # print("flattened_I.shape:", flattened_I.shape)
+            validation_loader = torch.utils.data.DataLoader(torch.from_numpy(flattened_I), batch_size=config.test_batch_size)
+            preds_arr = [] # Store the predictions for all batches 
+            for validation_batch in iter(validation_loader):
+                _, flattened_preds_tf = model.predict_step({"xs": validation_batch.to(device)}) #.float().to(device)})    # predict using the model
+                preds_arr.append(flattened_preds_tf["preds"].cpu().numpy())
+            preds_tf = np.reshape(np.concatenate(preds_arr, axis=0), (*batch_shape, *I.shape[-2:])) # Combine the predictions for all batches
+            # print("preds_tf.shape:", preds_tf.shape)
+            preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf], axis=-2)  # concatenate the predictions
+            # print("preds_tf.shape:", preds_tf.shape)
+    end = time.time() #end the timer for transformer predictions
+    print("time elapsed for MOP Pred:", (end - start)/60, "min") #print the time elapsed for transformer predictions
 
-    # errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
+    errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
 
-    # #zero predictor predictions
-    # errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2     # get the errors of zero predictions
+    #zero predictor predictions
+    errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2     # get the errors of zero predictions
 
-    # n_noise = config.n_noise
+    n_noise = config.n_noise
 
-    # start = time.time() #start the timer for kalman filter predictions
-    # if run_deg_kf_test: #degenerate system KF Predictions
-    #     #Kalman Filter Predictions
-    #     preds_kf_list = []
-    #     for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)):
-    #         inner_list = []
-    #         for __ys in _ys:
-    #             result = apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-    #             inner_list.append(result)
-    #         preds_kf_list.append(inner_list)
+    start = time.time() #start the timer for kalman filter predictions
+    if run_deg_kf_test: #degenerate system KF Predictions
+        #Kalman Filter Predictions
+        preds_kf_list = []
+        for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)):
+            inner_list = []
+            for __ys in _ys:
+                result = apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
+                inner_list.append(result)
+            preds_kf_list.append(inner_list)
 
-    #     preds_kf = np.array(preds_kf_list)  # get kalman filter predictions
+        preds_kf = np.array(preds_kf_list)  # get kalman filter predictions
 
-    #     #create an array of zeros to hold the kalman filter predictions
-    #     preds_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1, config.ny)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
+        #create an array of zeros to hold the kalman filter predictions
+        preds_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1, config.ny)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
 
-    #     errs_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
-    #     #iterate over sim_objs
-    #     kf_index = 0
-    #     for sim_obj in sim_objs: #iterate over the training systems
-    #         for sys in range(num_systems): #iterate over the test systems
-    #             print("Kalman filter", kf_index, "testing on system", sys)
-    #             for trial in range(num_trials):
-    #                 preds_kf[kf_index, sys, trial,:,:] = apply_kf(sim_obj, ys[sys,trial,:-1,:], sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise)) #get the kalman filter predictions for the test system and the training system
-    #             errs_kf[kf_index, sys] = np.linalg.norm((ys[sys] - preds_kf[kf_index, sys]), axis=-1) ** 2 #get the errors of the kalman filter predictions for the test system and the training system
-    #         kf_index += 1
+        errs_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
+        #iterate over sim_objs
+        kf_index = 0
+        for sim_obj in sim_objs: #iterate over the training systems
+            for sys in range(num_systems): #iterate over the test systems
+                print("Kalman filter", kf_index, "testing on system", sys)
+                for trial in range(num_trials):
+                    preds_kf[kf_index, sys, trial,:,:] = apply_kf(sim_obj, ys[sys,trial,:-1,:], sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise)) #get the kalman filter predictions for the test system and the training system
+                errs_kf[kf_index, sys] = np.linalg.norm((ys[sys] - preds_kf[kf_index, sys]), axis=-1) ** 2 #get the errors of the kalman filter predictions for the test system and the training system
+            kf_index += 1
 
-    # else: #Kalman Predictions
-    #     preds_kf = np.array([[
-    #             apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-    #             for __ys in _ys
-    #         ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
-    #     ])  # get kalman filter predictions
-    #     errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
+    else: #Kalman Predictions
+        preds_kf = np.array([[
+                apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
+                for __ys in _ys
+            ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
+        ])  # get kalman filter predictions
+        errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
     
-    # end = time.time() #end the timer for kalman filter predictions
-    # print("time elapsed for KF Pred:", (end - start)/60, "min") #print the time elapsed for kalman filter predictions
-
-    # err_lss = collections.OrderedDict([
-    #     ("Kalman", errs_kf),
-    #     ("MOP", errs_tf),
-    #     ("Zero", errs_zero)
-    # ])
-    # print("err_lss keys:", err_lss.keys())
+    end = time.time() #end the timer for kalman filter predictions
+    print("time elapsed for KF Pred:", (end - start)/60, "min") #print the time elapsed for kalman filter predictions
 
     err_lss = collections.OrderedDict([
+        ("Kalman", errs_kf),
+        ("MOP", errs_tf),
+        ("Zero", errs_zero)
     ])
+    print("err_lss keys:", err_lss.keys())
 
     #Analytical Kalman Predictions
     analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems,1))@np.ones((1,config.n_positions))
     print("err_lss Analytical_Kalman sys 2:", err_lss["Analytical_Kalman"][2][50])
 
-    # # OLS Wentinn
-    # start = time.time() #start the timer for OLS Wentinn predictions
-    # err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
-    # end = time.time() #end the timer for OLS Wentinn predictions
-    # print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
+    # OLS Wentinn
+    start = time.time() #start the timer for OLS Wentinn predictions
+    err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
+    end = time.time() #end the timer for OLS Wentinn predictions
+    print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
 
 
     #Original OLS
