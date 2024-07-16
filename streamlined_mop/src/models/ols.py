@@ -28,7 +28,7 @@ class CnnKF(nn.Module):
         def to_complex(t: torch.Tensor) -> torch.Tensor:
             return torch.complex(t, torch.zeros_like(t))
 
-        Q = to_complex(self.observation_IR.to(torch.float32))                                   # [B... x O_D x R x O_D]
+        Q = to_complex(self.observation_IR)                                   # [B... x O_D x R x O_D]
         Q = Q.permute(*range(Q.ndim - 3), -2, -1, -3)                                           # [B... x R x O_D x O_D]
 
         F = to_complex(torch.Tensor(system.A))                                                  # [B... x S_D x S_D]
@@ -121,7 +121,7 @@ class CnnKF(nn.Module):
             self.y = torch.cat([self.y, flattened_observations], dim=0)
             flattened_w = torch.linalg.pinv(self.X) @ self.y
 
-        self.observation_IR.data = flattened_w.unflatten(0, (self.ir_length, -1)).transpose(0, 1).to(torch.float32) # [O_D x R x O_D]
+        self.observation_IR.data = flattened_w.unflatten(0, (self.ir_length, -1)).transpose(0, 1) # [O_D x R x O_D]
         return self.observation_IR.data
 
 

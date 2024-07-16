@@ -271,60 +271,59 @@ def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_
     return err_lss
 
 def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
-    print("\n\n max_ir_length + 1:", max_ir_length+1)
-    for ir_length in range(2, max_ir_length + 1):
+
+    torch.set_default_dtype(torch.float64) #set the default dtype to torch.float64
+    print("\n\n max_ir_length:", max_ir_length)
+    for ir_length in range(1, max_ir_length + 1):
         start = time.time()
         print(f"\n\nIR length: {ir_length}")
-        preds_rls_wentinn = []
-        preds_rls_wentinn_analytical = []
-        sys_count = 0
-        for sim_obj, _ys in zip(sim_objs, ys):
-            _preds_rls_wentinn = []
-            _preds_rls_wentinn_analytical = []
-            for __ys in _ys:
-                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-                ls = list(np.zeros((2, config.ny)))
-                ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
 
-                rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
-                for i in range(config.n_positions - 1):
-                    obs_tensor = rls_wentinn.update(
-                        torch.from_numpy(padded_ys[i:i + ir_length]),
-                        torch.from_numpy(padded_ys[i + ir_length])
-                    )
+        if ir_length == 2:
+            preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, ridge=0.0)
 
-                    ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
-                    ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+            err_lss[f"OLS_ir_{ir_length}_unreg"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+            err_lss[f"OLS_analytical_ir_{ir_length}_unreg"] = np.array(preds_rls_wentinn_analytical)
 
-                _preds_rls_wentinn.append(ls)
-                _preds_rls_wentinn_analytical.append(ls_analytical)
 
-                if i == 50 and rls_wentinn.analytical_error(sim_obj).item() < 0.6 and ir_length == 2 and sys_count == 2:
-
-                    # Inside your loop or function where you open the file
-                    file_path = f"../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/observation_IR_{ir_length}.pt"
-                    directory = os.path.dirname(file_path)
-
-                    # Create the directory if it does not exist
-                    if not os.path.exists(directory):
-                        os.makedirs(directory)
-
-                    # Now, safely open the file for writing
-                    with open(file_path, "wb") as f:
-                        torch.save(obs_tensor, f)
-                        # print("\n\n\nsaved observation_IR tensor to file")
-                        # print("_preds_rls_wentinn_analytical[-1][50]:", _preds_rls_wentinn_analytical[-1][50])
-
-            preds_rls_wentinn.append(_preds_rls_wentinn)
-            preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
-            sys_count += 1
+        preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, ridge=1.0)
 
         err_lss[f"OLS_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-        #err_lss[f"OLS_analytical_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn_analytical), axis=-1) ** 2
         err_lss[f"OLS_analytical_ir_{ir_length}"] = np.array(preds_rls_wentinn_analytical)
-    end = time.time()
-    print("time elapsed:", (end - start)/60, "min")
+
+        end = time.time()
+        print("time elapsed:", (end - start)/60, "min for IR length:", ir_length)
+
+    torch.set_default_dtype(torch.float32) #reset the default dtype to torch.float32
     return err_lss
+
+def compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, config, ridge):
+    rls_wentinn = CnnKF(config.ny, ir_length, ridge=ridge)
+    for i in range(config.n_positions - 1):
+        ls.append(rls_wentinn(torch.from_numpy(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
+        ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+
+        assert ls_analytical[-1] >= torch.trace(sim_obj.S_observation_inf).item(), f"Analytical error is less than irreducible error: {ls_analytical[-1]} < {torch.trace(sim_obj.S_observation_inf).item()}."
+    return ls, ls_analytical
+
+def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
+    preds_rls_wentinn = []
+    preds_rls_wentinn_analytical = []
+    for sim_obj, _ys in zip(sim_objs, ys):
+        _preds_rls_wentinn = []
+        _preds_rls_wentinn_analytical = []
+        for __ys in _ys:
+            padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+            ls = list(np.zeros((2, config.ny)))
+            ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+
+            ls, ls_analytical = compute_OLS_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, config, ridge)
+
+            _preds_rls_wentinn.append(ls)
+            _preds_rls_wentinn_analytical.append(ls_analytical)
+
+        preds_rls_wentinn.append(_preds_rls_wentinn)
+        preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
+    return preds_rls_wentinn, preds_rls_wentinn_analytical
     
 def compute_OLS_wentinn(config, ys, sim_objs, ir_length, err_lss):
     errs_rls_wentinn = []
@@ -403,84 +402,87 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
             sim_objs = pickle.load(f)
 
-    #Transformer Predictions
-    start = time.time() #start the timer for transformer predictions
-    with torch.no_grad():  # no gradients
-        I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)   # get the inputs (observations without the last one)
-        # if config.dataset_typ == "drone":  # if the dataset type is drone
-        #     I = np.concatenate([I, us], axis=-1)  # concatenate the inputs
+    # #Transformer Predictions
+    # start = time.time() #start the timer for transformer predictions
+    # with torch.no_grad():  # no gradients
+    #     I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)   # get the inputs (observations without the last one)
+    #     # if config.dataset_typ == "drone":  # if the dataset type is drone
+    #     #     I = np.concatenate([I, us], axis=-1)  # concatenate the inputs
 
-        if config.changing:
-            preds_tf = model.predict_ar(ys[:, :-1])  # predict using the model
-        else:
-            # print("before model.predict_step()")
-            batch_shape = I.shape[:-2]
-            # print("batch_shape:", batch_shape)
-            flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
-            # print("flattened_I.shape:", flattened_I.shape)
-            validation_loader = torch.utils.data.DataLoader(torch.from_numpy(flattened_I), batch_size=config.test_batch_size)
-            preds_arr = [] # Store the predictions for all batches 
-            for validation_batch in iter(validation_loader):
-                _, flattened_preds_tf = model.predict_step({"xs": validation_batch.to(device)}) #.float().to(device)})    # predict using the model
-                preds_arr.append(flattened_preds_tf["preds"].cpu().numpy())
-            preds_tf = np.reshape(np.concatenate(preds_arr, axis=0), (*batch_shape, *I.shape[-2:])) # Combine the predictions for all batches
-            # print("preds_tf.shape:", preds_tf.shape)
-            preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf], axis=-2)  # concatenate the predictions
-            # print("preds_tf.shape:", preds_tf.shape)
-    end = time.time() #end the timer for transformer predictions
-    print("time elapsed for MOP Pred:", (end - start)/60, "min") #print the time elapsed for transformer predictions
+    #     if config.changing:
+    #         preds_tf = model.predict_ar(ys[:, :-1])  # predict using the model
+    #     else:
+    #         # print("before model.predict_step()")
+    #         batch_shape = I.shape[:-2]
+    #         # print("batch_shape:", batch_shape)
+    #         flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
+    #         # print("flattened_I.shape:", flattened_I.shape)
+    #         validation_loader = torch.utils.data.DataLoader(torch.from_numpy(flattened_I), batch_size=config.test_batch_size)
+    #         preds_arr = [] # Store the predictions for all batches 
+    #         for validation_batch in iter(validation_loader):
+    #             _, flattened_preds_tf = model.predict_step({"xs": validation_batch.to(device)}) #.float().to(device)})    # predict using the model
+    #             preds_arr.append(flattened_preds_tf["preds"].cpu().numpy())
+    #         preds_tf = np.reshape(np.concatenate(preds_arr, axis=0), (*batch_shape, *I.shape[-2:])) # Combine the predictions for all batches
+    #         # print("preds_tf.shape:", preds_tf.shape)
+    #         preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf], axis=-2)  # concatenate the predictions
+    #         # print("preds_tf.shape:", preds_tf.shape)
+    # end = time.time() #end the timer for transformer predictions
+    # print("time elapsed for MOP Pred:", (end - start)/60, "min") #print the time elapsed for transformer predictions
 
-    errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
+    # errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
 
-    #zero predictor predictions
-    errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2     # get the errors of zero predictions
+    # #zero predictor predictions
+    # errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2     # get the errors of zero predictions
 
-    n_noise = config.n_noise
+    # n_noise = config.n_noise
 
-    start = time.time() #start the timer for kalman filter predictions
-    if run_deg_kf_test: #degenerate system KF Predictions
-        #Kalman Filter Predictions
-        preds_kf_list = []
-        for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)):
-            inner_list = []
-            for __ys in _ys:
-                result = apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-                inner_list.append(result)
-            preds_kf_list.append(inner_list)
+    # start = time.time() #start the timer for kalman filter predictions
+    # if run_deg_kf_test: #degenerate system KF Predictions
+    #     #Kalman Filter Predictions
+    #     preds_kf_list = []
+    #     for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)):
+    #         inner_list = []
+    #         for __ys in _ys:
+    #             result = apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
+    #             inner_list.append(result)
+    #         preds_kf_list.append(inner_list)
 
-        preds_kf = np.array(preds_kf_list)  # get kalman filter predictions
+    #     preds_kf = np.array(preds_kf_list)  # get kalman filter predictions
 
-        #create an array of zeros to hold the kalman filter predictions
-        preds_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1, config.ny)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
+    #     #create an array of zeros to hold the kalman filter predictions
+    #     preds_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1, config.ny)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
 
-        errs_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
-        #iterate over sim_objs
-        kf_index = 0
-        for sim_obj in sim_objs: #iterate over the training systems
-            for sys in range(num_systems): #iterate over the test systems
-                print("Kalman filter", kf_index, "testing on system", sys)
-                for trial in range(num_trials):
-                    preds_kf[kf_index, sys, trial,:,:] = apply_kf(sim_obj, ys[sys,trial,:-1,:], sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise)) #get the kalman filter predictions for the test system and the training system
-                errs_kf[kf_index, sys] = np.linalg.norm((ys[sys] - preds_kf[kf_index, sys]), axis=-1) ** 2 #get the errors of the kalman filter predictions for the test system and the training system
-            kf_index += 1
+    #     errs_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
+    #     #iterate over sim_objs
+    #     kf_index = 0
+    #     for sim_obj in sim_objs: #iterate over the training systems
+    #         for sys in range(num_systems): #iterate over the test systems
+    #             print("Kalman filter", kf_index, "testing on system", sys)
+    #             for trial in range(num_trials):
+    #                 preds_kf[kf_index, sys, trial,:,:] = apply_kf(sim_obj, ys[sys,trial,:-1,:], sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise)) #get the kalman filter predictions for the test system and the training system
+    #             errs_kf[kf_index, sys] = np.linalg.norm((ys[sys] - preds_kf[kf_index, sys]), axis=-1) ** 2 #get the errors of the kalman filter predictions for the test system and the training system
+    #         kf_index += 1
 
-    else: #Kalman Predictions
-        preds_kf = np.array([[
-                apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-                for __ys in _ys
-            ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
-        ])  # get kalman filter predictions
-        errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
+    # else: #Kalman Predictions
+    #     preds_kf = np.array([[
+    #             apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
+    #             for __ys in _ys
+    #         ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
+    #     ])  # get kalman filter predictions
+    #     errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
     
-    end = time.time() #end the timer for kalman filter predictions
-    print("time elapsed for KF Pred:", (end - start)/60, "min") #print the time elapsed for kalman filter predictions
+    # end = time.time() #end the timer for kalman filter predictions
+    # print("time elapsed for KF Pred:", (end - start)/60, "min") #print the time elapsed for kalman filter predictions
+
+    # err_lss = collections.OrderedDict([
+    #     ("Kalman", errs_kf),
+    #     ("MOP", errs_tf),
+    #     ("Zero", errs_zero)
+    # ])
+    # print("err_lss keys:", err_lss.keys())
 
     err_lss = collections.OrderedDict([
-        ("Kalman", errs_kf),
-        ("MOP", errs_tf),
-        ("Zero", errs_zero)
     ])
-    print("err_lss keys:", err_lss.keys())
 
     #Analytical Kalman Predictions
     analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
@@ -492,6 +494,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     # err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
     # end = time.time() #end the timer for OLS Wentinn predictions
     # print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
+
 
     #Original OLS
     start = time.time() #start the timer for OLS predictions
