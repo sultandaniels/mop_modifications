@@ -492,7 +492,6 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     # end = time.time() #end the timer for OLS Wentinn predictions
     # print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
 
-
     #Original OLS
     start = time.time() #start the timer for OLS predictions
     err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=1, err_lss=err_lss)
