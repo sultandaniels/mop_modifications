@@ -272,17 +272,17 @@ def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_
 
 def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
 
-    torch.set_default_dtype(torch.float64) #set the default dtype to torch.float64
+    # torch.set_default_dtype(torch.float64) #set the default dtype to torch.float64
     print("\n\n max_ir_length:", max_ir_length)
     for ir_length in range(1, max_ir_length + 1):
         start = time.time()
         print(f"\n\nIR length: {ir_length}")
 
         if ir_length == 2:
-            preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, ridge=0.0)
+            preds_rls_wentinn_unreg, preds_rls_wentinn_analytical_unreg = compute_OLS_helper(config, ys, sim_objs, ir_length, ridge=0.0)
 
-            err_lss[f"OLS_ir_{ir_length}_unreg"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-            err_lss[f"OLS_analytical_ir_{ir_length}_unreg"] = np.array(preds_rls_wentinn_analytical)
+            err_lss[f"OLS_ir_{ir_length}_unreg"] = np.linalg.norm(ys - np.array(preds_rls_wentinn_unreg), axis=-1) ** 2
+            err_lss[f"OLS_analytical_ir_{ir_length}_unreg"] = np.array(preds_rls_wentinn_analytical_unreg)
 
 
         preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, ridge=1.0)
@@ -293,7 +293,7 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
         end = time.time()
         print("time elapsed:", (end - start)/60, "min for IR length:", ir_length)
 
-    torch.set_default_dtype(torch.float32) #reset the default dtype to torch.float32
+    # torch.set_default_dtype(torch.float32) #reset the default dtype to torch.float32
     return err_lss
 
 def compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, config, ridge):
@@ -302,7 +302,7 @@ def compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, 
         ls.append(rls_wentinn(torch.from_numpy(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
         ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
 
-        # assert ls_analytical[-1] >= torch.trace(sim_obj.S_observation_inf).item(), f"Analytical error is less than irreducible error: {ls_analytical[-1]} < {torch.trace(sim_obj.S_observation_inf).item()}."
+        assert ls_analytical[-1] >= torch.trace(sim_obj.S_observation_inf).item(), f"Analytical error is less than irreducible error: {ls_analytical[-1]} < {torch.trace(sim_obj.S_observation_inf).item()}."
     return ls, ls_analytical
 
 def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
@@ -495,7 +495,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
     #Original OLS
     start = time.time() #start the timer for OLS predictions
-    err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=3, err_lss=err_lss)
+    err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=1, err_lss=err_lss)
     end = time.time() #end the timer for OLS predictions
     print("time elapsed for OLS Pred:", (end - start)/60, "min") #print the time elapsed for OLS predictions
     #print the value of the OLS prediction for system 2 at position 50
