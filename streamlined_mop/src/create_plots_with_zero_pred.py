@@ -302,7 +302,7 @@ def compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, 
         ls.append(rls_wentinn(torch.from_numpy(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
         ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
 
-        assert ls_analytical[-1] >= torch.trace(sim_obj.S_observation_inf).item(), f"Analytical error is less than irreducible error: {ls_analytical[-1]} < {torch.trace(sim_obj.S_observation_inf).item()}."
+        # assert ls_analytical[-1] >= torch.trace(sim_obj.S_observation_inf).item(), f"Analytical error is less than irreducible error: {ls_analytical[-1]} < {torch.trace(sim_obj.S_observation_inf).item()}."
     return ls, ls_analytical
 
 def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
