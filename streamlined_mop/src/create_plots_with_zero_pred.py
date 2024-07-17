@@ -500,7 +500,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
     #Original OLS
     start = time.time() #start the timer for OLS predictions
-    err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=1, err_lss=err_lss)
+    err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=3, err_lss=err_lss)
     end = time.time() #end the timer for OLS predictions
     print("time elapsed for OLS Pred:", (end - start)/60, "min") #print the time elapsed for OLS predictions
 
