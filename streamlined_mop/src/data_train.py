@@ -171,15 +171,14 @@ if __name__ == '__main__':
                 ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t][0] for x in error_checkpoints_tuples], marker='o', label="Median")
                 # Example debug print to check the structure
 
-                #fit a line to the data
-                # Convert x[0] to float explicitly
+                #fit an affine line to the data on a log-log scale
                 x_values = [float(x[0]) for x in error_checkpoints_tuples]
                 y_values = [x[1][t][0] for x in error_checkpoints_tuples]
-
-                # Now use these lists in np.polyfit
-                z = np.polyfit(x_values, y_values, 1)
-                p = np.poly1d(z)
-                ax[t][sys].plot(x_values, p(x_values), "r--", label="y=%.6fx+%.6f" % (z[0], z[1]))
+                log_x = np.log(x_values)
+                log_y = np.log(y_values)
+                A = np.vstack([log_x, np.ones(len(log_x))]).T
+                m, c = np.linalg.lstsq(A, log_y, rcond=None)[0]
+                ax[t][sys].plot(x_values, np.exp(m * log_x + c), label="Fit Line m = " + str(m) + " c = " + str(c))
 
                 # Assuming the above prints confirm the lists are 1-dimensional
                 y1 = [x[1][t][1] for x in error_checkpoints_tuples]
