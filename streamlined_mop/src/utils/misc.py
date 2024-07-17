@@ -105,7 +105,6 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
                 #set err_avg_t to be the value of avg at the t'th step
                 for t in ts:
                     err_avg_t.append((avg[t], std[t]))
-
     else: #subtract the irreducible error
         for i, (name, err_ls) in enumerate(err_lss.items()):
             if name == "MOP":
@@ -118,7 +117,6 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
                 #set err_avg_t to be the value of avg at the t'th step
                 for t in ts:
                     err_avg_t.append((avg[t] - err_irreducible[sys], std[t]))
-
     return handles, err_avg_t
 
 def spectrum(A, k):

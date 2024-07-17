@@ -272,7 +272,7 @@ def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_
 
 def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
     print("\n\n max_ir_length + 1:", max_ir_length+1)
-    for ir_length in range(2, max_ir_length + 1):
+    for ir_length in range(1, max_ir_length + 1):
         start = time.time()
         print(f"\n\nIR length: {ir_length}")
         preds_rls_wentinn = []
