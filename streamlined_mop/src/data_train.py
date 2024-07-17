@@ -178,7 +178,7 @@ if __name__ == '__main__':
                 log_y = np.log(y_values)
                 A = np.vstack([log_x, np.ones(len(log_x))]).T
                 m, c = np.linalg.lstsq(A, log_y, rcond=None)[0]
-                ax[t][sys].plot(x_values, np.exp(m * log_x - c), label="Fit Line m = " + str(m) + " c = " + str(c))
+                ax[t][sys].plot(x_values, np.exp(3*m * log_x + c), label="Fit Line m = " + str(m) + " c = " + str(c))
 
                 # Assuming the above prints confirm the lists are 1-dimensional
                 y1 = [x[1][t][1] for x in error_checkpoints_tuples]
