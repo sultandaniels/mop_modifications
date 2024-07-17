@@ -97,14 +97,12 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
         if name == "MOP":
             print("\n\nplotting MOP at step:", train_steps, "\n\n")
             avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
+
+            #compute median and quartiles for the error
+            q1, median, q3 = np.quantile(err_ls[sys], [0.45, 0.5, 0.55], axis=-2)
         
             if not normalized:
-                #compute median and quartiles for the error
-                q1, median, q3 = np.quantile(err_ls[sys], [0.25, 0.5, 0.75], axis=-2)
-                print("q1.shape", q1.shape)
-                print("median.shape", median.shape)
-                print("q3.shape", q3.shape)
-
+                
                 handles.extend(ax.plot(avg, label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j-1]))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
@@ -114,8 +112,6 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
                     err_avg_t.append((median[t], q1[t], q3[t]))
 
             else: #subtract the irreducible error
-                #compute median and quartiles for the error
-                q1, median, q3 = np.quantile(err_ls[sys], [0.25, 0.5, 0.75], axis=-2)
 
                 handles.extend(ax.plot(avg - err_irreducible[sys], label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j-1]))
                 if shade:
