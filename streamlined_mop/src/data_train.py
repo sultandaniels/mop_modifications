@@ -179,7 +179,7 @@ if __name__ == '__main__':
                 # Now use these lists in np.polyfit
                 z = np.polyfit(x_values, y_values, 1)
                 p = np.poly1d(z)
-                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], p([x[0] for x in error_checkpoints_tuples]), "r--", label="y=%.6fx+%.6f" % (z[0], z[1]))
+                ax[t][sys].plot(x_values, p(x_values), "r--", label="y=%.6fx+%.6f" % (z[0], z[1]))
 
                 # Assuming the above prints confirm the lists are 1-dimensional
                 y1 = [x[1][t][1] for x in error_checkpoints_tuples]
