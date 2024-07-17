@@ -172,7 +172,12 @@ if __name__ == '__main__':
                 # Example debug print to check the structure
 
                 #fit a line to the data
-                z = np.polyfit([x[0] for x in error_checkpoints_tuples], [x[1][t][0] for x in error_checkpoints_tuples], 1)
+                # Convert x[0] to float explicitly
+                x_values = [float(x[0]) for x in error_checkpoints_tuples]
+                y_values = [x[1][t][0] for x in error_checkpoints_tuples]
+
+                # Now use these lists in np.polyfit
+                z = np.polyfit(x_values, y_values, 1)
                 p = np.poly1d(z)
                 ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], p([x[0] for x in error_checkpoints_tuples]), "r--", label="y=%.6fx+%.6f" % (z[0], z[1]))
 
