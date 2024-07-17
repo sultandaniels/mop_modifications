@@ -156,7 +156,7 @@ if __name__ == '__main__':
         #plot the error_checkpoints_tuples
         print("\n\nPlotting error_checkpoints_tuples")
         #make a new figure
-        fig, ax = plt.subplots(3, 3, figsize=(30, 15))
+        fig, ax = plt.subplots(3, 3, figsize=(30, 20))
 
         for sys in range(config.num_val_tasks):
             # Filter and transform sys_error_checkpoints_tuples for the current system sys
@@ -204,6 +204,11 @@ if __name__ == '__main__':
                 # ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
 
                 x_label_values = [x[0] for x in error_checkpoints_tuples]
+                # Assuming `x_label_values` is a list of values you want as labels on the x-axis
+                x_label_positions = np.arange(len(x_label_values))  # Positions where labels should appear
+
+                # Set the positions and labels for the x-axis ticks
+                ax[t][sys].set_xticks(x_label_positions)
                 ax[t][sys].set_xticklabels(x_label_values, rotation=45, fontsize=10)  # Rotate labels for better fit
                 # set y-axis to log scale
                 ax[t][sys].set_yscale('log')
@@ -211,7 +216,7 @@ if __name__ == '__main__':
                 # add a legend 
                 ax[t][sys].legend()
 
-        fig.text(0.5, 0.01, "The error bars are the 45th and 55th percentile.", ha='center', va='bottom', fontsize=12)
+        fig.text(0.5, 0, "The error bars are the 45th and 55th percentile.", ha='center', va='bottom', fontsize=12)
         # Adjust layout to make room for the rotated x-axis labels
         plt.tight_layout()
         #get the parent directory of the ckpt_path
