@@ -93,13 +93,12 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
     ax.grid()
     handles = []
     err_avg_t = []
-    if name == "MOP":
-        print("\n\nplotting MOP at step:", train_steps, "\n\n")
-        avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
-    
-    if not normalized:
-        for i, (name, err_ls) in enumerate(err_lss.items()):
-            if name == "MOP":
+    for i, (name, err_ls) in enumerate(err_lss.items()):
+        if name == "MOP":
+            print("\n\nplotting MOP at step:", train_steps, "\n\n")
+            avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
+        
+            if not normalized:
                 #compute median and quartiles for the error
                 q1, median, q3 = np.quantile(err_ls[sys], [0.25, 0.5, 0.75], axis=-2)
                 print("q1.shape", q1.shape)
@@ -114,9 +113,7 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
                 for t in ts:
                     err_avg_t.append((median[t], q1[t], q3[t]))
 
-    else: #subtract the irreducible error
-        for i, (name, err_ls) in enumerate(err_lss.items()):
-            if name == "MOP":
+            else: #subtract the irreducible error
                 #compute median and quartiles for the error
                 q1, median, q3 = np.quantile(err_ls[sys], [0.25, 0.5, 0.75], axis=-2)
 
@@ -127,7 +124,6 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
                 #set err_avg_t to be the value of avg at the t'th step
                 for t in ts:
                     err_avg_t.append((median[t] - err_irreducible[sys], q1[t] - err_irreducible[sys], q3[t] - err_irreducible[sys]))
-
     return handles, err_avg_t
 
 def spectrum(A, k):
