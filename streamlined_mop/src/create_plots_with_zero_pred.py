@@ -444,6 +444,9 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
     start = time.time() #start the timer for kalman filter predictions
     if run_deg_kf_test: #degenerate system KF Predictions
+        
+    #############################################################
+    #this portion can most likely be deleted
         #Kalman Filter Predictions
         preds_kf_list = []
         for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)):
@@ -452,6 +455,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
                 result = apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
                 inner_list.append(result)
             preds_kf_list.append(inner_list)
+    #############################################################
 
         preds_kf = np.array(preds_kf_list)  # get kalman filter predictions
 

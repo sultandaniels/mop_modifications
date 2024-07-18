@@ -10,6 +10,7 @@ import wandb
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import numpy as np
+from log_log_fit import loglogfit
 
 def wandb_train(config_dict, model, output_dir):
     # add ckpt_path to config_dict
@@ -151,32 +152,25 @@ if __name__ == '__main__':
         
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
-                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t][0] for x in error_checkpoints_tuples], marker='o', label="Median")
-                # Example debug print to check the structure
 
-                #fit an affine line to the data on a log-log scale
                 x_values = [float(x[0]) for x in error_checkpoints_tuples]
                 y_values = [x[1][t][0] for x in error_checkpoints_tuples]
-                log_x = np.log(x_values)
-                log_y = np.log(y_values)
-                A = np.vstack([log_x, np.ones(len(log_x))]).T
-                m, c = np.linalg.lstsq(A, log_y, rcond=None)[0]
-                ax[t][sys].plot(x_values, np.exp(3*m * log_x + c), label="Fit Line m = " + str(m) + " c = " + str(c))
+                ax[t][sys].plot(x_values, y_values, marker='o', label="Median")
+                
+                # Fit a line to the data
+                y_fit, m, c = loglogfit(x_values, y_values)
+
+                ax[t][sys].plot(x_values, y_fit, label="Fit Line m = " + str(m) + " c = " + str(c))
 
                 # Assuming the above prints confirm the lists are 1-dimensional
                 y1 = [x[1][t][1] for x in error_checkpoints_tuples]
-
-                print("len of error_checkpoints_tuples", len(error_checkpoints_tuples))
-                print("len of error_checkpoints_tuples[0]", len(error_checkpoints_tuples[0]))
-                print("len of error_checkpoints_tuples[0][1]", len(error_checkpoints_tuples[0][1]))
-                print("len of error_checkpoints_tuples[0][1][0]", len(error_checkpoints_tuples[0][1][0]))
 
                 print("len of y1", len(y1))
                 print("shape of y1", np.shape(y1))
                 y2 = [x[1][t][2] for x in error_checkpoints_tuples]
                 x = np.arange(len(error_checkpoints_tuples))
 
-                ax[t][sys].fill_between(x, y1, y2, alpha=0.2)
+                ax[t][sys].fill_between(x_values, y1, y2, alpha=0.2)
                 ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + (" Normalized" if kfnorm else ""))
                 ax[t][sys].set_xlabel("Checkpoint Step")
                 ax[t][sys].set_ylabel("Error")
