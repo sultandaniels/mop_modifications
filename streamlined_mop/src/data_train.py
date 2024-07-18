@@ -152,6 +152,7 @@ if __name__ == '__main__':
         
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
+                print("len of x[1][t] for x in error_checkpoints_tuples", len(error_checkpoints_tuples[0][1][t]))
 
                 x_values = [float(x[0]) for x in error_checkpoints_tuples]
                 if kfnorm: #if kfnorm is true, then set the y_values to be the max of the error and 1e-7 to avoid log(0)

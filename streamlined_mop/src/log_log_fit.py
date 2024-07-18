@@ -20,15 +20,17 @@ def loglogfit(x_values, y_values):
     predicted_y = np.exp(m * log_x + c)
     return predicted_y, m, c
 
-predicted_y,m,c = loglogfit(x_values, y_values)
+# if main
+if __name__ == '__main__':
+    predicted_y,m,c = loglogfit(x_values, y_values)
 
-# Plot the data and the regression line
-import matplotlib.pyplot as plt
-plt.scatter(x_values, y_values, label="Data")
-plt.plot(x_values, predicted_y, label="Regression Line", color="red")
-plt.yscale("log")
-plt.xscale("log")
-plt.xlabel("x")
-plt.ylabel("y")
-plt.legend()
-plt.show()
+    # Plot the data and the regression line
+    import matplotlib.pyplot as plt
+    plt.scatter(x_values, y_values, label="Data")
+    plt.plot(x_values, predicted_y, label="Regression Line", color="red")
+    plt.yscale("log")
+    plt.xscale("log")
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.legend()
+    plt.show()
