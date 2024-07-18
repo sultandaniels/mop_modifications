@@ -1,20 +1,17 @@
-import logging
+import os
+import time
 
 import pytorch_lightning as pl
+from lightning.pytorch.loggers import WandbLogger
 from pytorch_lightning.strategies import DDPStrategy
 
 from core import Config, training
-from models import GPT2
 from datasources import FilterDataset, DataModuleWrapper
-import os
-import time
-import pickle
-from lightning.pytorch.loggers import WandbLogger
+from models import GPT2
 
 
-def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the embed dim experiment plots
+def train_gpt2(model, config, output_dir):  # input emd_dim as a parameter for the embed dim experiment plots
     # a function to train GPT2 model
-    logger = logging.getLogger(__name__)
     print("batch_size:", config.batch_size)
     print("train_steps:", config.train_steps)
     print("context length:", config.n_positions)
@@ -24,18 +21,21 @@ def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the
     # model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
     #              n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
 
-    val_dset = FilterDataset(output_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", use_true_len=True) if os.path.exists(output_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl") else None
+    val_dset = FilterDataset(output_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl",
+                             use_true_len=True) if os.path.exists(
+        output_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl") else None
     # raise Exception("Just checking FilterDataset")
 
-    datamodule = DataModuleWrapper(FilterDataset(output_dir + f"/data/train_{config.dataset_typ}{config.C_dist}.pkl"), val_dset)
+    datamodule = DataModuleWrapper(FilterDataset(output_dir + f"/data/train_{config.dataset_typ}{config.C_dist}.pkl"),
+                                   val_dset)
 
     # Define model
     # output_dir = training.setup_train(model)
     print("output_dir:", output_dir)
-    callbacks, loggers = training.get_callbacks_and_loggers(output_dir, config.train_int)#, config.n_embd)
+    callbacks, loggers = training.get_callbacks_and_loggers(output_dir, config.train_int)  # , config.n_embd)
     ckpt_path = config.ckpt_path if config.ckpt_path != '' else None
     print("ckpt_path:", config.ckpt_path)
-    
+
     # trainer = pl.Trainer(
     #     accelerator="gpu",
     #     callbacks=callbacks,
@@ -49,27 +49,27 @@ def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the
     wandb_logger = WandbLogger(log_model="all")
     trainer = pl.Trainer(
         accelerator="gpu",
-        devices =1,
+        devices=1,
         callbacks=callbacks,
         logger=wandb_logger,
         gradient_clip_algorithm=config.gradient_clip_algorithm,
         gradient_clip_val=config.gradient_clip_val,
         log_every_n_steps=50,
         max_epochs=config.num_epochs,
-        strategy=DDPStrategy(find_unused_parameters=True) #only for BLISS GPUs
+        # strategy=DDPStrategy(find_unused_parameters=True)  # only for BLISS GPUs
     )
     # time how long it takes to train the model
     time_start = time.time()
     if not os.path.exists(ckpt_path):
         print(f"Checkpoint file {ckpt_path} does not exist.")
-        # os.makedirs(ckpt_path, exist_ok=True)
+        # os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
         # Handle the situation, e.g., by aborting the program, loading a different checkpoint, etc. 
         trainer.fit(model, datamodule=datamodule)
     else:
         trainer.fit(model, datamodule=datamodule, ckpt_path=ckpt_path)
-
     time_end = time.time()
     return time_end - time_start
+
 
 if __name__ == '__main__':
     # #load the numpy folder in ../data and unpack the data.pkl file and show the keys
@@ -95,8 +95,3 @@ if __name__ == '__main__':
     model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
                  n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
     train_gpt2(model, config)
-    
-
-
-
-

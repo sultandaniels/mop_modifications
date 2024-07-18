@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 from transformers import GPT2Model, GPT2Config
-from models import BaseModel
+
 from core import Config
+from models.lightning_base_model import BaseModel
 
 config = Config()
 

@@ -1,5 +1,6 @@
-import torch
 import pytorch_lightning as pl
+import torch
+
 from core import Config
 
 config = Config()
@@ -15,10 +16,11 @@ class BaseModel(pl.LightningModule):
     def log_output_dct(self, output_dict, typ):
         for k in output_dict:
             if "loss" in k or "metric" in k:
-                self.log(typ+"_"+k, output_dict[k], on_step=True, on_epoch=True,
+                self.log(typ + "_" + k, output_dict[k], on_step=True, on_epoch=True,
                          prog_bar=True, logger=True)
 
-        if hasattr(config, "loss_weighting_strategy") and config.loss_weighting_strategy in ["gradnorm", "my_gradnorm"] and typ == "train":
+        if hasattr(config, "loss_weighting_strategy") and config.loss_weighting_strategy in ["gradnorm",
+                                                                                             "my_gradnorm"] and typ == "train":
             for name, param in self.loss_weighting_strategy.lw_dict.items():
                 self.log(name, param.detach().item(), on_step=True,
                          on_epoch=True, prog_bar=True, logger=True)
@@ -50,5 +52,5 @@ class BaseModel(pl.LightningModule):
     def configure_optimizers(self):
 
         optimizer = torch.optim.AdamW(self.parameters(), lr=config.learning_rate,
-                                    weight_decay=config.weight_decay)
+                                      weight_decay=config.weight_decay)
         return optimizer

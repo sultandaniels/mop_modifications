@@ -1,27 +1,34 @@
-from collect_data import collect_data
-from models import GPT2
-from core import Config
-from train import train_gpt2
-from core import setup_train
-import os
-from create_plots_with_zero_pred import create_plots, convergence_plots
 import argparse
-import wandb
+import os
+
 import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
 import numpy as np
+import wandb
+
+from collect_data import collect_data
+from core import Config
+from core import setup_train
+from create_plots_with_zero_pred import create_plots, convergence_plots
+from models import GPT2
+from train import train_gpt2
+
+from infrastructure import utils
 
 # main function
 
 if __name__ == '__main__':
-    wandb.login()
+    wandb.login(key="ab29cc0be459d71de16f336f5fe4cee0106fe76b")
     # Create the parser
     parser = argparse.ArgumentParser(description='Run Predictions or not.')
 
     # Add the arguments
-    parser.add_argument('--saved_preds', help='Boolean. Just plot the errors for a previously evaluated checkpoint', action='store_true')
-    parser.add_argument('--make_preds', help='Boolean. Run predictions and plot the errors for a previously trained checkpoint', action='store_true')
-    parser.add_argument('--resume_train', help='Boolean. Resume training from a specific checkpoint', action='store_true')
+    parser.add_argument('--saved_preds', help='Boolean. Just plot the errors for a previously evaluated checkpoint',
+                        action='store_true')
+    parser.add_argument('--make_preds',
+                        help='Boolean. Run predictions and plot the errors for a previously trained checkpoint',
+                        action='store_true')
+    parser.add_argument('--resume_train', help='Boolean. Resume training from a specific checkpoint',
+                        action='store_true')
     parser.add_argument('--train_conv', help='Boolean. make predictions for all checkpoints', action='store_true')
     parser.add_argument('--kfnorm', help='Boolean. subtract kalman performance from error', action='store_true')
 
@@ -29,21 +36,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Now you can use the flag
-    print("saved preds arg", args.saved_preds)
+    utils.print_namespace(args)
+
     saved_preds = args.saved_preds
-    print("make preds arg", args.make_preds)
     make_preds = args.make_preds
-    print("resume train arg", args.resume_train)
     resume_train = args.resume_train
-    print("train conv arg", args.train_conv)
     train_conv = args.train_conv
-    print("kfnorm arg", args.kfnorm)
     kfnorm = args.kfnorm
 
-
-    config = Config() # create a config object
+    config = Config()  # create a config object
     # Get the class variables in dictionary format
-    config_dict  = {
+    config_dict = {
         "seed": 0,
         "fully_reproducible": False,
         "num_tasks": 40,
@@ -72,29 +75,30 @@ if __name__ == '__main__':
         "gradient_clip_algorithm": 'norm',
         "gradient_clip_val": 1.0
     }
-    #change the num_tasks, num_val_tasks, dataset_typ, C_dist, nx, ny, n_noise, num_traces, train_steps, batch_size, train_data_workers, test_batch_size, test_data_workers, num_epochs, n_positions, n_embd, n_layer, n_head, n_dims_in, n_dims_out, changing, learning_rate, weight_decay, gradient_clip_algorithm, gradient_clip_val in config_dict to the values in config
+    # change the num_tasks, num_val_tasks, dataset_typ, C_dist, nx, ny, n_noise, num_traces, train_steps, batch_size, train_data_workers, test_batch_size, test_data_workers, num_epochs, n_positions, n_embd, n_layer, n_head, n_dims_in, n_dims_out, changing, learning_rate, weight_decay, gradient_clip_algorithm, gradient_clip_val in config_dict to the values in config
     config_attributes = list(config_dict.keys())
     for key in config_attributes:
         config_dict[key] = config.__getattribute__(key)
 
     if saved_preds:
         # create prediction plots
-        run_preds = make_preds #run the predictions evaluation
-        run_deg_kf_test = False #run degenerate KF test
-        excess = False #run the excess plots
+        run_preds = make_preds  # run the predictions evaluation
+        run_deg_kf_test = False  # run degenerate KF test
+        excess = False  # run the excess plots
         shade = True
-        config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
+        config.override("ckpt_path",
+                        "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
         print("ckpt_path", config.ckpt_path)
 
         if resume_train:
-            #get the parent directory of the ckpt_path
+            # get the parent directory of the ckpt_path
             parent_dir = os.path.dirname(config.ckpt_path)
-            #get the parent directory of the parent directory
+            # get the parent directory of the parent directory
             output_dir = os.path.dirname(parent_dir)
             # instantiate gpt2 model
             model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
-                    n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
-        
+                         n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
+
             # add ckpt_path to config_dict
             config_dict["ckpt_path"] = config.ckpt_path
 
@@ -105,7 +109,7 @@ if __name__ == '__main__':
                 # Track hyperparameters and run metadata
                 config=config_dict,
             )
-            train_gpt2(model, config, output_dir) # train the model
+            train_gpt2(model, config, output_dir)  # train the model
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
     elif train_conv:
         # create prediction plots
@@ -115,17 +119,18 @@ if __name__ == '__main__':
         shade = True
 
         if resume_train:
-            config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
+            config.override("ckpt_path",
+                            "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
             print("ckpt_path", config.ckpt_path)
-            
-            #get the parent directory of the ckpt_path
+
+            # get the parent directory of the ckpt_path
             parent_dir = os.path.dirname(config.ckpt_path)
-            #get the parent directory of the parent directory
+            # get the parent directory of the parent directory
             output_dir = os.path.dirname(parent_dir)
             # instantiate gpt2 model
             model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
-                    n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
-        
+                         n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
+
             # add ckpt_path to config_dict
             config_dict["ckpt_path"] = config.ckpt_path
 
@@ -136,9 +141,9 @@ if __name__ == '__main__':
                 # Track hyperparameters and run metadata
                 config=config_dict,
             )
-            train_gpt2(model, config, output_dir) # train the model
+            train_gpt2(model, config, output_dir)  # train the model
 
-        #for loop to iterate through all the checkpoints in the output directory
+        # for loop to iterate through all the checkpoints in the output directory
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
         fig, axs = plt.subplots(1, 3, figsize=(40, 20))  # 1 row, 3 columns, with a figure size of 15x5 inches
         filecount = 0
@@ -150,25 +155,29 @@ if __name__ == '__main__':
             print("filecount:", filecount)
             config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
             print("\n\n\nckpt_path", config.ckpt_path)
-            step_avg_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts) #create the convergence plots and return the step and average error tuple
-            sys_error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
+            step_avg_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm,
+                                             config.num_val_tasks, shade, fig, axs,
+                                             ts)  # create the convergence plots and return the step and average error tuple
+            sys_error_checkpoints_tuples.append(step_avg_tup)  # append the tuple to the list of tuples
 
-        #plot the error_checkpoints_tuples
+        # plot the error_checkpoints_tuples
         print("\n\nPlotting error_checkpoints_tuples")
-        #make a new figure
+        # make a new figure
         fig, ax = plt.subplots(3, 3, figsize=(30, 15))
 
         for sys in range(config.num_val_tasks):
             # Filter and transform sys_error_checkpoints_tuples for the current system sys
-            error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
+            error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if
+                                        isinstance(x[1], list) and len(x[1]) > sys]
             # print("\nerror_checkpoints_tuples[0][1]", error_checkpoints_tuples[0][1])
-            
-            #sort the error_checkpoints_tuples by the step
+
+            # sort the error_checkpoints_tuples by the step
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
-        
-            #make a plot for each value of t in ts for each system
+
+            # make a plot for each value of t in ts for each system
             for t in range(len(ts)):
-                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t][0] for x in error_checkpoints_tuples], marker='o')
+                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples],
+                                [x[1][t][0] for x in error_checkpoints_tuples], marker='o')
                 # Example debug print to check the structure
 
                 # Assuming the above prints confirm the lists are 1-dimensional
@@ -203,24 +212,25 @@ if __name__ == '__main__':
 
         # Adjust layout to make room for the rotated x-axis labels
         plt.tight_layout()
-        #get the parent directory of the ckpt_path
+        # get the parent directory of the ckpt_path
         parent_dir = os.path.dirname(config.ckpt_path)
 
-        #get the parent directory of the parent directory
+        # get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
         os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_normalized" if kfnorm else "") + ("-changing" if config.changing else ""))
+        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + (
+            "_normalized" if kfnorm else "") + ("-changing" if config.changing else ""))
 
     else:
         # instantiate gpt2 model
         model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
-                    n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
-        
+                     n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
+
         output_dir = setup_train(model)
         # output_dir = output_dir + f"_{config.dataset_typ}{config.C_dist}"
         os.makedirs(output_dir + f"/data/", exist_ok=True)
 
-        collect_data(model, config, output_dir) # collect data
+        collect_data(config, output_dir)  # collect data
 
         # replace ckpt_path with the path to the checkpoint file
         config.override("ckpt_path", output_dir + "/checkpoints/step=" + str(config.train_steps) + ".ckpt")
@@ -235,12 +245,12 @@ if __name__ == '__main__':
             # Track hyperparameters and run metadata
             config=config_dict,
         )
-        train_gpt2(model, config, output_dir) # train the model
+        train_gpt2(model, config, output_dir)  # train the model
 
         # create prediction plots
-        run_preds = True #run the predictions evaluation
-        run_deg_kf_test = False #run degenerate KF test
-        excess = False #run the excess plots
+        run_preds = True  # run the predictions evaluation
+        run_deg_kf_test = False  # run degenerate KF test
+        excess = False  # run the excess plots
         shade = True
 
         print("ckpt_path", config.ckpt_path)

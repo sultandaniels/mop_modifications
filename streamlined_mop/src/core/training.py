@@ -1,14 +1,14 @@
-import logging
-import time
-import hashlib
-import os
-import numpy as np
-
-from core import Config
-import os
 import glob
+import hashlib
+import logging
+import os
+import time
+
+import numpy as np
 from pytorch_lightning import callbacks as pl_callbacks
 from pytorch_lightning import loggers as pl_loggers
+
+from core import Config
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -84,15 +84,16 @@ def get_callbacks_and_loggers_old(model, output_dir):
     callbacks = [checkpoint_callback, lr_monitor]
     return callbacks, loggers
 
-def get_callbacks_and_loggers_new_eig(model, output_dir, emb_dim): #add emb_dim as a parameter
+
+def get_callbacks_and_loggers_new_eig(model, output_dir, emb_dim):  # add emb_dim as a parameter
     lr_monitor = pl_callbacks.LearningRateMonitor(logging_interval='epoch')
     tb_logger = pl_loggers.TensorBoardLogger(output_dir)
     loggers = [tb_logger]
 
     checkpoint_callback = pl_callbacks.ModelCheckpoint(
         dirpath=os.path.join(output_dir, "checkpoints"),
-        filename="new_eig_{step}", # for embed dim experiments: "emb_dim_" + str(emb_dim) + "_{step}",
-        save_top_k=-1, 
+        filename="new_eig_{step}",  # for embed dim experiments: "emb_dim_" + str(emb_dim) + "_{step}",
+        save_top_k=-1,
         every_n_train_steps=10000,
     )
 
@@ -110,16 +111,17 @@ def get_callbacks_and_loggers_new_eig(model, output_dir, emb_dim): #add emb_dim 
     callbacks = [checkpoint_callback, lr_monitor]
     return callbacks, loggers
 
-def get_callbacks_and_loggers(output_dir, train_int): #add emb_dim as a parameter
+
+def get_callbacks_and_loggers(output_dir, train_int):  # add emb_dim as a parameter
     lr_monitor = pl_callbacks.LearningRateMonitor(logging_interval='epoch')
     tb_logger = pl_loggers.TensorBoardLogger(output_dir)
     loggers = [tb_logger]
 
     checkpoint_callback = pl_callbacks.ModelCheckpoint(
         dirpath=os.path.join(output_dir, "checkpoints"),
-        filename="{step}", # for embed dim experiments: "emb_dim_" + str(emb_dim) + "_{step}",
-        save_top_k=-1, 
-        every_n_train_steps=train_int, #this changed from 10000 to train_step
+        filename="{step}",  # for embed dim experiments: "emb_dim_" + str(emb_dim) + "_{step}",
+        save_top_k=-1,
+        every_n_train_steps=train_int,  # this changed from 10000 to train_step
     )
 
     print("\n\n\ncheckpoint_callback", checkpoint_callback.dirpath)

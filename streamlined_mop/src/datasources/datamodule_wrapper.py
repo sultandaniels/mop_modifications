@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
-from core import Config
 from torch.utils.data import DataLoader
+
+from core import Config
 
 config = Config()
 
