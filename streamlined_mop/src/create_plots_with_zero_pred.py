@@ -1106,20 +1106,18 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     for sys in range(len(irreducible_error_load)):            
         #plot transformer, KF and FIR errors
         #get the checkpoint steps number from the checkpoint path
-        ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
-        print("\n\nckpt_steps:", ckpt_steps)
-        handles, err_avg_t = plot_errs_conv(ts, j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade)
+        ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0] #get the checkpoint steps number
+        handles, err_avg_t = plot_errs_conv(ts, j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade) #plot the errors
         sys_errs.append(err_avg_t) #append the system number and the error average at step t
         
         
         # Step 1: Collect legend handles and labels
-        handles, labels = ax[sys].get_legend_handles_labels()
+        handles, labels = ax[sys].get_legend_handles_labels() # handles and labels of the legend
 
         # Step 2: Sort handles and labels based on "MOP" part
         # Extracting the number after "MOP" and using it for sorting
         sorted_handles_labels = sorted(zip(handles, labels), key=lambda hl: int(hl[1].split("MOP")[1]))
         sorted_handles, sorted_labels = zip(*sorted_handles_labels)
-        print("sorted labels", sorted_labels)
 
         # Step 3: Create the legend with sorted handles and labels
         ax[sys].legend(sorted_handles, sorted_labels, fontsize=18, loc="upper right", ncol=1)

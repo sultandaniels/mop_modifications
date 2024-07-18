@@ -164,9 +164,6 @@ if __name__ == '__main__':
 
                 # Assuming the above prints confirm the lists are 1-dimensional
                 y1 = [x[1][t][1] for x in error_checkpoints_tuples]
-
-                print("len of y1", len(y1))
-                print("shape of y1", np.shape(y1))
                 y2 = [x[1][t][2] for x in error_checkpoints_tuples]
                 x = np.arange(len(error_checkpoints_tuples))
 
