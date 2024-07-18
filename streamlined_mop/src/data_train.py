@@ -154,13 +154,16 @@ if __name__ == '__main__':
             for t in range(len(ts)):
 
                 x_values = [float(x[0]) for x in error_checkpoints_tuples]
-                y_values = [x[1][t][0] for x in error_checkpoints_tuples]
+                if kfnorm: #if kfnorm is true, then set the y_values to be the max of the error and 1e-7 to avoid log(0)
+                    y_values = [x[1][t][0] if x[1][t][0] >= 0 else 1e-7 for x in error_checkpoints_tuples]
+                else: #otherwise set the y_values to be the error
+                    y_values = [x[1][t][0] for x in error_checkpoints_tuples]
                 ax[t][sys].plot(x_values, y_values, marker='o', label="Median")
                 
                 # Fit a line to the data
                 y_fit, m, c = loglogfit(x_values, y_values)
 
-                # ax[t][sys].plot(x_values, y_fit, label="Fit Line m = " + str(m) + " c = " + str(c))
+                ax[t][sys].plot(x_values, y_fit, label="Fit Line m = " + str(m) + " c = " + str(c))
 
                 # Assuming the above prints confirm the lists are 1-dimensional
                 y1 = [x[1][t][1] for x in error_checkpoints_tuples]
