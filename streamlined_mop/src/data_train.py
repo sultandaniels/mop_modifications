@@ -156,6 +156,8 @@ if __name__ == '__main__':
                 x_values = [float(x[0]) for x in error_checkpoints_tuples]
                 y_values = [x[1][t][0] for x in error_checkpoints_tuples]
                 ax[t][sys].plot(x_values, y_values, marker='o', label="Median")
+
+                print("y_values", y_values)
                 
                 # Fit a line to the data
                 y_fit, m, c = loglogfit(x_values, y_values)
