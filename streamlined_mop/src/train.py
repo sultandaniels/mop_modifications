@@ -62,7 +62,7 @@ def train_gpt2(model, config, output_dir):  # input emd_dim as a parameter for t
     time_start = time.time()
     if not os.path.exists(ckpt_path):
         print(f"Checkpoint file {ckpt_path} does not exist.")
-        # os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
+        # os.makedirs(ckpt_path, exist_ok=True)
         # Handle the situation, e.g., by aborting the program, loading a different checkpoint, etc. 
         trainer.fit(model, datamodule=datamodule)
     else:

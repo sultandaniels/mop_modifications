@@ -34,6 +34,8 @@ if __name__ == '__main__':
 
     # Parse the arguments
     args = parser.parse_args()
+    # args.saved_preds = True
+    # args.make_preds = True
 
     # Now you can use the flag
     utils.print_namespace(args)
@@ -87,7 +89,7 @@ if __name__ == '__main__':
         excess = False  # run the excess plots
         shade = True
         config.override("ckpt_path",
-                        "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
+                        "../outputs/GPT2/240718_202437.2214bf_upperTriA_gauss_C/checkpoints/step=1.ckpt")
         print("ckpt_path", config.ckpt_path)
 
         if resume_train:
@@ -120,7 +122,7 @@ if __name__ == '__main__':
 
         if resume_train:
             config.override("ckpt_path",
-                            "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
+                            "../outputs/GPT2/240718_202437.2214bf_upperTriA_gauss_C/checkpoints/step=1.ckpt")
             print("ckpt_path", config.ckpt_path)
 
             # get the parent directory of the ckpt_path
@@ -144,7 +146,7 @@ if __name__ == '__main__':
             train_gpt2(model, config, output_dir)  # train the model
 
         # for loop to iterate through all the checkpoints in the output directory
-        output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
+        output_dir = "../outputs/GPT2/240718_202437.2214bf_upperTriA_gauss_C"
         fig, axs = plt.subplots(1, 3, figsize=(40, 20))  # 1 row, 3 columns, with a figure size of 15x5 inches
         filecount = 0
 

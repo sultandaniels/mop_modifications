@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn.functional as Fn
 from pandas.plotting import table
 
 from core import Config
@@ -194,167 +195,95 @@ def wentinn_compute_errors(config):
 
 
 ####################################################################################################
-def compute_OLS_and_OLS_analytical(config, ys, sim_objs, ir_length, err_lss):  # PENDING DELETION
-    preds_rls = []
-    preds_rls_analytical = []
-    for sim_obj, _ys in zip(sim_objs, ys):
-        _preds_rls = []
-        _preds_rls_analytical = []
-        for __ys in _ys:
-            ls = [np.zeros(config.ny)]
-            ls_analytical = [np.linalg.norm(__ys[0], axis=-1) ** 2]
-            rls = RLS(config.nx, config.ny)
-
-            # print("shape __ys:", __ys.shape)
-            # print("range of for loop:", range(__ys.shape[-2] - 1))
-            for i in range(_ys.shape[-2] - 1):
-                if i < 3:
-                    ls.append(__ys[i])
-                    ls_analytical.append(np.linalg.norm(__ys[i + 1], axis=-1) ** 2)
-                else:
-                    if __ys[i - 3:i].shape[0] == 0:
-                        print("i:", i)
-                    rls.add_data(__ys[i - ir_length:i].flatten(), __ys[i])
-                    _cnn_rls = CnnKF(config.ny, ir_length)
-                    _cnn_rls.observation_IR.data = torch.from_numpy(np.stack([_rls.mu for _rls in rls.rlss], axis=-1)
-                                                                    .reshape(ir_length, config.ny, config.ny)
-                                                                    .transpose(1, 0, 2)[:, ::-1].copy())
-                    ls.append(rls.predict(__ys[i - (ir_length - 1):i + 1].flatten()))
-                    ls_analytical.append(_cnn_rls.analytical_error(sim_obj).item())
-            _preds_rls.append(ls)
-            _preds_rls_analytical.append(ls_analytical)
-
-        preds_rls.append(_preds_rls)
-        preds_rls_analytical.append(_preds_rls_analytical)
-
-    err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
-    err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
-    return err_lss
-
-
-def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_lss):
-    # Ensure PyTorch version supports MPS and MPS is available
-    device = torch.device("cpu")  # Fallback to CPU if MPS is not available
-    preds_rls = []
-    preds_rls_analytical = []
-    for sim_obj, _ys in zip(sim_objs, ys):
-        _preds_rls = []
-        _preds_rls_analytical = []
-        for __ys in _ys:
-            # Convert numpy arrays to tensors and move to MPS
-            __ys_tensor = torch.from_numpy(__ys).to(device)
-            ls = [torch.zeros(config.ny, device=device)]
-            ls_analytical = [torch.linalg.norm(__ys_tensor[0], axis=-1) ** 2]
-            rls = RLS(config.nx, config.ny)  # Assuming RLS can handle MPS tensors
-            for i in range(__ys_tensor.shape[-2] - 1):
-                if i < 2:
-                    ls.append(__ys_tensor[i])
-                    ls_analytical.append(torch.linalg.norm(__ys_tensor[i + 1], axis=-1) ** 2)
-                else:
-                    rls.add_data_tensor(__ys_tensor[i - 2:i].flatten(), __ys_tensor[i])
-                    _cnn_rls = CnnKF(config.ny, ir_length)
-                    # Ensure _cnn_rls can handle MPS tensors
-                    _cnn_rls.observation_IR.data = torch.stack([_rls.mu for _rls in rls.rlss], axis=-1).reshape(
-                        ir_length, config.ny, config.ny).transpose(1, 0, 2)[:, ::-1].copy().to(device)
-                    ls.append(rls.predict(__ys_tensor[i - 1:i + 1].flatten()))
-                    ls_analytical.append(_cnn_rls.analytical_error(sim_obj).item())
-
-            _preds_rls.append(ls)
-            _preds_rls_analytical.append(ls_analytical)
-
-        preds_rls.append(_preds_rls)
-        preds_rls_analytical.append(_preds_rls_analytical)
-
-    # Convert predictions back to CPU and numpy for final operations
-    preds_rls = [torch.stack(pred).cpu().numpy() for pred in preds_rls]
-    preds_rls_analytical = [torch.tensor(pred).cpu().numpy() for pred in preds_rls_analytical]
-
-    err_lss["OLS"] = np.linalg.norm(ys - np.array(preds_rls), axis=-1) ** 2
-    err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
-    return err_lss
-
 
 def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
     # set torch precision to float64
     torch.set_default_dtype(torch.float64)
-    print("\n\n max_ir_length + 1:", max_ir_length + 1)
+    print("max_ir_length + 1:", max_ir_length + 1)
     for ir_length in range(1, max_ir_length + 1):
         start = time.time()
-        print(f"\n\nIR length: {ir_length}")
+        print(f"\tIR length: {ir_length}")
 
         if ir_length == 2:
             preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, 0.0)
 
-            err_lss[f"OLS_ir_{ir_length}_unreg"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-            err_lss[f"OLS_analytical_ir_{ir_length}_unreg"] = np.array(preds_rls_wentinn_analytical)
+            err_lss[f"OLS_ir_{ir_length}_unreg"] = torch.norm(ys - preds_rls_wentinn, dim=-1) ** 2
+            err_lss[f"OLS_analytical_ir_{ir_length}_unreg"] = preds_rls_wentinn_analytical
 
         preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, 1.0)
 
-        err_lss[f"OLS_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-        err_lss[f"OLS_analytical_ir_{ir_length}"] = np.array(preds_rls_wentinn_analytical)
+        err_lss[f"OLS_ir_{ir_length}"] = torch.norm(ys - preds_rls_wentinn, dim=-1) ** 2
+        err_lss[f"OLS_analytical_ir_{ir_length}"] = preds_rls_wentinn_analytical
         end = time.time()
-        print("time elapsed:", (end - start) / 60, "min")
+        print("\ttime elapsed:", (end - start) / 60, "min\n")
     # set torch precision back to float32
     torch.set_default_dtype(torch.float32)
     return err_lss
 
 
-def compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, config, ridge):
-    rls_wentinn = CnnKF(config.ny, ir_length, ridge=ridge)
-    for i in range(config.n_positions - 1):
-        obs_tensor = rls_wentinn.update(
-            torch.from_numpy(padded_ys[i:i + ir_length]),
-            torch.from_numpy(padded_ys[i + ir_length])
-        )
-
-        ls.append(
-            rls_wentinn(torch.from_numpy(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
-        ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
-
-        # assert ls_analytical[-1] >= torch.trace(sim_obj.S_observation_inf).item(), f"Analytical error is less than irreducible error: {ls_analytical[-1]} < {torch.trace(sim_obj.S_observation_inf).item()}."
-    return ls, ls_analytical
-
-
 def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
-    preds_rls_wentinn = []
-    preds_rls_wentinn_analytical = []
-    for sim_obj, _ys in zip(sim_objs, ys):
-        _preds_rls_wentinn = []
-        _preds_rls_wentinn_analytical = []
-        for __ys in _ys:
-            padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])  # [(L + R - 1) x O_D]
-            ls = list(np.zeros((2, config.ny)))
-            ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
+    # [n_systems x n_traces x (n_positions + 1) x O_D]
+    ys = ys.to(torch.get_default_dtype())
+    # [n_systems x n_traces x (n_positions + ir_length) x O_D]
+    padded_ys = torch.cat([
+        torch.zeros((*ys.shape[:2], ir_length - 1, config.ny)), ys
+    ], dim=-2)
 
-            ls, ls_analytical = compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, config,
-                                                          ridge)
+    Y_indices = torch.arange(ir_length, (config.n_positions - 1) + ir_length)[:, None]  # [(n_positions - 1) x 1]
+    X_indices = Y_indices - 1 - torch.arange(ir_length)
 
-            _preds_rls_wentinn.append(ls)
-            _preds_rls_wentinn_analytical.append(ls_analytical)
+    X, Y = padded_ys[..., X_indices, :], padded_ys[..., Y_indices, :]   # [n_systems x n_traces x (n_positions - 1) x ir_length x O_D], [n_systems x n_traces x (n_positions - 1) x 1 x O_D]
+    flattened_X, flattened_Y = X.flatten(-2, -1), Y.flatten(-2, -1)     # [n_systems x n_traces x (n_positions - 1) x (ir_length * O_D)], [n_systems x n_traces x (n_positions - 1) x O_D]
 
-        preds_rls_wentinn.append(_preds_rls_wentinn)
-        preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
+    # [n_systems x n_traces x (n_positions - 1) x (ir_length * I_D) x (ir_length * O_D)]
+    cumulative_XTX = torch.cumsum(flattened_X[..., :, None] * flattened_X[..., None, :], dim=-3) + ridge * torch.eye(ir_length * config.ny)
+    # [n_systems x n_traces x (n_positions - 1) x (ir_length * I_D) x O_D]
+    cumulative_XTY = torch.cumsum(flattened_X[..., :, None] * flattened_Y[..., None, :], dim=-3)
+
+    min_eqs = config.ny if ridge == 0.0 else 1
+
+    _rank_full = torch.inverse(cumulative_XTX[..., min_eqs - 1:, :, :]) @ cumulative_XTY[..., min_eqs - 1:, :, :]
+    _rank_deficient = []
+    for n_eqs in range(1, min_eqs):
+        _rank_deficient.append(torch.linalg.pinv(flattened_X[..., :n_eqs, :]) @ flattened_Y[..., :n_eqs, :])
+    if len(_rank_deficient) == 0:
+        _rank_deficient = torch.zeros_like(_rank_full[..., :0, :, :])
+    else:
+        _rank_deficient = torch.stack(_rank_deficient, dim=-3)
+
+    # [n_systems x n_traces x (n_positions - 1) x (ir_length * O_D) x O_D]
+    # -> [n_systems x n_traces x (n_positions - 1) x ir_length x O_D x O_D]
+    # -> [n_systems x n_traces x (n_positions - 1) x O_D x ir_length x O_D]
+    observation_IRs = torch.cat([_rank_deficient, _rank_full], dim=-3).unflatten(-2, (ir_length, config.ny)).transpose(dim0=-3, dim1=-2)
+
+    # SECTION: Compute the empirical output
+    shifted_X = padded_ys[..., X_indices + 1, :]    # [n_systems x n_traces x (n_positions - 1) x ir_length x O_D]
+
+    flattened_observation_IRs = observation_IRs.flatten(0, 2)   # [B x O_D x ir_length x O_D]
+    flattened_shifted_X = shifted_X.flatten(0, 2)               # [B x ir_length x O_D]
+
+    preds_rls_wentinn = torch.vmap(Fn.conv2d)(
+        flattened_observation_IRs,                                              # [B x O_D x ir_length x O_D]
+        flattened_shifted_X.transpose(dim0=-2, dim1=-1)[..., None, :, :, None]  # [B x 1 x O_D x ir_length x 1]
+    ).reshape(*ys.shape[:2], config.n_positions - 1, config.ny) # [n_systems x n_traces x (n_positions - 1)]
+
+    preds_rls_wentinn = torch.cat([
+        torch.zeros_like(ys[..., :2, :]),
+        preds_rls_wentinn
+    ], dim=-2)  # [n_systems x n_traces x (n_positions + 1) x O_D]
+
+    # SECTION: Compute analytical errors
+    preds_rls_wentinn_analytical = CnnKF.analytical_error(
+        observation_IRs,                                                                                # [n_systems x n_traces x (n_positions - 1) x ...]
+        sim_objs.td()["environment"][:, None, None].apply(lambda t: t.to(torch.get_default_dtype()))    # [n_systems x 1 x 1 x ...]
+    )   # [n_systems x n_traces x (n_positions - 1)]
+
+    preds_rls_wentinn_analytical = torch.cat([
+        torch.norm(ys[..., :2, :], dim=-1) ** 2,    # [n_systems x n_traces x 2]
+        preds_rls_wentinn_analytical,               # [n_systems x n_traces x (n_positions - 1)]
+    ], dim=-1)  # [n_systems x n_traces x (n_positions + 1)]
+
     return preds_rls_wentinn, preds_rls_wentinn_analytical
-
-
-def compute_OLS_wentinn(config, ys, sim_objs, ir_length, err_lss):
-    errs_rls_wentinn = []
-    for sim_obj, _ys in zip(sim_objs, ys):
-        _errs_rls_wentinn = []
-        for __ys in _ys:
-            padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])  # [(L + R - 1) x O_D]
-            ls = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
-            rls_wentinn = CnnKF(config.ny, ir_length)
-            for i in range(config.n_positions - 1):
-                rls_wentinn.update(
-                    torch.from_numpy(padded_ys[i:i + ir_length]),
-                    torch.from_numpy(padded_ys[i + ir_length])
-                )
-                ls.append(rls_wentinn.analytical_error(sim_obj).item())
-            _errs_rls_wentinn.append(ls)
-        errs_rls_wentinn.append(_errs_rls_wentinn)
-    err_lss["OLS_wentinn"] = np.array(errs_rls_wentinn)
-    return err_lss
 
 
 def batch_trace(x):
@@ -364,10 +293,9 @@ def batch_trace(x):
     return x.diagonal(dim1=-2, dim2=-1).sum(dim=-1)
 
 
-def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
+def compute_errors(config, run_deg_kf_test):
     # a function to compute the test errors for the GPT2 model, kalman filter, and zero predictions
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
-    logger = logging.getLogger(__name__)  # get the logger
 
     num_systems = config.num_val_tasks  # number of validation tasks
     print("Number of validation systems:", num_systems)
@@ -377,145 +305,81 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     model = GPT2.load_from_checkpoint(config.ckpt_path,
                                       n_dims_in=config.n_dims_in, n_positions=config.n_positions,
                                       n_dims_out=config.n_dims_out, n_embd=config.n_embd,
-                                      n_layer=config.n_layer, n_head=config.n_head).eval().to(device)  # load_from_checkpoint
+                                      n_layer=config.n_layer, n_head=config.n_head).eval().to(
+        device)  # load_from_checkpoint
 
-    if wentinn_data:
+    # get the parent directory of the ckpt_path
+    parent_dir = os.path.dirname(config.ckpt_path)
+    print("parent_dir:", parent_dir)
 
-        with open(f"../data/numpy_three_sys" + C_dist + "/test_sim.pt", "rb") as f:
-            sim_objs = torch.load(f)
+    # get the parent directory of the parent directory
+    parent_parent_dir = os.path.dirname(parent_dir)
+    print("parent_parent_dir:", parent_parent_dir)
 
-        with open('../data/numpy_three_sys' + C_dist + '/data.pkl',
-                  'rb') as f:  # load the data.pkl file for the test data
-            data = pickle.load(f)
-            ys = data["observation"]
-            print("ys.shape:", ys.shape)
-    else:
-        # get the parent directory of the ckpt_path
-        parent_dir = os.path.dirname(config.ckpt_path)
-        print("parent_dir:", parent_dir)
+    with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
+        samples = pickle.load(f).unflatten(0, (num_systems, num_trials))
+        ys = samples["observation"]
 
-        # get the parent directory of the parent directory
-        parent_parent_dir = os.path.dirname(parent_dir)
-        print("parent_parent_dir:", parent_parent_dir)
-
-        with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
-            samples = pickle.load(f)
-            # for every 2000 entries in samples, get the observation values and append them to the ys list
-            i = 0
-            ys = np.zeros((num_systems, num_trials, config.n_positions + 1, config.ny))
-            for entry in samples:
-                ys[math.floor(i / num_trials), i % num_trials] = entry["obs"]
-                i += 1
-            ys = ys.astype(np.float32)
-            del samples  # Delete the variable
-            gc.collect()  # Start the garbage collector
-
-        # open fsim file
-        with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
-            sim_objs = pickle.load(f)
+    # open fsim file
+    with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
+        sim_objs = pickle.load(f)
 
     # Transformer Predictions
     start = time.time()  # start the timer for transformer predictions
     with torch.no_grad():  # no gradients
-        I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)  # get the inputs (observations without the last one)
-        # if config.dataset_typ == "drone":  # if the dataset type is drone
-        #     I = np.concatenate([I, us], axis=-1)  # concatenate the inputs
-
+        inputs = ys[..., :-1, :]
         if config.changing:
             preds_tf = model.predict_ar(ys[:, :-1])  # predict using the model
         else:
-            # print("before model.predict_step()")
-            batch_shape = I.shape[:-2]
-            # print("batch_shape:", batch_shape)
-            flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
-            # print("flattened_I.shape:", flattened_I.shape)
-            validation_loader = torch.utils.data.DataLoader(torch.from_numpy(flattened_I),
-                                                            batch_size=config.test_batch_size)
-            preds_arr = []  # Store the predictions for all batches
-            for validation_batch in iter(validation_loader):
-                _, flattened_preds_tf = model.predict_step(
-                    {"xs": validation_batch.to(device)})  # .float().to(device)})    # predict using the model
-                preds_arr.append(flattened_preds_tf["preds"].cpu().numpy())
-            preds_tf = np.reshape(np.concatenate(preds_arr, axis=0),
-                                  (*batch_shape, *I.shape[-2:]))  # Combine the predictions for all batches
-            # print("preds_tf.shape:", preds_tf.shape)
-            preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf],
-                                      axis=-2)  # concatenate the predictions
-            # print("preds_tf.shape:", preds_tf.shape)
+            flattened_inputs = inputs.flatten(0, -3)
+            flattened_preds_tf = model.predict_step({"xs": flattened_inputs.to(device)})[1]["preds"]
+
+            preds_tf = torch.cat([
+                flattened_preds_tf.unflatten(0, (num_systems, num_trials)),
+                torch.zeros((num_systems, num_trials, 1, config.ny))
+            ], dim=-2)
+    errs_tf = torch.norm((ys - preds_tf), dim=-1) ** 2  # get the errors of transformer predictions
     end = time.time()  # end the timer for transformer predictions
     print("time elapsed for MOP Pred:", (end - start) / 60, "min")  # print the time elapsed for transformer predictions
 
-    errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2  # get the errors of transformer predictions
-
     # zero predictor predictions
-    errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2  # get the errors of zero predictions
-
-    n_noise = config.n_noise
+    errs_zero = torch.norm(ys, dim=-1) ** 2  # get the errors of zero predictions
 
     start = time.time()  # start the timer for kalman filter predictions
-    if run_deg_kf_test:  # degenerate system KF Predictions
-        # Kalman Filter Predictions
-        preds_kf_list = []
-        for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)):
-            inner_list = []
-            for __ys in _ys:
-                result = apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise),
-                                  sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-                inner_list.append(result)
-            preds_kf_list.append(inner_list)
 
-        preds_kf = np.array(preds_kf_list)  # get kalman filter predictions
-
+    if run_deg_kf_test: # degenerate system KF Predictions
         # create an array of zeros to hold the kalman filter predictions
-        preds_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1,
-                             config.ny))  # first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
+        preds_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1, config.ny)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
 
-        errs_kf = np.zeros((num_systems, num_systems, num_trials,
-                            config.n_positions + 1))  # first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
+        errs_kf = np.zeros((num_systems, num_systems, num_trials, config.n_positions + 1)) #first axis is the system that the kalman filter is being trained on, second axis is the system that the kalman filter is being tested on
         # iterate over sim_objs
         kf_index = 0
-        for sim_obj in sim_objs:  # iterate over the training systems
-            for sys in range(num_systems):  # iterate over the test systems
+        for sim_obj in sim_objs: # iterate over the training systems
+            for sys in range(num_systems): # iterate over the test systems
                 print("Kalman filter", kf_index, "testing on system", sys)
                 for trial in range(num_trials):
-                    preds_kf[kf_index, sys, trial, :, :] = apply_kf(sim_obj, ys[sys, trial, :-1, :],
-                                                                    sigma_w=sim_obj.sigma_w * np.sqrt(n_noise),
-                                                                    sigma_v=sim_obj.sigma_v * np.sqrt(
-                                                                        n_noise))  # get the kalman filter predictions for the test system and the training system
-                errs_kf[kf_index, sys] = np.linalg.norm((ys[sys] - preds_kf[kf_index, sys]),
-                                                        axis=-1) ** 2  # get the errors of the kalman filter predictions for the test system and the training system
+                    preds_kf[kf_index, sys, trial, :, :] = apply_kf(sim_obj, ys[sys, trial, :-1, :], sigma_w=sim_obj.sigma_w * np.sqrt(config.n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(config.n_noise))  # get the kalman filter predictions for the test system and the training system
+                errs_kf[kf_index, sys] = np.linalg.norm((ys[sys] - preds_kf[kf_index, sys]), axis=-1) ** 2  # get the errors of the kalman filter predictions for the test system and the training system
             kf_index += 1
 
-    else:  # Kalman Predictions
-        preds_kf = np.array([[
-            apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise),
-                     sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-            for __ys in _ys
-        ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
-        ])  # get kalman filter predictions
-        errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
-
+    else: # Kalman Predictions
+        preds_kf = samples["target_observation_estimation"]  # get kalman filter predictions
+        errs_kf = torch.norm((ys - preds_kf), dim=-1) ** 2
     end = time.time()  # end the timer for kalman filter predictions
     print("time elapsed for KF Pred:", (end - start) / 60,
           "min")  # print the time elapsed for kalman filter predictions
 
     err_lss = collections.OrderedDict([
         ("Kalman", errs_kf),
-        ("MOP", errs_tf),
+        # ("MOP", errs_tf),
         ("Zero", errs_zero)
     ])
     print("err_lss keys:", err_lss.keys())
 
     # Analytical Kalman Predictions
-    analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
-    err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems, 1)) @ np.ones((1, config.n_positions))
-    print("err_lss Analytical_Kalman sys 2:", err_lss["Analytical_Kalman"][2][50])
-
-    # # OLS Wentinn
-    # start = time.time() #start the timer for OLS Wentinn predictions
-    # err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
-    # end = time.time() #end the timer for OLS Wentinn predictions
-    # print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
+    irreducible_error = sim_objs.td()["environment", "irreducible_loss"]
+    err_lss["Analytical_Kalman"] = irreducible_error[:, None].expand(-1, config.n_positions + 1)
+    print("err_lss Analytical_Kalman sys 2:", err_lss["Analytical_Kalman"][2, 50])
 
     # Original OLS
     start = time.time()  # start the timer for OLS predictions
@@ -523,50 +387,6 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     end = time.time()  # end the timer for OLS predictions
     print("time elapsed for OLS Pred:", (end - start) / 60, "min")  # print the time elapsed for OLS predictions
 
-    # #Revised OLS
-    # print("\n\nREVISED OLS")
-    # sim_obj_td = torch.stack([
-    #     TensorDict({
-    #         'F': torch.Tensor(sim.A),                              # [N x S_D x S_D]
-    #         'H': torch.Tensor(sim.C),                              # [N x O_D x S_D]
-    #         'sqrt_S_W': sim.sigma_w * torch.eye(sim.C.shape[-1]),  # [N x S_D x S_D]
-    #         'sqrt_S_V': sim.sigma_v * torch.eye(sim.C.shape[-2])   # [N x O_D x O_D]
-    #     }, batch_size=())
-    #     for sim in sim_objs
-    # ])
-
-    # for ir_length in range(1, 4):
-    #     print(f"IR length: {ir_length}")
-    #     start = time.time()
-    #     rls_preds, rls_analytical_error = [], []
-
-    #     torch_ys = torch.Tensor(ys)         # [N x E x L x O_D]
-    #     print("torch_ys.shape:", torch_ys.shape)
-    #     padded_torch_ys = torch.cat([
-    #         torch_ys,
-    #         # torch.zeros((num_systems, num_trials, ir_length - 1, config.ny))
-    #         torch.zeros((num_systems, num_trials, config.n_positions +1, config.ny))
-    #     ], dim=-2)                                  # [N x E x (L + R - 1) x O_D]
-
-    #     rls_wentinn = CnnKF(batch_shape=(num_systems, num_trials), ny=config.ny, ir_length=ir_length, ridge=1.0)
-    #     for i in range(config.n_positions - 1):
-    #         rls_wentinn.update(
-    #             padded_torch_ys[:, :, i:i + ir_length],
-    #             padded_torch_ys[:, :, i + ir_length]
-    #         )
-    #         rls_preds.append(rls_wentinn(padded_torch_ys[i + 1:i + ir_length + 1]))
-    #         rls_analytical_error.append(rls_wentinn.analytical_error(sim_obj_td[:, None]))
-
-    #     rls_preds = torch.stack(rls_preds, dim=2).detach().numpy()                      # [N x E x L x O_D]
-    #     rls_analytical_error = torch.stack(rls_analytical_error, dim=2).detach.numpy()  # [N x E x L]
-
-    #     err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(rls_preds), axis=-1) ** 2
-
-    #     # err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-    #     end = time.time()
-    #     print("time elapsed:", (end - start)/60, "min")
-
-    irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error
 
 
@@ -668,8 +488,7 @@ def compute_errors_conv(config, C_dist, run_deg_kf_test, wentinn_data):
 
 
 def save_preds(run_deg_kf_test, config):
-    err_lss, irreducible_error = compute_errors(config, config.C_dist, run_deg_kf_test,
-                                                wentinn_data=False)  # , emb_dim)
+    err_lss, irreducible_error = compute_errors(config, run_deg_kf_test)  # , emb_dim)
 
     # make the prediction errors directory
     # get the parent directory of the ckpt_path

@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as Fn
+from tensordict import TensorDict
 
-import utils
-from dyn_models.filtering_lti import FilterSim
+from infrastructure import utils
 
 
 class CnnKF(nn.Module):
@@ -22,18 +22,16 @@ class CnnKF(nn.Module):
         self.X = torch.zeros((0, r_))  # [k x RO_D]
         self.y = torch.zeros((0, self.O_D))  # [k x O_D]
 
-    def analytical_error(self, system: FilterSim) -> torch.Tensor:
+    @classmethod
+    def analytical_error(cls, observation_IR: torch.Tensor, systems: TensorDict[str, torch.Tensor]) -> torch.Tensor:
         # Variable definition
-        def to_complex(t: torch.Tensor) -> torch.Tensor:
-            return torch.complex(t, torch.zeros_like(t))
-
-        Q = to_complex(self.observation_IR)  # [B... x O_D x R x O_D]
+        Q = utils.complex(observation_IR)  # [B... x O_D x R x O_D]
         Q = Q.permute(*range(Q.ndim - 3), -2, -1, -3)  # [B... x R x O_D x O_D]
 
-        F = to_complex(torch.Tensor(system.A))  # [B... x S_D x S_D]
-        H = to_complex(torch.Tensor(system.C))  # [B... x O_D x S_D]
-        sqrt_S_W = to_complex(system.sigma_w * torch.eye(H.shape[-1]))  # [B... x S_D x S_D]
-        sqrt_S_V = to_complex(system.sigma_v * torch.eye(H.shape[-2]))  # [B... x O_D x O_D]
+        F = utils.complex(systems["F"])  # [B... x S_D x S_D]
+        H = utils.complex(systems["H"])  # [B... x O_D x S_D]
+        sqrt_S_W = utils.complex(systems["sqrt_S_W"])  # [B... x S_D x S_D]
+        sqrt_S_V = utils.complex(systems["sqrt_S_V"])  # [B... x O_D x O_D]
 
         R = Q.shape[-3]
 

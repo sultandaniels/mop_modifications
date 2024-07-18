@@ -13,7 +13,7 @@ from utils import set_seed
 # /checkpoints/step=10000.ckpt
 
 class Config(object, metaclass=Singleton):
-    ckpt_path = ""
+    ckpt_path = ""  # "../outputs/GPT2/240718_200431.36249d_upperTriA_gauss_C/checkpoints/step=1.ckpt"
     # ckpt_path = "/Users/sultandaniels/Documents/Transformer_Kalman/outputs/GPT2/240529_111352.3b8b85_unifA_unif_C/checkpoints/step=7.ckpt"
     # ckpt_path = "../outputs/GPT2/240425_225022.52199c/checkpoints/batch_size_28_con_len_250_step=20000.ckpt" #20000 steps gaussA gaussC
     # ckpt_path = "../outputs/GPT2/240320_014524.c78f58/checkpoints/num_tasks_28_con_len_250_step=20000.ckpt" #checkpoint of dense A uniform C
@@ -28,11 +28,11 @@ class Config(object, metaclass=Singleton):
     nx = 10
     ny = 5
     n_noise = 1
-    num_traces = {"train": 1, "val": 2000}
+    num_traces = {"train": 1, "val": 200}
 
     # Training settings
     train_steps = 1     # 192000  # number of training steps
-    train_int = 4000  # number of steps between logging
+    train_int = 1  # number of steps between logging
     batch_size = 28  # does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
     train_data_workers = 1  # set to 1 (check if it changes the speed of the training process)
     test_batch_size = 16  # 256
