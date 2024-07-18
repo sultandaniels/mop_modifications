@@ -46,7 +46,7 @@ def preds_thread(make_preds, resume_train, train_conv):
         wandb_train(config_dict, model, output_dir)
     if not train_conv:
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
-    return None
+    return run_preds, run_deg_kf_test, excess, shade
 
 
 # main function
@@ -117,9 +117,9 @@ if __name__ == '__main__':
 
 
     if (not train_conv) and (make_preds or saved_preds):
-        preds_thread(make_preds, resume_train, train_conv)
+        run_preds, run_deg_kf_test, excess, shade = preds_thread(make_preds, resume_train, train_conv)
     elif train_conv:
-        preds_thread(make_preds, resume_train, train_conv)
+        run_preds, run_deg_kf_test, excess, shade = preds_thread(make_preds, resume_train, train_conv)
 
         #for loop to iterate through all the checkpoints in the output directory
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
