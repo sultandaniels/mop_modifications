@@ -371,7 +371,7 @@ def compute_errors(config, run_deg_kf_test):
 
     err_lss = collections.OrderedDict([
         ("Kalman", errs_kf),
-        # ("MOP", errs_tf),
+        ("MOP", errs_tf),
         ("Zero", errs_zero)
     ])
     print("err_lss keys:", err_lss.keys())
