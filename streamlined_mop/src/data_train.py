@@ -11,6 +11,44 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import numpy as np
 
+def wandb_train(config_dict, model, output_dir):
+    # add ckpt_path to config_dict
+    config_dict["ckpt_path"] = config.ckpt_path
+
+    # 🐝 1️⃣ Start a new run to track this script
+    run = wandb.init(
+        # Set the project where this run will be logged
+        project="transformer_kalman_no_sweep",
+        # Track hyperparameters and run metadata
+        config=config_dict,
+    )
+    train_gpt2(model, config, output_dir) # train the model
+    return None
+
+def preds_thread(make_preds, resume_train, train_conv):
+    # create prediction plots
+    run_preds = make_preds # run the predictions evaluation
+    run_deg_kf_test = False #run degenerate KF test
+    excess = False #run the excess plots
+    shade = True
+    config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
+    print("ckpt_path", config.ckpt_path)
+
+    if resume_train:
+        #get the parent directory of the ckpt_path
+        parent_dir = os.path.dirname(config.ckpt_path)
+        #get the parent directory of the parent directory
+        output_dir = os.path.dirname(parent_dir)
+        # instantiate gpt2 model
+        model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
+                n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
+        
+        wandb_train(config_dict, model, output_dir)
+    if not train_conv:
+        create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
+    return None
+
+
 # main function
 
 if __name__ == '__main__':
@@ -77,66 +115,11 @@ if __name__ == '__main__':
     for key in config_attributes:
         config_dict[key] = config.__getattribute__(key)
 
-    if saved_preds:
-        # create prediction plots
-        run_preds = make_preds #run the predictions evaluation
-        run_deg_kf_test = False #run degenerate KF test
-        excess = False #run the excess plots
-        shade = True
-        config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
-        print("ckpt_path", config.ckpt_path)
 
-        if resume_train:
-            #get the parent directory of the ckpt_path
-            parent_dir = os.path.dirname(config.ckpt_path)
-            #get the parent directory of the parent directory
-            output_dir = os.path.dirname(parent_dir)
-            # instantiate gpt2 model
-            model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
-                    n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
-        
-            # add ckpt_path to config_dict
-            config_dict["ckpt_path"] = config.ckpt_path
-
-            # 🐝 1️⃣ Start a new run to track this script
-            run = wandb.init(
-                # Set the project where this run will be logged
-                project="transformer_kalman_no_sweep",
-                # Track hyperparameters and run metadata
-                config=config_dict,
-            )
-            train_gpt2(model, config, output_dir) # train the model
-        create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
+    if (not train_conv) and (make_preds or saved_preds):
+        preds_thread(make_preds, resume_train, train_conv)
     elif train_conv:
-        # create prediction plots
-        run_preds = make_preds
-        run_deg_kf_test = False
-        excess = False
-        shade = True
-
-        if resume_train:
-            config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
-            print("ckpt_path", config.ckpt_path)
-            
-            #get the parent directory of the ckpt_path
-            parent_dir = os.path.dirname(config.ckpt_path)
-            #get the parent directory of the parent directory
-            output_dir = os.path.dirname(parent_dir)
-            # instantiate gpt2 model
-            model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
-                    n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
-        
-            # add ckpt_path to config_dict
-            config_dict["ckpt_path"] = config.ckpt_path
-
-            # 🐝 1️⃣ Start a new run to track this script
-            run = wandb.init(
-                # Set the project where this run will be logged
-                project="transformer_kalman_no_sweep",
-                # Track hyperparameters and run metadata
-                config=config_dict,
-            )
-            train_gpt2(model, config, output_dir) # train the model
+        preds_thread(make_preds, resume_train, train_conv)
 
         #for loop to iterate through all the checkpoints in the output directory
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
@@ -245,17 +228,7 @@ if __name__ == '__main__':
         # replace ckpt_path with the path to the checkpoint file
         config.override("ckpt_path", output_dir + "/checkpoints/step=" + str(config.train_steps) + ".ckpt")
 
-        # add ckpt_path to config_dict
-        config_dict["ckpt_path"] = config.ckpt_path
-
-        # 🐝 1️⃣ Start a new run to track this script
-        run = wandb.init(
-            # Set the project where this run will be logged
-            project="transformer_kalman_no_sweep",
-            # Track hyperparameters and run metadata
-            config=config_dict,
-        )
-        train_gpt2(model, config, output_dir) # train the model
+        wandb_train(config_dict, model, output_dir)
 
         # create prediction plots
         run_preds = True #run the predictions evaluation
