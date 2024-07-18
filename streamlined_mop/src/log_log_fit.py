@@ -8,6 +8,7 @@ def loglogfit(x_values, y_values):
     # For a log-log scale regression
     log_x = np.log(x_values)
     log_y = np.log(y_values)
+    print("log_y:", log_y)
 
     # Set up the design matrix for a linear model
     A = np.vstack([log_x, np.ones(len(log_x))]).T

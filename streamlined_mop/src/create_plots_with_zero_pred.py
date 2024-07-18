@@ -386,11 +386,9 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     else:
         # get the parent directory of the ckpt_path
         parent_dir = os.path.dirname(config.ckpt_path)
-        print("parent_dir:", parent_dir)
 
         #get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
-        print("parent_parent_dir:", parent_parent_dir)
 
         with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
             samples = pickle.load(f)
@@ -583,11 +581,9 @@ def compute_errors_conv(config, C_dist, run_deg_kf_test, wentinn_data):
     else:
         # get the parent directory of the ckpt_path
         parent_dir = os.path.dirname(config.ckpt_path)
-        print("parent_dir:", parent_dir)
 
         #get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
-        print("parent_parent_dir:", parent_parent_dir)
 
         with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
             samples = pickle.load(f)
@@ -652,15 +648,12 @@ def save_preds(run_deg_kf_test, config):
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
     parent_dir = os.path.dirname(config.ckpt_path)
-    print("parent_dir:", parent_dir)
 
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
-    print("parent_parent_dir:", parent_parent_dir)
 
     #get the step size from the ckpt_path
-    step_size = config.ckpt_path.split("/")[-1].split("_")[-1]
-    print("step_size:", step_size)
+    step_size = config.ckpt_path.split("/")[-1].split("_")[-1] #get step number
 
     os.makedirs(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size, exist_ok=True)
     if run_deg_kf_test:
@@ -685,11 +678,9 @@ def save_preds_conv(run_deg_kf_test, config):
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
     parent_dir = os.path.dirname(config.ckpt_path)
-    print("parent_dir:", parent_dir)
 
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
-    print("parent_parent_dir:", parent_parent_dir)
 
     # a boolean for whether the below directory exists
     if not os.path.exists(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size):
@@ -713,11 +704,9 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
     parent_dir = os.path.dirname(config.ckpt_path)
-    print("parent_dir:", parent_dir)
 
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
-    print("parent_parent_dir:", parent_parent_dir)
 
     #get the step size from the ckpt_path
     step_size = config.ckpt_path.split("/")[-1].split("_")[-1]
@@ -730,8 +719,6 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
     else:
         with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
             err_lss_load = pickle.load(f)
-
-    print("err_lss_load keys:", err_lss_load.keys())
 
     with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl", "rb") as f:
         irreducible_error_load = pickle.load(f)
@@ -796,7 +783,6 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
 
     #load the prediction errors from the file
     err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
-    print("err_lss_load keys:", err_lss_load.keys())
 
     if run_deg_kf_test:
         cos_sims, err_ratios, zero_ratios, deg_fig, axs = setup_deg_kf_axs_arrs(num_systems)
@@ -858,7 +844,6 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
             if sys == num_systems - 1 and i == num_systems - 1:
                 # get the parent directory of the ckpt_path
                 parent_dir = os.path.dirname(config.ckpt_path)
-                print("parent_dir:", parent_dir)
 
                 #get the parent directory of the parent directory
                 parent_parent_dir = os.path.dirname(parent_dir)
@@ -1230,7 +1215,6 @@ if __name__ == '__main__':
             if sys == num_systems - 1 and i == num_systems - 1:
                 # get the parent directory of the ckpt_path
                 parent_dir = os.path.dirname(config.ckpt_path)
-                print("parent_dir:", parent_dir)
 
                 #get the parent directory of the parent directory
                 parent_parent_dir = os.path.dirname(parent_dir)
