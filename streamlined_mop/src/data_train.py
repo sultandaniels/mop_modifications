@@ -160,7 +160,7 @@ if __name__ == '__main__':
                 # Fit a line to the data
                 y_fit, m, c = loglogfit(x_values, y_values)
 
-                ax[t][sys].plot(x_values, y_fit, label="Fit Line m = " + str(m) + " c = " + str(c))
+                # ax[t][sys].plot(x_values, y_fit, label="Fit Line m = " + str(m) + " c = " + str(c))
 
                 # Assuming the above prints confirm the lists are 1-dimensional
                 y1 = [x[1][t][1] for x in error_checkpoints_tuples]
