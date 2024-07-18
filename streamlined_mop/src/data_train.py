@@ -184,7 +184,7 @@ if __name__ == '__main__':
                 # # Adjust the label size if necessary
                 # ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
 
-                x_label_values = [x[0] for x in error_checkpoints_tuples]
+                x_label_values = [int(x[0]) for x in error_checkpoints_tuples]
                 # Assuming `x_label_values` is a list of values you want as labels on the x-axis
                 x_label_positions = np.arange(len(x_label_values))  # Positions where labels should appear
 

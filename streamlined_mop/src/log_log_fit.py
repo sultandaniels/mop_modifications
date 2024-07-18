@@ -8,17 +8,12 @@ def loglogfit(x_values, y_values):
     # For a log-log scale regression
     log_x = np.log(x_values)
     log_y = np.log(y_values)
-    print("log_x:", log_x)
-    print("log_y:", log_y)
 
     # Set up the design matrix for a linear model
     A = np.vstack([log_x, np.ones(len(log_x))]).T
 
     # Solve the least squares problem
     m, c = np.linalg.lstsq(A, log_y, rcond=None)[0]
-
-    # m is the slope, c is the intercept on the log-log scale
-    print(f"Slope: {m}, Intercept: {c}")
 
     # To plot or use the regression line:
     # Convert back if you're working on a log-log scale
