@@ -28,7 +28,7 @@ class CnnKF(nn.Module):
         def to_complex(t: torch.Tensor) -> torch.Tensor:
             return torch.complex(t, torch.zeros_like(t))
 
-        Q = to_complex(self.observation_IR.to(torch.float32))                                   # [B... x O_D x R x O_D]
+        Q = to_complex(self.observation_IR)                                   # [B... x O_D x R x O_D]
         Q = Q.permute(*range(Q.ndim - 3), -2, -1, -3)                                           # [B... x R x O_D x O_D]
 
         F = to_complex(torch.Tensor(system.A))                                                  # [B... x S_D x S_D]
@@ -69,9 +69,9 @@ class CnnKF(nn.Module):
         # Highlight
         v_current_err = sqrt_S_V.norm(dim=(-2, -1)) ** 2                                        # [B...]
 
-        #check if Q is zero
-        if torch.all(Q == 0):
-            print("Q is zero")
+        # #check if Q is zero
+        # if torch.all(Q == 0):
+        #     print("Q is zero")
         # Highlight
         # TODO: Backward pass on the above one breaks when Q = 0 for some reason
         # v_recent_err = (Q @ sqrt_S_V.unsqueeze(-3)).flatten(-3, -1).norm(dim=-1) ** 2           # [B...]
@@ -121,7 +121,7 @@ class CnnKF(nn.Module):
             self.y = torch.cat([self.y, flattened_observations], dim=0)
             flattened_w = torch.linalg.pinv(self.X) @ self.y
 
-        self.observation_IR.data = flattened_w.unflatten(0, (self.ir_length, -1)).transpose(0, 1).to(torch.float32) # [O_D x R x O_D]
+        self.observation_IR.data = flattened_w.unflatten(0, (self.ir_length, -1)).transpose(0, 1) # [O_D x R x O_D]
         return self.observation_IR.data
 
 

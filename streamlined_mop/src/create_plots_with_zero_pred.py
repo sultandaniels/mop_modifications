@@ -271,60 +271,65 @@ def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_
     return err_lss
 
 def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
+
+    #set torch precision to float64
+    torch.set_default_dtype(torch.float64)
     print("\n\n max_ir_length + 1:", max_ir_length+1)
     for ir_length in range(1, max_ir_length + 1):
         start = time.time()
         print(f"\n\nIR length: {ir_length}")
-        preds_rls_wentinn = []
-        preds_rls_wentinn_analytical = []
-        sys_count = 0
-        for sim_obj, _ys in zip(sim_objs, ys):
-            _preds_rls_wentinn = []
-            _preds_rls_wentinn_analytical = []
-            for __ys in _ys:
-                padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
-                ls = list(np.zeros((2, config.ny)))
-                ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
 
-                rls_wentinn = CnnKF(config.ny, ir_length, ridge=1.0)
-                for i in range(config.n_positions - 1):
-                    obs_tensor = rls_wentinn.update(
+        if ir_length == 2:
+            preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, 0.0)
+
+            err_lss[f"OLS_ir_{ir_length}_unreg"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+            err_lss[f"OLS_analytical_ir_{ir_length}_unreg"] = np.array(preds_rls_wentinn_analytical)
+
+
+        preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, 1.0)
+
+        err_lss[f"OLS_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
+        err_lss[f"OLS_analytical_ir_{ir_length}"] = np.array(preds_rls_wentinn_analytical)
+        end = time.time()
+        print("time elapsed:", (end - start)/60, "min")
+    #set torch precision back to float32
+    torch.set_default_dtype(torch.float32)
+    return err_lss
+
+def compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, config, ridge):
+    rls_wentinn = CnnKF(config.ny, ir_length, ridge=ridge)
+    for i in range(config.n_positions - 1):
+
+        obs_tensor = rls_wentinn.update(
                         torch.from_numpy(padded_ys[i:i + ir_length]),
                         torch.from_numpy(padded_ys[i + ir_length])
                     )
+        
+        ls.append(rls_wentinn(torch.from_numpy(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
+        ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
 
-                    ls.append(rls_wentinn(torch.Tensor(padded_ys[i + 1:i + ir_length + 1])[None]).squeeze(0, 1).detach().numpy())
-                    ls_analytical.append(rls_wentinn.analytical_error(sim_obj).item())
+        # assert ls_analytical[-1] >= torch.trace(sim_obj.S_observation_inf).item(), f"Analytical error is less than irreducible error: {ls_analytical[-1]} < {torch.trace(sim_obj.S_observation_inf).item()}."
+    return ls, ls_analytical
 
-                _preds_rls_wentinn.append(ls)
-                _preds_rls_wentinn_analytical.append(ls_analytical)
+def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
+    preds_rls_wentinn = []
+    preds_rls_wentinn_analytical = []
+    for sim_obj, _ys in zip(sim_objs, ys):
+        _preds_rls_wentinn = []
+        _preds_rls_wentinn_analytical = []
+        for __ys in _ys:
+            padded_ys = np.vstack([np.zeros((ir_length - 1, config.ny)), __ys])   # [(L + R - 1) x O_D]
+            ls = list(np.zeros((2, config.ny)))
+            ls_analytical = list(np.linalg.norm(__ys[:2], axis=-1) ** 2)
 
-                if i == 50 and rls_wentinn.analytical_error(sim_obj).item() < 0.6 and ir_length == 2 and sys_count == 2:
+            ls, ls_analytical = compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, config, ridge)
 
-                    # Inside your loop or function where you open the file
-                    file_path = f"../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/data/observation_IR_{ir_length}.pt"
-                    directory = os.path.dirname(file_path)
+            _preds_rls_wentinn.append(ls)
+            _preds_rls_wentinn_analytical.append(ls_analytical)
 
-                    # Create the directory if it does not exist
-                    if not os.path.exists(directory):
-                        os.makedirs(directory)
-
-                    # Now, safely open the file for writing
-                    with open(file_path, "wb") as f:
-                        torch.save(obs_tensor, f)
-                        # print("\n\n\nsaved observation_IR tensor to file")
-                        # print("_preds_rls_wentinn_analytical[-1][50]:", _preds_rls_wentinn_analytical[-1][50])
-
-            preds_rls_wentinn.append(_preds_rls_wentinn)
-            preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
-            sys_count += 1
-
-        err_lss[f"OLS_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-        #err_lss[f"OLS_analytical_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn_analytical), axis=-1) ** 2
-        err_lss[f"OLS_analytical_ir_{ir_length}"] = np.array(preds_rls_wentinn_analytical)
-    end = time.time()
-    print("time elapsed:", (end - start)/60, "min")
-    return err_lss
+        preds_rls_wentinn.append(_preds_rls_wentinn)
+        preds_rls_wentinn_analytical.append(_preds_rls_wentinn_analytical)
+    return preds_rls_wentinn, preds_rls_wentinn_analytical
     
 def compute_OLS_wentinn(config, ys, sim_objs, ir_length, err_lss):
     errs_rls_wentinn = []
@@ -381,11 +386,9 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     else:
         # get the parent directory of the ckpt_path
         parent_dir = os.path.dirname(config.ckpt_path)
-        print("parent_dir:", parent_dir)
 
         #get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
-        print("parent_parent_dir:", parent_parent_dir)
 
         with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
             samples = pickle.load(f)
@@ -439,6 +442,9 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
     start = time.time() #start the timer for kalman filter predictions
     if run_deg_kf_test: #degenerate system KF Predictions
+        
+    #############################################################
+    #this portion can most likely be deleted
         #Kalman Filter Predictions
         preds_kf_list = []
         for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)):
@@ -447,6 +453,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
                 result = apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise), sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
                 inner_list.append(result)
             preds_kf_list.append(inner_list)
+    #############################################################
 
         preds_kf = np.array(preds_kf_list)  # get kalman filter predictions
 
@@ -498,9 +505,6 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=3, err_lss=err_lss)
     end = time.time() #end the timer for OLS predictions
     print("time elapsed for OLS Pred:", (end - start)/60, "min") #print the time elapsed for OLS predictions
-    #print the value of the OLS prediction for system 2 at position 50
-    print("err_lss OLS_analytical_ir_2 shape:", err_lss["OLS_analytical_ir_2"].shape)
-    print("err_lss OLS_analytical_ir_2 sys 2:", err_lss["OLS_analytical_ir_2"][2][:,50].mean())
 
     # #Revised OLS
     # print("\n\nREVISED OLS")
@@ -577,11 +581,9 @@ def compute_errors_conv(config, C_dist, run_deg_kf_test, wentinn_data):
     else:
         # get the parent directory of the ckpt_path
         parent_dir = os.path.dirname(config.ckpt_path)
-        print("parent_dir:", parent_dir)
 
         #get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
-        print("parent_parent_dir:", parent_parent_dir)
 
         with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
             samples = pickle.load(f)
@@ -646,15 +648,12 @@ def save_preds(run_deg_kf_test, config):
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
     parent_dir = os.path.dirname(config.ckpt_path)
-    print("parent_dir:", parent_dir)
 
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
-    print("parent_parent_dir:", parent_parent_dir)
 
     #get the step size from the ckpt_path
-    step_size = config.ckpt_path.split("/")[-1].split("_")[-1]
-    print("step_size:", step_size)
+    step_size = config.ckpt_path.split("/")[-1].split("_")[-1] #get step number
 
     os.makedirs(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size, exist_ok=True)
     if run_deg_kf_test:
@@ -679,11 +678,9 @@ def save_preds_conv(run_deg_kf_test, config):
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
     parent_dir = os.path.dirname(config.ckpt_path)
-    print("parent_dir:", parent_dir)
 
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
-    print("parent_parent_dir:", parent_parent_dir)
 
     # a boolean for whether the below directory exists
     if not os.path.exists(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size):
@@ -707,11 +704,9 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
     parent_dir = os.path.dirname(config.ckpt_path)
-    print("parent_dir:", parent_dir)
 
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
-    print("parent_parent_dir:", parent_parent_dir)
 
     #get the step size from the ckpt_path
     step_size = config.ckpt_path.split("/")[-1].split("_")[-1]
@@ -724,8 +719,6 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
     else:
         with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
             err_lss_load = pickle.load(f)
-
-    print("err_lss_load keys:", err_lss_load.keys())
 
     with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl", "rb") as f:
         irreducible_error_load = pickle.load(f)
@@ -790,12 +783,11 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
 
     #load the prediction errors from the file
     err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
-    print("err_lss_load keys:", err_lss_load.keys())
 
     if run_deg_kf_test:
         cos_sims, err_ratios, zero_ratios, deg_fig, axs = setup_deg_kf_axs_arrs(num_systems)
 
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#00ced1', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#7D00BD', '#d00960']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#00ced1', '#8c564b', '#e377c2', '#A80000', '#bcbd22', '#7D00BD', '#d00960', '#006400']
 
     print("len(err_lss_load):", len(err_lss_load))
     for sys in range(len(irreducible_error_load)):
@@ -852,7 +844,6 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
             if sys == num_systems - 1 and i == num_systems - 1:
                 # get the parent directory of the ckpt_path
                 parent_dir = os.path.dirname(config.ckpt_path)
-                print("parent_dir:", parent_dir)
 
                 #get the parent directory of the parent directory
                 parent_parent_dir = os.path.dirname(parent_dir)
@@ -949,7 +940,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
                 os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
                 fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else "_excess"))
             else:
-                ax.legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/4))
+                ax.legend(fontsize=18, loc="upper right", ncol= max(1,math.floor(len(handles)/4)))
                 ax.set_xlabel("t", fontsize=30)
                 ax.set_ylabel("Prediction Error", fontsize=30)
                 ax.grid(which="both")
@@ -1100,20 +1091,18 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     for sys in range(len(irreducible_error_load)):            
         #plot transformer, KF and FIR errors
         #get the checkpoint steps number from the checkpoint path
-        ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]
-        print("\n\nckpt_steps:", ckpt_steps)
-        handles, err_avg_t = plot_errs_conv(ts, j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade)
+        ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0] #get the checkpoint steps number
+        handles, err_avg_t = plot_errs_conv(ts, j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade) #plot the errors
         sys_errs.append(err_avg_t) #append the system number and the error average at step t
         
         
         # Step 1: Collect legend handles and labels
-        handles, labels = ax[sys].get_legend_handles_labels()
+        handles, labels = ax[sys].get_legend_handles_labels() # handles and labels of the legend
 
         # Step 2: Sort handles and labels based on "MOP" part
         # Extracting the number after "MOP" and using it for sorting
         sorted_handles_labels = sorted(zip(handles, labels), key=lambda hl: int(hl[1].split("MOP")[1]))
         sorted_handles, sorted_labels = zip(*sorted_handles_labels)
-        print("sorted labels", sorted_labels)
 
         # Step 3: Create the legend with sorted handles and labels
         ax[sys].legend(sorted_handles, sorted_labels, fontsize=18, loc="upper right", ncol=1)
@@ -1226,7 +1215,6 @@ if __name__ == '__main__':
             if sys == num_systems - 1 and i == num_systems - 1:
                 # get the parent directory of the ckpt_path
                 parent_dir = os.path.dirname(config.ckpt_path)
-                print("parent_dir:", parent_dir)
 
                 #get the parent directory of the parent directory
                 parent_parent_dir = os.path.dirname(parent_dir)
@@ -1323,7 +1311,7 @@ if __name__ == '__main__':
                 os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
                 fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + ("-changing" if config.changing else "_excess"))
             else:
-                ax.legend(fontsize=18, loc="upper right", ncol= math.floor(len(handles)/4))
+                ax.legend(fontsize=18, loc="upper right", ncol= max(1,math.floor(len(handles)/4)))
                 ax.set_xlabel("t", fontsize=30)
                 ax.set_ylabel("Prediction Error", fontsize=30)
                 ax.grid(which="both")

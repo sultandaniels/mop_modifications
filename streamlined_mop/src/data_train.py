@@ -10,6 +10,45 @@ import wandb
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import numpy as np
+from log_log_fit import loglogfit
+
+def wandb_train(config_dict, model, output_dir):
+    # add ckpt_path to config_dict
+    config_dict["ckpt_path"] = config.ckpt_path
+
+    # 🐝 1️⃣ Start a new run to track this script
+    run = wandb.init(
+        # Set the project where this run will be logged
+        project="transformer_kalman_no_sweep",
+        # Track hyperparameters and run metadata
+        config=config_dict,
+    )
+    train_gpt2(model, config, output_dir) # train the model
+    return None
+
+def preds_thread(make_preds, resume_train, train_conv):
+    # create prediction plots
+    run_preds = make_preds # run the predictions evaluation
+    run_deg_kf_test = False #run degenerate KF test
+    excess = False #run the excess plots
+    shade = True
+    config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
+    print("ckpt_path", config.ckpt_path)
+
+    if resume_train:
+        #get the parent directory of the ckpt_path
+        parent_dir = os.path.dirname(config.ckpt_path)
+        #get the parent directory of the parent directory
+        output_dir = os.path.dirname(parent_dir)
+        # instantiate gpt2 model
+        model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
+                n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
+        
+        wandb_train(config_dict, model, output_dir)
+    if not train_conv:
+        create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
+    return run_preds, run_deg_kf_test, excess, shade
+
 
 # main function
 
@@ -77,66 +116,11 @@ if __name__ == '__main__':
     for key in config_attributes:
         config_dict[key] = config.__getattribute__(key)
 
-    if saved_preds:
-        # create prediction plots
-        run_preds = make_preds #run the predictions evaluation
-        run_deg_kf_test = False #run degenerate KF test
-        excess = False #run the excess plots
-        shade = True
-        config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
-        print("ckpt_path", config.ckpt_path)
 
-        if resume_train:
-            #get the parent directory of the ckpt_path
-            parent_dir = os.path.dirname(config.ckpt_path)
-            #get the parent directory of the parent directory
-            output_dir = os.path.dirname(parent_dir)
-            # instantiate gpt2 model
-            model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
-                    n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
-        
-            # add ckpt_path to config_dict
-            config_dict["ckpt_path"] = config.ckpt_path
-
-            # 🐝 1️⃣ Start a new run to track this script
-            run = wandb.init(
-                # Set the project where this run will be logged
-                project="transformer_kalman_no_sweep",
-                # Track hyperparameters and run metadata
-                config=config_dict,
-            )
-            train_gpt2(model, config, output_dir) # train the model
-        create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
+    if (not train_conv) and (make_preds or saved_preds):
+        run_preds, run_deg_kf_test, excess, shade = preds_thread(make_preds, resume_train, train_conv)
     elif train_conv:
-        # create prediction plots
-        run_preds = make_preds
-        run_deg_kf_test = False
-        excess = False
-        shade = True
-
-        if resume_train:
-            config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
-            print("ckpt_path", config.ckpt_path)
-            
-            #get the parent directory of the ckpt_path
-            parent_dir = os.path.dirname(config.ckpt_path)
-            #get the parent directory of the parent directory
-            output_dir = os.path.dirname(parent_dir)
-            # instantiate gpt2 model
-            model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
-                    n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
-        
-            # add ckpt_path to config_dict
-            config_dict["ckpt_path"] = config.ckpt_path
-
-            # 🐝 1️⃣ Start a new run to track this script
-            run = wandb.init(
-                # Set the project where this run will be logged
-                project="transformer_kalman_no_sweep",
-                # Track hyperparameters and run metadata
-                config=config_dict,
-            )
-            train_gpt2(model, config, output_dir) # train the model
+        run_preds, run_deg_kf_test, excess, shade = preds_thread(make_preds, resume_train, train_conv)
 
         #for loop to iterate through all the checkpoints in the output directory
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
@@ -156,7 +140,7 @@ if __name__ == '__main__':
         #plot the error_checkpoints_tuples
         print("\n\nPlotting error_checkpoints_tuples")
         #make a new figure
-        fig, ax = plt.subplots(3, 3, figsize=(30, 15))
+        fig, ax = plt.subplots(3, 3, figsize=(30, 20))
 
         for sys in range(config.num_val_tasks):
             # Filter and transform sys_error_checkpoints_tuples for the current system sys
@@ -168,23 +152,25 @@ if __name__ == '__main__':
         
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
-                ax[t][sys].plot([x[0] for x in error_checkpoints_tuples], [x[1][t][0] for x in error_checkpoints_tuples], marker='o')
-                # Example debug print to check the structure
+
+                x_values = [float(x[0]) for x in error_checkpoints_tuples]
+                if kfnorm: #if kfnorm is true, then set the y_values to be the max of the error and 1e-7 to avoid log(0)
+                    y_values = [x[1][t][0] if x[1][t][0] >= 0 else 1e-7 for x in error_checkpoints_tuples]
+                else: #otherwise set the y_values to be the error
+                    y_values = [x[1][t][0] for x in error_checkpoints_tuples]
+                ax[t][sys].plot(x_values, y_values, marker='o', label="Median")
+                
+                # Fit a line to the data
+                y_fit, m, c = loglogfit(x_values, y_values)
+
+                ax[t][sys].plot(x_values, y_fit, label="Fit Line m = " + str(m) + " c = " + str(c))
 
                 # Assuming the above prints confirm the lists are 1-dimensional
-                y1 = [x[1][t][0] - x[1][t][1] for x in error_checkpoints_tuples]
-
-                print("len of error_checkpoints_tuples", len(error_checkpoints_tuples))
-                print("len of error_checkpoints_tuples[0]", len(error_checkpoints_tuples[0]))
-                print("len of error_checkpoints_tuples[0][1]", len(error_checkpoints_tuples[0][1]))
-                print("len of error_checkpoints_tuples[0][1][0]", len(error_checkpoints_tuples[0][1][0]))
-
-                print("len of y1", len(y1))
-                print("shape of y1", np.shape(y1))
-                y2 = [x[1][t][0] + x[1][t][1] for x in error_checkpoints_tuples]
+                y1 = [x[1][t][1] for x in error_checkpoints_tuples]
+                y2 = [x[1][t][2] for x in error_checkpoints_tuples]
                 x = np.arange(len(error_checkpoints_tuples))
 
-                ax[t][sys].fill_between(x, y1, y2, alpha=0.2)
+                ax[t][sys].fill_between(x_values, y1, y2, alpha=0.2)
                 ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + (" Normalized" if kfnorm else ""))
                 ax[t][sys].set_xlabel("Checkpoint Step")
                 ax[t][sys].set_ylabel("Error")
@@ -193,14 +179,25 @@ if __name__ == '__main__':
                 # ax[t][sys].xaxis.set_major_formatter(formatter)
                 # ax[t][sys].legend()
 
-                # Rotate the x-axis labels
-                ax[t][sys].tick_params(axis='x', labelrotation=45)  # Rotate labels to 45 degrees
-                # Adjust the label size if necessary
-                ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
+                # # Rotate the x-axis labels
+                # ax[t][sys].tick_params(axis='x', labelrotation=45)  # Rotate labels to 45 degrees
+                # # Adjust the label size if necessary
+                # ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
+
+                x_label_values = [int(x[0]) for x in error_checkpoints_tuples]
+                # Assuming `x_label_values` is a list of values you want as labels on the x-axis
+                x_label_positions = np.arange(len(x_label_values))  # Positions where labels should appear
+
+                # Set the positions and labels for the x-axis ticks
+                ax[t][sys].set_xticks(x_label_positions)
+                ax[t][sys].set_xticklabels(x_label_values, rotation=45, fontsize=10)  # Rotate labels for better fit
                 # set y-axis to log scale
                 ax[t][sys].set_yscale('log')
                 ax[t][sys].set_xscale('log')
+                # add a legend 
+                ax[t][sys].legend()
 
+        fig.text(0.5, 0, "The error bars are the 45th and 55th percentile.", ha='center', va='bottom', fontsize=12)
         # Adjust layout to make room for the rotated x-axis labels
         plt.tight_layout()
         #get the parent directory of the ckpt_path
@@ -225,17 +222,7 @@ if __name__ == '__main__':
         # replace ckpt_path with the path to the checkpoint file
         config.override("ckpt_path", output_dir + "/checkpoints/step=" + str(config.train_steps) + ".ckpt")
 
-        # add ckpt_path to config_dict
-        config_dict["ckpt_path"] = config.ckpt_path
-
-        # 🐝 1️⃣ Start a new run to track this script
-        run = wandb.init(
-            # Set the project where this run will be logged
-            project="transformer_kalman_no_sweep",
-            # Track hyperparameters and run metadata
-            config=config_dict,
-        )
-        train_gpt2(model, config, output_dir) # train the model
+        wandb_train(config_dict, model, output_dir)
 
         # create prediction plots
         run_preds = True #run the predictions evaluation

@@ -93,30 +93,35 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
     ax.grid()
     handles = []
     err_avg_t = []
-    if not normalized:
-        for i, (name, err_ls) in enumerate(err_lss.items()):
-            if name == "MOP":
-                print("\n\nplotting MOP at step:", train_steps, "\n\n")
-                avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
+    for i, (name, err_ls) in enumerate(err_lss.items()):
+        if name == "MOP":
+            print("\n\nplotting MOP at step:", train_steps, "\n\n")
+            avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
+
+            #compute median and quartiles for the error
+            q1, median, q3 = np.quantile(err_ls[sys], [0.45, 0.5, 0.55], axis=-2)
+        
+            if not normalized:
+                
                 handles.extend(ax.plot(avg, label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j-1]))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
 
                 #set err_avg_t to be the value of avg at the t'th step
                 for t in ts:
-                    err_avg_t.append((avg[t], std[t]))
-    else: #subtract the irreducible error
-        for i, (name, err_ls) in enumerate(err_lss.items()):
-            if name == "MOP":
-                print("\n\nplotting MOP at step:", train_steps, "\n\n")
-                avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
+                    # err_avg_t.append((median[t], q1[t], q3[t]))
+                    err_avg_t.append((avg[t], avg[t] - std[t], avg[t] + std[t]))                    
+
+            else: #subtract the irreducible error
+
                 handles.extend(ax.plot(avg - err_irreducible[sys], label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j-1]))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - err_irreducible[sys] - std, avg - err_irreducible[sys] + std, facecolor=handles[-1].get_color(), alpha=0.2)
 
                 #set err_avg_t to be the value of avg at the t'th step
                 for t in ts:
-                    err_avg_t.append((avg[t] - err_irreducible[sys], std[t]))
+                    # err_avg_t.append((median[t] - err_irreducible[sys], q1[t] - err_irreducible[sys], q3[t] - err_irreducible[sys]))
+                    err_avg_t.append((avg[t] - err_irreducible[sys], avg[t] - std[t] - err_irreducible[sys], avg[t] + std[t] - err_irreducible[sys]))
     return handles, err_avg_t
 
 def spectrum(A, k):
