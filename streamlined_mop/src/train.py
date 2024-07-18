@@ -56,7 +56,7 @@ def train_gpt2(model, config, output_dir): #input emd_dim as a parameter for the
         gradient_clip_val=config.gradient_clip_val,
         log_every_n_steps=50,
         max_epochs=config.num_epochs,
-        # strategy=DDPStrategy(find_unused_parameters=True) #only for BLISS GPUs
+        strategy=DDPStrategy(find_unused_parameters=True) #only for BLISS GPUs
     )
     # time how long it takes to train the model
     time_start = time.time()
