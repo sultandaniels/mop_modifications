@@ -167,7 +167,6 @@ if __name__ == '__main__':
                 #     y_values = [x[1][t][0] for x in error_checkpoints_tuples]
                 y_values = []
                 for x in error_checkpoints_tuples:
-                    print("x[1]", x[1])
                     if len(x[1]) > t:  # Check if the list is long enough
                         if kfnorm:
                             # Use max of the error and 1e-7 to avoid log(0)
