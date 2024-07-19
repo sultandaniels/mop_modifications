@@ -136,7 +136,7 @@ if __name__ == '__main__':
             print("\n\n\nckpt_path", config.ckpt_path)
             step_avg_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts) #create the convergence plots and return the step and average error tuple
 
-            print("step_avg_tup[1]", step_avg_tup[1])
+            # print("step_avg_tup[1]", step_avg_tup[1])
             sys_error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
 
         #plot the error_checkpoints_tuples
@@ -147,12 +147,12 @@ if __name__ == '__main__':
         for sys in range(config.num_val_tasks):
             # Filter and transform sys_error_checkpoints_tuples for the current system sys
             error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
-            # print("\nerror_checkpoints_tuples[0][1]", error_checkpoints_tuples[0][1])
+            print("\nerror_checkpoints_tuples[0][1][0]", error_checkpoints_tuples[0][1][0])
             
             #sort the error_checkpoints_tuples by the step
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
 
-            print("len of error_checkpoints_tuples", len(error_checkpoints_tuples))
+            # print("len of error_checkpoints_tuples", len(error_checkpoints_tuples))
         
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
