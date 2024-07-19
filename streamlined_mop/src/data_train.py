@@ -135,6 +135,8 @@ if __name__ == '__main__':
             config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
             print("\n\n\nckpt_path", config.ckpt_path)
             step_avg_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts) #create the convergence plots and return the step and average error tuple
+
+            print("step_avg_tup[1]", step_avg_tup[1])
             sys_error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
 
         #plot the error_checkpoints_tuples
@@ -149,15 +151,35 @@ if __name__ == '__main__':
             
             #sort the error_checkpoints_tuples by the step
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
+
+            print("len of error_checkpoints_tuples", len(error_checkpoints_tuples))
         
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
 
                 x_values = [float(x[0]) for x in error_checkpoints_tuples]
-                if kfnorm: #if kfnorm is true, then set the y_values to be the max of the error and 1e-7 to avoid log(0)
-                    y_values = [x[1][t][0] if x[1][t][0] >= 0 else 1e-7 for x in error_checkpoints_tuples]
-                else: #otherwise set the y_values to be the error
-                    y_values = [x[1][t][0] for x in error_checkpoints_tuples]
+                # if kfnorm: #if kfnorm is true, then set the y_values to be the max of the error and 1e-7 to avoid log(0)
+                #     print("t", t)
+                #     print("error_checkpoints_tuples[0][1]", error_checkpoints_tuples[0][1])
+                #     print("error_checkpoints_tuples[0][1][t]", error_checkpoints_tuples[0][1][t])
+                #     y_values = [x[1][t][0] if x[1][t][0] >= 0 else 1e-7 for x in error_checkpoints_tuples]
+                # else: #otherwise set the y_values to be the error
+                #     y_values = [x[1][t][0] for x in error_checkpoints_tuples]
+                y_values = []
+                for x in error_checkpoints_tuples:
+                    print("x[1]", x[1])
+                    if len(x[1]) > t:  # Check if the list is long enough
+                        if kfnorm:
+                            # Use max of the error and 1e-7 to avoid log(0)
+                            y_val = x[1][t][0] if x[1][t][0] >= 0 else 1e-7
+                        else:
+                            y_val = x[1][t][0]
+                    else:
+                        print("Error: List too short")
+                        print("len(x[1])", len(x[1]))
+                        print("t", t) 
+                        y_val = 1e-7  # Default value or some other handling
+                    y_values.append(y_val)
                 ax[t][sys].plot(x_values, y_values, marker='o', label="Median")
                 
                 # Fit a line to the data
