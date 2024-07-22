@@ -116,7 +116,6 @@ if __name__ == '__main__':
     for key in config_attributes:
         config_dict[key] = config.__getattribute__(key)
 
-
     if (not train_conv) and (make_preds or saved_preds):
         run_preds, run_deg_kf_test, excess, shade = preds_thread(make_preds, resume_train, train_conv)
     elif train_conv:
@@ -158,6 +157,7 @@ if __name__ == '__main__':
             for t in range(len(ts)):
 
                 x_values = [float(x[0]) for x in error_checkpoints_tuples]
+                print("len of x_values", len(x_values))
                 # if kfnorm: #if kfnorm is true, then set the y_values to be the max of the error and 1e-7 to avoid log(0)
                 #     print("t", t)
                 #     print("error_checkpoints_tuples[0][1]", error_checkpoints_tuples[0][1])
@@ -187,6 +187,7 @@ if __name__ == '__main__':
                 ax[t][sys].plot(x_values, y_fit, label="Fit Line m = " + str(m) + " c = " + str(c))
 
                 # Assuming the above prints confirm the lists are 1-dimensional
+                print("t: ", t)
                 y1 = [x[1][t][1] for x in error_checkpoints_tuples]
                 y2 = [x[1][t][2] for x in error_checkpoints_tuples]
                 x = np.arange(len(error_checkpoints_tuples))
