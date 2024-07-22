@@ -146,10 +146,10 @@ if __name__ == '__main__':
         for sys in range(config.num_val_tasks):
             # Filter and transform sys_error_checkpoints_tuples for the current system sys
             error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
-            print("\nerror_checkpoints_tuples[0][1][0]", error_checkpoints_tuples[0][1][0])
             
             #sort the error_checkpoints_tuples by the step
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
+            print("\nerror_checkpoints_tuples[0][1][0]", error_checkpoints_tuples[0][1][0])
 
             # print("len of error_checkpoints_tuples", len(error_checkpoints_tuples))
         
@@ -179,6 +179,7 @@ if __name__ == '__main__':
                         print("t", t) 
                         y_val = 1e-7  # Default value or some other handling
                     y_values.append(y_val)
+
                 ax[t][sys].plot(x_values, y_values, marker='o', label="Median")
                 
                 # Fit a line to the data
