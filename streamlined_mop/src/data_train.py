@@ -168,7 +168,9 @@ if __name__ == '__main__':
                 # else: #otherwise set the y_values to be the error
                 #     y_values = [x[1][t][0] for x in error_checkpoints_tuples]
                 y_values = []
-                for x in error_checkpoints_tuples:
+                i = 0
+                while i < len(error_checkpoints_tuples):
+                    x = error_checkpoints_tuples[i]
                     if len(x[1]) > t:  # Check if the list is long enough
                         if kfnorm:
                             # Use max of the error and 1e-7 to avoid log(0)
@@ -181,6 +183,7 @@ if __name__ == '__main__':
                         print("t", t) 
                         y_val = 1e-7  # Default value or some other handling
                     y_values.append(y_val)
+                    i += 1
 
                 ax[t][sys].plot(x_values, y_values, marker='o', label="Median")
                 
