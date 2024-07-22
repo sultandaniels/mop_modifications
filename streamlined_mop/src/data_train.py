@@ -156,6 +156,8 @@ if __name__ == '__main__':
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
 
+                print("\nerror_checkpoints_tuples[0][1][0]", error_checkpoints_tuples[0][1][0])
+
                 x_values = [float(x[0]) for x in error_checkpoints_tuples]
                 print("len of x_values", len(x_values))
                 # if kfnorm: #if kfnorm is true, then set the y_values to be the max of the error and 1e-7 to avoid log(0)
@@ -189,6 +191,7 @@ if __name__ == '__main__':
 
                 # Assuming the above prints confirm the lists are 1-dimensional
                 print("t: ", t)
+                print("\nerror_checkpoints_tuples[0][1][0]", error_checkpoints_tuples[0][1][0])
                 y1 = [x[1][t][1] for x in error_checkpoints_tuples]
                 y2 = [x[1][t][2] for x in error_checkpoints_tuples]
                 x = np.arange(len(error_checkpoints_tuples))
