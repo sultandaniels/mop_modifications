@@ -170,6 +170,20 @@ def _torch_schur(A: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     # return That, Q
 
 
+def safe_inverse(A):
+    try:
+        # Attempt to compute the inverse
+        A_inv = torch.inverse(A)
+    except RuntimeError as e:
+        # If a RuntimeError occurs, check if it's due to singularity
+        if "singular" in str(e):
+            print("Matrix is singular, using pseudoinverse.")
+            A_inv = torch.pinverse(A)
+        else:
+           # If the error is due to another issue, re-raise the exception
+           raise e
+    return A_inv
+
 def solve_discrete_are(A: torch.Tensor, B: torch.Tensor, Q: torch.Tensor, R: torch.Tensor) -> torch.Tensor:
     batch_shape = A.shape[:-2]
     Q = 0.5 * (Q + Q.mT)
@@ -180,12 +194,15 @@ def solve_discrete_are(A: torch.Tensor, B: torch.Tensor, Q: torch.Tensor, R: tor
     I = torch.eye(m).expand(*batch_shape, m, m)
     zeros = torch.zeros((*batch_shape, m, m))
 
+    
+    A_mT_inv = safe_inverse(A)
+
     Z = torch.cat([
         torch.cat([A, zeros], dim=-1),
         torch.cat([zeros, zeros], dim=-1)
     ], dim=-2) + torch.cat([
         -B @ torch.inverse(R) @ B.mT, I
-    ], dim=-2) @ torch.inverse(A.mT) @ torch.cat([
+    ], dim=-2) @ A_mT_inv @ torch.cat([
         -Q, I
     ], dim=-1)
 
