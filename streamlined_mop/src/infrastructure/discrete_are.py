@@ -201,7 +201,7 @@ def solve_discrete_are(A: torch.Tensor, B: torch.Tensor, Q: torch.Tensor, R: tor
         torch.cat([A, zeros], dim=-1),
         torch.cat([zeros, zeros], dim=-1)
     ], dim=-2) + torch.cat([
-        -B @ torch.inverse(R) @ B.mT, I
+        -B @ safe_inverse(R) @ B.mT, I
     ], dim=-2) @ A_mT_inv @ torch.cat([
         -Q, I
     ], dim=-1)
@@ -210,7 +210,7 @@ def solve_discrete_are(A: torch.Tensor, B: torch.Tensor, Q: torch.Tensor, R: tor
     U_1 = U[..., :m]
     U11 = U_1[..., :m, :]
     U21 = U_1[..., m:, :]
-    return U21 @ torch.inverse(U11)
+    return U21 @ safe_inverse(U11)
 
 
 
