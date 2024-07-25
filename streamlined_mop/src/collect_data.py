@@ -13,17 +13,25 @@ from system.linear_time_invariant import LTISystem
 def collect_data(config, output_dir):
     config.parse_args()
     print("Collecting data for", config.dataset_typ, config.C_dist)
-    for name, num_tasks in zip(["train", "val"], [config.num_tasks, config.num_val_tasks]):
+    for name, num_tasks in zip(["train", "val", "val_noiseless"], [config.num_tasks, config.num_val_tasks, config.num_val_tasks]):
+        if name == "val_noiseless":
+            noise_value = 0
+        else:
+            noise_value = 1e-1
+
         _sim_objs = []  # make sure that train and val sim_objs are different
         print("Generating", num_tasks, "samples for", name)
         for _ in tqdm(range(num_tasks)):
-            _sim_objs.append(generate_lti_system(config.C_dist, config.dataset_typ, config.nx, config.ny, sigma_w=1e-1, sigma_v=1e-1,
+            _sim_objs.append(generate_lti_system(config.C_dist, config.dataset_typ, config.nx, config.ny, sigma_w=noise_value, sigma_v=noise_value,
                                                  n_noise=config.n_noise))
 
         problem_shape = Namespace(
             environment=Namespace(observation=config.ny),
             controller=Namespace()
         )
+
+        print("sim_obj.sigma_w", _sim_objs[0].sigma_w)
+        print("sim_obj.sigma_v", _sim_objs[0].sigma_v)
         sys_td = torch.stack([
             TensorDict.from_dict({"environment": {
                 "F": torch.Tensor(sim_obj.A),
