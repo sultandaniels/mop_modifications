@@ -84,7 +84,7 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                 print("Zero (time avergaged mean)/(irreducible): ", err_rat[1])
     return handles, err_rat
 
-def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, normalized, legend_loc="upper right", ax=None, shade=True):
+def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, normalized, legend_loc="upper right", ax=None, shade=True, kal_err=None):
     print("\n\n\nSYS", sys)
     if ax is None:
         fig = plt.figure(figsize=(15, 9))
@@ -102,7 +102,6 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
             q1, median, q3 = np.quantile(err_ls[sys], [0.45, 0.5, 0.55], axis=-2)
         
             if not normalized:
-                
                 handles.extend(ax.plot(avg, label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j-1]))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
@@ -113,15 +112,14 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
                     err_avg_t.append((avg[t], avg[t] - std[t], avg[t] + std[t]))                    
 
             else: #subtract the irreducible error
-
                 handles.extend(ax.plot(avg - err_irreducible[sys], label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j-1]))
                 if shade:
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - err_irreducible[sys] - std, avg - err_irreducible[sys] + std, facecolor=handles[-1].get_color(), alpha=0.2)
 
                 #set err_avg_t to be the value of avg at the t'th step
                 for t in ts:
-                    # err_avg_t.append((median[t] - err_irreducible[sys], q1[t] - err_irreducible[sys], q3[t] - err_irreducible[sys]))
-                    err_avg_t.append((avg[t] - err_irreducible[sys], avg[t] - std[t] - err_irreducible[sys], avg[t] + std[t] - err_irreducible[sys]))
+                    # err_avg_t.append((median[t] - kal_err[sys][t], q1[t] - kal_err[sys][t], q3[t] - kal_err[sys][t]))
+                    err_avg_t.append((avg[t] - kal_err[sys][t], avg[t] - std[t] - kal_err[sys][t], avg[t] + std[t] - kal_err[sys][t]))
     return handles, err_avg_t
 
 def spectrum(A, k):

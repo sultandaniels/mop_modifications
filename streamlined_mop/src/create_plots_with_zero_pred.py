@@ -673,7 +673,7 @@ def save_preds_conv(run_deg_kf_test, config):
 
     #get the step size from the ckpt_path
     step_size = config.ckpt_path.split("/")[-1].split("_")[-1]
-    print("step_size:", step_size)
+    print("step_size: %r" % step_size)
 
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
@@ -683,8 +683,8 @@ def save_preds_conv(run_deg_kf_test, config):
     parent_parent_dir = os.path.dirname(parent_dir)
 
     # a boolean for whether the below directory exists
-    if not os.path.exists(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size):
-        os.makedirs(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size, exist_ok=False)
+    if not os.path.exists(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size): #if the directory does not exist
+        os.makedirs(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size, exist_ok=True)
         
         err_lss, irreducible_error = compute_errors_conv(config, config.C_dist, run_deg_kf_test, wentinn_data=False)  #, emb_dim)
 
@@ -720,10 +720,10 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
         with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
             err_lss_load = pickle.load(f)
 
+    print("err_lss_load keys:", err_lss_load.keys())
+
     with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl", "rb") as f:
         irreducible_error_load = pickle.load(f)
-    
-    print(irreducible_error_load)
 
     if config.C_dist == "_unif_C" and config.dataset_typ == "ypred":
         with open(f"../data/prediction_errors_unif_C/fir_bounds.pt", "rb") as f:
@@ -1025,7 +1025,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
     
     return None
 
-def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems, shade, fig, ax, ts):
+def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems, shade, fig, ax, ts, kal_errors):
     excess = False
     C_dist = config.C_dist
     print("\n\n", "config path:", config.ckpt_path)
@@ -1092,7 +1092,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
         #plot transformer, KF and FIR errors
         #get the checkpoint steps number from the checkpoint path
         ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0] #get the checkpoint steps number
-        handles, err_avg_t = plot_errs_conv(ts, j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade) #plot the errors
+        handles, err_avg_t = plot_errs_conv(ts, j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps, kfnorm, ax=ax[sys], shade=shade, kal_err=kal_errors) #plot the errors
         sys_errs.append(err_avg_t) #append the system number and the error average at step t
         
         

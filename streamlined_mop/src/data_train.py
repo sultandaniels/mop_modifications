@@ -4,13 +4,14 @@ from core import Config
 from train import train_gpt2
 from core import setup_train
 import os
-from create_plots_with_zero_pred import create_plots, convergence_plots
+from create_plots_with_zero_pred import create_plots, convergence_plots, load_preds
 import argparse
 import wandb
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import numpy as np
-from log_log_fit import loglogfit
+from log_log_fit import loglogfit, loss, model_function
+from scipy.optimize import curve_fit, minimize
 
 def wandb_train(config_dict, model, output_dir):
     # add ckpt_path to config_dict
@@ -63,6 +64,7 @@ if __name__ == '__main__':
     parser.add_argument('--resume_train', help='Boolean. Resume training from a specific checkpoint', action='store_true')
     parser.add_argument('--train_conv', help='Boolean. make predictions for all checkpoints', action='store_true')
     parser.add_argument('--kfnorm', help='Boolean. subtract kalman performance from error', action='store_true')
+    parser.add_argument('--olsnorm', help='Boolean. subtract kalman performance from error', action='store_true')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -78,6 +80,8 @@ if __name__ == '__main__':
     train_conv = args.train_conv
     print("kfnorm arg", args.kfnorm)
     kfnorm = args.kfnorm
+    print("olsnorm arg", args.olsnorm)
+    olsnorm = args.olsnorm
 
 
     config = Config() # create a config object
@@ -121,6 +125,18 @@ if __name__ == '__main__':
     elif train_conv:
         run_preds, run_deg_kf_test, excess, shade = preds_thread(make_preds, resume_train, train_conv)
 
+        #load the prediction errors from the step=40000 prediction_errors file
+        num_systems = config.num_val_tasks
+        config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
+        err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
+
+        if kfnorm:
+            kal_errors = np.mean(err_lss_load["Kalman"], axis=1)
+        elif olsnorm:
+            kal_errors = np.mean(err_lss_load["OLS_ir_length3_orig"], axis=1)
+        else:
+            kal_errors = None
+
         #for loop to iterate through all the checkpoints in the output directory
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
         fig, axs = plt.subplots(1, 3, figsize=(40, 20))  # 1 row, 3 columns, with a figure size of 15x5 inches
@@ -133,7 +149,7 @@ if __name__ == '__main__':
             print("filecount:", filecount)
             config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
             print("\n\n\nckpt_path", config.ckpt_path)
-            step_avg_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts) #create the convergence plots and return the step and average error tuple
+            step_avg_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts, kal_errors) #create the convergence plots and return the step and average error tuple
 
             # print("step_avg_tup[1]", step_avg_tup[1])
             sys_error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
@@ -149,58 +165,57 @@ if __name__ == '__main__':
             
             #sort the error_checkpoints_tuples by the step
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
-            print("\nerror_checkpoints_tuples[0][1][0]", error_checkpoints_tuples[0][1][0])
-
-            # print("len of error_checkpoints_tuples", len(error_checkpoints_tuples))
         
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
 
-                print("\nerror_checkpoints_tuples[0][1][0]", error_checkpoints_tuples[0][1][0])
-
                 x_values = [float(x[0]) for x in error_checkpoints_tuples]
-                print("len of x_values", len(x_values))
-                # if kfnorm: #if kfnorm is true, then set the y_values to be the max of the error and 1e-7 to avoid log(0)
-                #     print("t", t)
-                #     print("error_checkpoints_tuples[0][1]", error_checkpoints_tuples[0][1])
-                #     print("error_checkpoints_tuples[0][1][t]", error_checkpoints_tuples[0][1][t])
-                #     y_values = [x[1][t][0] if x[1][t][0] >= 0 else 1e-7 for x in error_checkpoints_tuples]
-                # else: #otherwise set the y_values to be the error
-                #     y_values = [x[1][t][0] for x in error_checkpoints_tuples]
-                y_values = []
-                i = 0
-                while i < len(error_checkpoints_tuples):
-                    x = error_checkpoints_tuples[i]
-                    if len(x[1]) > t:  # Check if the list is long enough
-                        if kfnorm:
-                            # Use max of the error and 1e-7 to avoid log(0)
-                            y_val = x[1][t][0] if x[1][t][0] >= 0 else 1e-7
-                        else:
-                            y_val = x[1][t][0]
-                    else:
-                        print("Error: List too short")
-                        print("len(x[1])", len(x[1]))
-                        print("t", t) 
-                        y_val = 1e-7  # Default value or some other handling
-                    y_values.append(y_val)
-                    i += 1
 
-                ax[t][sys].plot(x_values, y_values, marker='o', label="Median")
+                #set the y_values to be the error
+                y_values = [x[1][t][0] for x in error_checkpoints_tuples]
+
+                if sys == 0 and t == 0:
+                    print("\n\nx_values", x_values)
+                    print("\n\ny_values", y_values)
                 
                 # Fit a line to the data
-                y_fit, m, c = loglogfit(x_values, y_values)
+                y_fit, a, b, c = loglogfit(x_values, y_values)
 
-                ax[t][sys].plot(x_values, y_fit, label="Fit Line m = " + str(m) + " c = " + str(c))
+                # Fit a regularized line to the data
+                # Initial guess for parameters
+                initial_guess = [-1.0, 0.0, 1.0]
+
+                # Regularization strength
+                lambda_reg = 1e-2
+
+                # Perform the minimization
+                result = minimize(lambda params: loss(lambda_reg, x_values, y_values, params), initial_guess)
+
+                # Extract the optimized parameters
+                a_opt, b_opt, c_opt = result.x
+
+                print(f"Optimized parameters: a={a_opt}, b={b_opt}, c={c_opt}")
+                # Generate y-values based on the optimized model
+                fitted_y_values_opt = model_function(x_values, a_opt, b_opt, c_opt)
+
+                if sys == 2:
+                    subtract = c
+                else:
+                    subtract = c_opt
+
+                ax[t][sys].plot(x_values, y_values-subtract, marker='o', label="Mean")
+
+                ax[t][sys].plot(x_values, y_fit-subtract, label="Fit y-s = e^b*x^a, a=%g, b=%g, c=%g, s=%g" % (a, b, c, subtract))
+
+                ax[t][sys].plot(x_values, fitted_y_values_opt-subtract, label="Regularized Fit y-s = e^b*x^a, a=%g, b=%g, c=%g, s=%g" % (a_opt, b_opt, c_opt, subtract))
 
                 # Assuming the above prints confirm the lists are 1-dimensional
-                print("t: ", t)
-                print("\nerror_checkpoints_tuples[0][1][0]", error_checkpoints_tuples[0][1][0])
                 y1 = [x[1][t][1] for x in error_checkpoints_tuples]
                 y2 = [x[1][t][2] for x in error_checkpoints_tuples]
                 x = np.arange(len(error_checkpoints_tuples))
 
-                ax[t][sys].fill_between(x_values, y1, y2, alpha=0.2)
-                ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + (" Normalized" if kfnorm else ""))
+                ax[t][sys].fill_between(x_values, y1-subtract, y2-subtract, alpha=0.2)
+                ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")))
                 ax[t][sys].set_xlabel("Checkpoint Step")
                 ax[t][sys].set_ylabel("Error")
 
@@ -220,13 +235,13 @@ if __name__ == '__main__':
                 # Set the positions and labels for the x-axis ticks
                 ax[t][sys].set_xticks(x_label_positions)
                 ax[t][sys].set_xticklabels(x_label_values, rotation=45, fontsize=10)  # Rotate labels for better fit
-                # set y-axis to log scale
-                ax[t][sys].set_yscale('log')
-                ax[t][sys].set_xscale('log')
+                # # set y-axis to log scale
+                # ax[t][sys].set_yscale('log')
+                # ax[t][sys].set_xscale('log')
                 # add a legend 
                 ax[t][sys].legend()
 
-        fig.text(0.5, 0, "The error bars are the 45th and 55th percentile.", ha='center', va='bottom', fontsize=12)
+        fig.text(0.5, 0, "The error bars are 3*std.", ha='center', va='bottom', fontsize=12)
         # Adjust layout to make room for the rotated x-axis labels
         plt.tight_layout()
         #get the parent directory of the ckpt_path
@@ -235,7 +250,7 @@ if __name__ == '__main__':
         #get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
         os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_normalized" if kfnorm else "") + ("-changing" if config.changing else ""))
+        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("-changing" if config.changing else ""))
 
     else:
         # instantiate gpt2 model
