@@ -178,7 +178,6 @@ def safe_inverse(A):
         # If a RuntimeError occurs, check if it's due to singularity
         if "singular" in str(e):
             print("Matrix is singular, using pseudoinverse.")
-            print("A", A)
             A_inv = torch.pinverse(A)
         else:
            # If the error is due to another issue, re-raise the exception
