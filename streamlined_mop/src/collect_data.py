@@ -43,9 +43,14 @@ def collect_data(config, output_dir):
             for sim_obj in _sim_objs
         ], dim=0)
 
+        if name == "train":
+            trace_num = config.num_traces[name]
+        else:
+            trace_num = config.num_traces["val"]
+
         with torch.set_grad_enabled(False):
             lsg = LTISystem(problem_shape, sys_td)
-            samples = lsg.generate_dataset(config.num_traces[name], config.n_positions + 1).reshape(-1, config.n_positions + 1)["environment"]
+            samples = lsg.generate_dataset(trace_num, config.n_positions + 1).reshape(-1, config.n_positions + 1)["environment"]
         print("Saving", len(samples), "samples for", name)
 
         with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}.pkl", "wb") as f:
