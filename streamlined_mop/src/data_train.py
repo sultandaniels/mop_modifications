@@ -10,7 +10,7 @@ import wandb
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import numpy as np
-from log_log_fit import loglogfit, loss, model_function
+from log_log_fit import loglogfit, loss, model_function, loglogfit_regularized
 from scipy.optimize import curve_fit, minimize
 
 def wandb_train(config_dict, model, output_dir):
@@ -184,15 +184,9 @@ if __name__ == '__main__':
                 # Fit a regularized line to the data
                 # Initial guess for parameters
                 initial_guess = [-1.0, 0.0, 1.0]
-
                 # Regularization strength
                 lambda_reg = 1e-2
-
-                # Perform the minimization
-                result = minimize(lambda params: loss(lambda_reg, x_values, y_values, params), initial_guess)
-
-                # Extract the optimized parameters
-                a_opt, b_opt, c_opt = result.x
+                a_opt, b_opt, c_opt = loglogfit_regularized(initial_guess, x_values, y_values, lambda_reg)
 
                 print(f"Optimized parameters: a={a_opt}, b={b_opt}, c={c_opt}")
                 # Generate y-values based on the optimized model

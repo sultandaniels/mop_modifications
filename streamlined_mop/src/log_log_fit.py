@@ -48,6 +48,19 @@ def loglogfit_linear(x_values, y_values):
     predicted_y = np.exp(m * log_x + c)
     return predicted_y, m, c
 
+def loglogfit_regularized(initial_guess, x_values, y_values, lambda_reg=0.01):
+    ## regularized version
+    # Initial guess for parameters
+
+    # Perform the minimization
+    result = minimize(lambda params: loss(lambda_reg, x_values, y_values, params), initial_guess)
+
+    # Extract the optimized parameters
+    a_opt, b_opt, c_opt = result.x
+    return a_opt, b_opt, c_opt
+
+
+
 if __name__ == '__main__':
     
     # Define the parameters for the curve
@@ -74,20 +87,12 @@ if __name__ == '__main__':
     plt.xscale("log")
     plt.xlabel("x")
     plt.ylabel("y")
-    
-    ## regularized version
-    # Initial guess for parameters
-    initial_guess = [1.0, 1.0, 1.0]
 
-    # Regularization strength
     lambda_reg = 0.01
+    initial_guess = [-1.0, 0.0, 1.0]
+    a_opt, b_opt, c_opt = loglogfit_regularized(initial_guess, x_values, y_values, lambda_reg)
 
-    # Perform the minimization
-    result = minimize(lambda params: loss(lambda_reg, x_values, y_values, params), initial_guess)
-
-    # Extract the optimized parameters
-    a_opt, b_opt, c_opt = result.x
-
+    
     print(f"Optimized parameters: a={a_opt}, b={b_opt}, c={c_opt}")
     # Generate y-values based on the optimized model
     fitted_y_values_opt = model_function(x_values, a_opt, b_opt, c_opt)
