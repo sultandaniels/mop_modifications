@@ -50,7 +50,7 @@ class CnnKF(nn.Module):
         L_pow_series = L.unsqueeze(-2) ** torch.arange(1, R + 1)[:, None]  # [B... x R x S_D]
         L_pow_series_inv = 1. / L_pow_series  # [B... x R x S_D]
 
-        QlHsLl = (Q @ Hs.unsqueeze(-3)).to(device) * L_pow_series_inv.unsqueeze(-2).to(device)  # [B... x R x O_D x S_D]
+        QlHsLl = (Q.to(device) @ Hs.unsqueeze(-3).to(device)) * L_pow_series_inv.unsqueeze(-2).to(device)  # [B... x R x O_D x S_D]
         Hs_cumQlHsLl = Hs.unsqueeze(-3) - torch.cumsum(QlHsLl, dim=-3)  # [B... x R x O_D x S_D]
         Hs_cumQlHsLl_Lk = Hs_cumQlHsLl * L_pow_series.unsqueeze(-2)  # [B... x R x O_D x S_D]
 
