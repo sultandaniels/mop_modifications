@@ -57,7 +57,7 @@ class CnnKF(nn.Module):
         # Highlight
         ws_recent_err = (Hs_cumQlHsLl_Lk.to(device) @ sqrt_S_Ws.to(device).unsqueeze(-3)).flatten(-3, -1).norm(dim=-1) ** 2  # [B...]
 
-        Hs_cumQlHsLl_R = Hs_cumQlHsLl.index_select(-3, torch.tensor([R - 1])).squeeze(-3).to(device)  # [B... x O_D x S_D]
+        Hs_cumQlHsLl_R = Hs_cumQlHsLl.index_select(-3, torch.tensor([R - 1]).to(device)).squeeze(-3).to(device)  # [B... x O_D x S_D]
         cll = L.unsqueeze(-1).to(device) * L.unsqueeze(-2).to(device)  # [B... x S_D x S_D]
 
         # Highlight
