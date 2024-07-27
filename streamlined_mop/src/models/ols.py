@@ -24,6 +24,8 @@ class CnnKF(nn.Module):
 
     @classmethod
     def analytical_error(cls, observation_IR: torch.Tensor, systems: TensorDict[str, torch.Tensor]) -> torch.Tensor:
+        device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
+
         # Variable definition
         Q = utils.complex(observation_IR)  # [B... x O_D x R x O_D]
         Q = Q.permute(*range(Q.ndim - 3), -2, -1, -3)  # [B... x R x O_D x O_D]
@@ -48,7 +50,7 @@ class CnnKF(nn.Module):
         L_pow_series = L.unsqueeze(-2) ** torch.arange(1, R + 1)[:, None]  # [B... x R x S_D]
         L_pow_series_inv = 1. / L_pow_series  # [B... x R x S_D]
 
-        QlHsLl = (Q @ Hs.unsqueeze(-3)) * L_pow_series_inv.unsqueeze(-2)  # [B... x R x O_D x S_D]
+        QlHsLl = (Q @ Hs.unsqueeze(-3)).to(device) * L_pow_series_inv.unsqueeze(-2).to(device)  # [B... x R x O_D x S_D]
         Hs_cumQlHsLl = Hs.unsqueeze(-3) - torch.cumsum(QlHsLl, dim=-3)  # [B... x R x O_D x S_D]
         Hs_cumQlHsLl_Lk = Hs_cumQlHsLl * L_pow_series.unsqueeze(-2)  # [B... x R x O_D x S_D]
 
