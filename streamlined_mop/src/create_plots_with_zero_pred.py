@@ -159,7 +159,7 @@ def compute_errors(config, run_deg_kf_test):
                 flattened_preds_tf.unflatten(0, (num_systems, num_trials)),
                 torch.zeros((num_systems, num_trials, 1, config.ny)).to(device)
             ], dim=-2)
-    errs_tf = torch.norm((ys - preds_tf), dim=-1) ** 2  # get the errors of transformer predictions
+    errs_tf = torch.norm((ys.to(device) - preds_tf.to(device)), dim=-1) ** 2  # get the errors of transformer predictions
     end = time.time()  # end the timer for transformer predictions
     print("time elapsed for MOP Pred:", (end - start) / 60, "min")  # print the time elapsed for transformer predictions
 
