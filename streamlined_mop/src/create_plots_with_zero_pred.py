@@ -69,7 +69,7 @@ def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
     flattened_X, flattened_Y = X.flatten(-2, -1), Y.flatten(-2, -1)     # [n_systems x n_traces x (n_positions - 1) x (ir_length * O_D)], [n_systems x n_traces x (n_positions - 1) x O_D]
 
     # [n_systems x n_traces x (n_positions - 1) x (ir_length * I_D) x (ir_length * O_D)]
-    cumulative_XTX = torch.cumsum(flattened_X[..., :, None] * flattened_X[..., None, :], dim=-3) + ridge * torch.eye(ir_length * config.ny)
+    cumulative_XTX = torch.cumsum(flattened_X[..., :, None].to(device) * flattened_X[..., None, :], dim=-3).to(device) + ridge * torch.eye(ir_length * config.ny).to(device)
     # [n_systems x n_traces x (n_positions - 1) x (ir_length * I_D) x O_D]
     cumulative_XTY = torch.cumsum(flattened_X[..., :, None] * flattened_Y[..., None, :], dim=-3)
 
