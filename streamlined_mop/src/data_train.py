@@ -33,7 +33,7 @@ def preds_thread(make_preds, resume_train, train_conv):
     run_deg_kf_test = False #run degenerate KF test
     excess = False #run the excess plots
     shade = True
-    config.override("ckpt_path", "../outputs/GPT2/240725_212615.bd6d52_upperTriA_gauss_C/step=192000.ckpt")
+    config.override("ckpt_path", "../outputs/GPT2/240725_212615.bd6d52_upperTriA_gauss_C/checkpoints/step=192000.ckpt")
     print("ckpt_path", config.ckpt_path)
 
     if resume_train:
@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
         #load the prediction errors from the step=40000 prediction_errors file
         num_systems = config.num_val_tasks
-        config.override("ckpt_path", "../outputs/GPT2/240725_212615.bd6d52_upperTriA_gauss_C/step=192000.ckpt")
+        config.override("ckpt_path", "../outputs/GPT2/240725_212615.bd6d52_upperTriA_gauss_C/checkpoints/step=192000.ckpt")
         err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
 
         if kfnorm:
