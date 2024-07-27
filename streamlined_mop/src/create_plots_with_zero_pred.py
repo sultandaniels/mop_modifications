@@ -185,7 +185,7 @@ def compute_errors(config, run_deg_kf_test):
 
     else: # Kalman Predictions
         preds_kf = samples["target_observation_estimation"]  # get kalman filter predictions
-        errs_kf = torch.norm((ys - preds_kf), dim=-1) ** 2
+        errs_kf = torch.norm((ys.to(device) - preds_kf.to(device)), dim=-1) ** 2
     end = time.time()  # end the timer for kalman filter predictions
     print("time elapsed for KF Pred:", (end - start) / 60,
           "min")  # print the time elapsed for kalman filter predictions
@@ -293,10 +293,10 @@ def compute_errors_conv(config, C_dist, run_deg_kf_test, wentinn_data):
     end = time.time()  # end the timer for transformer predictions
     print("time elapsed for MOP Pred:", (end - start) / 60, "min")  # print the time elapsed for transformer predictions
 
-    errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2  # get the errors of transformer predictions
+    errs_tf = np.linalg.norm((ys.to(device) - preds_tf.to(device)), axis=-1) ** 2  # get the errors of transformer predictions
 
     # zero predictor predictions
-    errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2  # get the errors of zero predictions
+    errs_zero = np.linalg.norm((ys.to(device) - np.zeros_like(ys).to(device)), axis=-1) ** 2  # get the errors of zero predictions
 
     err_lss = collections.OrderedDict([
         ("MOP", errs_tf),
