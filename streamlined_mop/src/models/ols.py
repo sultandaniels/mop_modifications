@@ -74,7 +74,7 @@ class CnnKF(nn.Module):
         # Highlight
         # TODO: Backward pass on the above one breaks when Q = 0 for some reason
         # v_recent_err = (Q @ sqrt_S_V.unsqueeze(-3)).flatten(-3, -1).norm(dim=-1) ** 2           # [B...]
-        v_recent_err = utils.batch_trace(sqrt_S_V.mT @ (Q.mT @ Q).sum(dim=-3) @ sqrt_S_V)  # [B...]
+        v_recent_err = utils.batch_trace(sqrt_S_V.mT.to(device) @ (Q.mT.to(device) @ Q.to(device)).sum(dim=-3) @ sqrt_S_V.to(device))  # [B...]
 
         err = ws_current_err + ws_recent_err + ws_geometric_err + v_current_err + v_recent_err  # [B...]
         return err.real
