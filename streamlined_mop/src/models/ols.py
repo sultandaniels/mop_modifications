@@ -51,17 +51,17 @@ class CnnKF(nn.Module):
         L_pow_series_inv = 1. / L_pow_series  # [B... x R x S_D]
 
         QlHsLl = (Q.to(device) @ Hs.unsqueeze(-3).to(device)) * L_pow_series_inv.unsqueeze(-2).to(device)  # [B... x R x O_D x S_D]
-        Hs_cumQlHsLl = Hs.unsqueeze(-3) - torch.cumsum(QlHsLl, dim=-3)  # [B... x R x O_D x S_D]
-        Hs_cumQlHsLl_Lk = Hs_cumQlHsLl * L_pow_series.unsqueeze(-2)  # [B... x R x O_D x S_D]
+        Hs_cumQlHsLl = Hs.unsqueeze(-3).to(device) - torch.cumsum(QlHsLl, dim=-3).to(device)  # [B... x R x O_D x S_D]
+        Hs_cumQlHsLl_Lk = Hs_cumQlHsLl.to(device) * L_pow_series.unsqueeze(-2).to(device)  # [B... x R x O_D x S_D]
 
         # Highlight
-        ws_recent_err = (Hs_cumQlHsLl_Lk @ sqrt_S_Ws.unsqueeze(-3)).flatten(-3, -1).norm(dim=-1) ** 2  # [B...]
+        ws_recent_err = (Hs_cumQlHsLl_Lk.to(device) @ sqrt_S_Ws.unsqueeze(-3)).flatten(-3, -1).norm(dim=-1).to(device) ** 2  # [B...]
 
-        Hs_cumQlHsLl_R = Hs_cumQlHsLl.index_select(-3, torch.tensor([R - 1])).squeeze(-3)  # [B... x O_D x S_D]
-        cll = L.unsqueeze(-1) * L.unsqueeze(-2)  # [B... x S_D x S_D]
+        Hs_cumQlHsLl_R = Hs_cumQlHsLl.index_select(-3, torch.tensor([R - 1])).squeeze(-3).to(device)  # [B... x O_D x S_D]
+        cll = L.unsqueeze(-1).to(device) * L.unsqueeze(-2).to(device)  # [B... x S_D x S_D]
 
         # Highlight
-        _ws_geometric = (Hs_cumQlHsLl_R.mT @ Hs_cumQlHsLl_R) * ((cll ** (R + 1)) / (1 - cll))  # [B... x S_D x S_D]
+        _ws_geometric = (Hs_cumQlHsLl_R.mT @ Hs_cumQlHsLl_R) * ((cll ** (R + 1)) / (1 - cll).to(device))  # [B... x S_D x S_D]
         ws_geometric_err = utils.batch_trace(sqrt_S_Ws.mT @ _ws_geometric @ sqrt_S_Ws)  # [B...]
 
         # Observation noise error
