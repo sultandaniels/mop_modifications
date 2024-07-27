@@ -76,7 +76,7 @@ class CnnKF(nn.Module):
         # v_recent_err = (Q @ sqrt_S_V.unsqueeze(-3)).flatten(-3, -1).norm(dim=-1) ** 2           # [B...]
         v_recent_err = utils.batch_trace(sqrt_S_V.mT.to(device) @ (Q.mT.to(device) @ Q.to(device)).sum(dim=-3) @ sqrt_S_V.to(device))  # [B...]
 
-        err = ws_current_err + ws_recent_err + ws_geometric_err + v_current_err + v_recent_err  # [B...]
+        err = ws_current_err.to(device) + ws_recent_err.to(device) + ws_geometric_err.to(device) + v_current_err.to(device) + v_recent_err.to(device)  # [B...]
         return err.real
 
     """ forward
