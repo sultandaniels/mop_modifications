@@ -25,6 +25,9 @@ plt.rcParams['axes.titlesize'] = 20
 ####################################################################################################
 
 def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
+
     # set torch precision to float64
     torch.set_default_dtype(torch.float64)
     print("max_ir_length + 1:", max_ir_length + 1)
@@ -35,12 +38,12 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
         if ir_length == 2:
             preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, 0.0)
 
-            err_lss[f"OLS_ir_{ir_length}_unreg"] = torch.norm(ys - preds_rls_wentinn, dim=-1) ** 2
+            err_lss[f"OLS_ir_{ir_length}_unreg"] = torch.norm(ys.to(device) - preds_rls_wentinn.to(device), dim=-1) ** 2
             err_lss[f"OLS_analytical_ir_{ir_length}_unreg"] = preds_rls_wentinn_analytical
 
         preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, 1.0)
 
-        err_lss[f"OLS_ir_{ir_length}"] = torch.norm(ys - preds_rls_wentinn, dim=-1) ** 2
+        err_lss[f"OLS_ir_{ir_length}"] = torch.norm(ys.to(device) - preds_rls_wentinn.to(device), dim=-1) ** 2
         err_lss[f"OLS_analytical_ir_{ir_length}"] = preds_rls_wentinn_analytical
         end = time.time()
         print("\ttime elapsed:", (end - start) / 60, "min\n")
@@ -50,11 +53,13 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
 
 
 def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
+    device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
+
     # [n_systems x n_traces x (n_positions + 1) x O_D]
     ys = ys.to(torch.get_default_dtype())
     # [n_systems x n_traces x (n_positions + ir_length) x O_D]
     padded_ys = torch.cat([
-        torch.zeros((*ys.shape[:2], ir_length - 1, config.ny)), ys
+        torch.zeros((*ys.shape[:2], ir_length - 1, config.ny)).to(device), ys.to(device)
     ], dim=-2)
 
     Y_indices = torch.arange(ir_length, (config.n_positions - 1) + ir_length)[:, None]  # [(n_positions - 1) x 1]
