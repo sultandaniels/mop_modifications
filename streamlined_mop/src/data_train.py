@@ -54,7 +54,8 @@ def preds_thread(make_preds, resume_train, train_conv):
 # main function
 
 if __name__ == '__main__':
-    wandb.login()
+    key = "3a79ab8d672524aef9614f59a5b14138cb46d56c"
+    wandb.login(key=key)
     # Create the parser
     parser = argparse.ArgumentParser(description='Run Predictions or not.')
 
