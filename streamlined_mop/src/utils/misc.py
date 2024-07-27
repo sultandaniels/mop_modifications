@@ -48,7 +48,7 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
     ax.grid()
     handles = []
     for i, (name, err_ls) in enumerate(err_lss.items()):
-        err_ls = err_ls.numpy()
+        err_ls = err_ls.cpu().numpy()
         print("name", name)
         print("err_ls.shape", err_ls.shape)
         if normalized:
