@@ -81,7 +81,7 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                     ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std,
                                     facecolor=handles[-1].get_color(), alpha=0.2)
             else:  # plot the analytical kalman filter
-                handles.extend(ax.plot(err_ls[sys], label=name, linewidth=1, color='#000000'))
+                handles.extend(ax.plot(err_ls[sys], label=name, linewidth=2, color='#000000'))
                 # handles.extend(ax.plot(err_irreducible[sys], label=name, linewidth=2, color='#000000'))
             if name == "Kalman":
                 err_rat[0] = np.mean(avg) / err_irreducible[sys]

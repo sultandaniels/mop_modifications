@@ -190,6 +190,10 @@ def compute_errors(config, run_deg_kf_test):
 
     else: # Kalman Predictions
         preds_kf = samples["target_observation_estimation"]  # get kalman filter predictions
+        # boolean for if preds_kf has nans
+        has_nans = torch.isnan(preds_kf).any()
+        if has_nans:
+            raise ValueError("Kalman filter predictions contain nans")
         errs_kf = torch.norm((ys.to(device) - preds_kf.to(device)), dim=-1) ** 2
     end = time.time()  # end the timer for kalman filter predictions
     print("time elapsed for KF Pred:", (end - start) / 60,
