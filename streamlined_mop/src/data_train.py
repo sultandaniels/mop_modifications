@@ -256,7 +256,7 @@ if __name__ == '__main__':
         # output_dir = output_dir + f"_{config.dataset_typ}{config.C_dist}"
         os.makedirs(output_dir + f"/data/", exist_ok=True)
 
-        collect_data(model, config, output_dir) # collect data
+        collect_data(config, output_dir) # collect data
 
         # replace ckpt_path with the path to the checkpoint file
         config.override("ckpt_path", output_dir + "/checkpoints/step=" + str(config.train_steps) + ".ckpt")
