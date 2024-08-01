@@ -145,6 +145,10 @@ def compute_errors(config, run_deg_kf_test):
     with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
         samples = pickle.load(f).unflatten(0, (num_systems, num_trials))
         ys = samples["observation"].to(device)
+        # check if samples contains nans
+        has_nans = torch.isnan(ys).any()
+        if has_nans:
+            raise ValueError("Samples contain nans")
 
     # open fsim file
     with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
