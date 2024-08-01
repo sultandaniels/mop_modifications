@@ -312,9 +312,9 @@ def compute_errors_conv(config, C_dist, run_deg_kf_test, wentinn_data):
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error
 
-
 def save_preds(run_deg_kf_test, config):
     err_lss, irreducible_error = compute_errors(config, run_deg_kf_test)  # , emb_dim)
+    print("irreducible_error:", irreducible_error)
 
     # make the prediction errors directory
     # get the parent directory of the ckpt_path
