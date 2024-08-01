@@ -38,7 +38,7 @@ class classproperty(property):
         return self.fget(owner_cls)
 
 
-def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
+def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=False):
     print("\n\n\nSYS", sys)
     err_rat = np.zeros(2)
     if ax is None:
