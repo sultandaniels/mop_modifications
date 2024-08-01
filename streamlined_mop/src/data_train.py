@@ -10,8 +10,9 @@ import wandb
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import numpy as np
-from log_log_fit import loglogfit, loss, model_function, loglogfit_regularized
+from log_log_fit import loglogfit, loglinfit, loss, model_function, model_function_loglin, loglogfit_regularized, closed_form_loglin, plot_closed_form_loglin_err
 from scipy.optimize import curve_fit, minimize
+import sympy as sp
 
 def wandb_train(config_dict, model, output_dir):
     # add ckpt_path to config_dict
@@ -50,6 +51,93 @@ def preds_thread(make_preds, resume_train, train_conv):
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
     return run_preds, run_deg_kf_test, excess, shade
 
+
+def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax, xax, rem):
+
+    if subtract > 0:
+        plot_label_mean = "Mean - s, s=%g" % subtract
+        plot_label_loglog = "Fit y-s = e^b*x^a - s, a=%g, b=%g, c=%g, s=%g" % (a_loglog, b_loglog, c_loglog, subtract)
+        plot_label_loglin = "Fit y-s = e^b*e^(x*a) - s, a=%g, b=%g, c=%g, s=%g" % (a_loglin, b_loglin, c_loglin, subtract)
+
+    else:
+        plot_label_mean = "Mean"
+        plot_label_loglog = "Fit y = e^b*x^a + c, a=%g, b=%g, c=%g" % (a_loglog, b_loglog, c_loglog)
+        plot_label_loglin = "Fit y = e^b*e^(x*a) + c, a=%g, b=%g, c=%g" % (a_loglin, b_loglin, c_loglin)
+
+    ax[t][sys].plot(x_values, y_values - subtract, marker='o', label=plot_label_mean)
+
+    ax[t][sys].plot(x_values, y_fit_loglog - subtract, label=plot_label_loglog)
+
+    ax[t][sys].plot(x_values, y_fit_loglin - subtract, label=plot_label_loglin)
+
+    # ax[t][sys].plot(x_values, fitted_y_values_opt - subtract, label="Regularized Fit y-s = e^b*x^a, a=%g, b=%g, c=%g, s=%g" % (a_opt, b_opt, c_opt, subtract))
+
+    # Assuming the above prints confirm the lists are 1-dimensional
+    y1 = [x[1][t][1] for x in error_checkpoints_tuples]
+    y2 = [x[1][t][2] for x in error_checkpoints_tuples]
+    x = np.arange(len(error_checkpoints_tuples))
+
+    #remove the first rem elements of y1, y2, and x
+    y1 = y1[rem:]
+    y2 = y2[rem:]
+    x = x[rem:]
+
+    ax[t][sys].fill_between(x_values, y1-subtract, y2-subtract, alpha=0.2)
+    ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")))
+    ax[t][sys].set_xlabel("Checkpoint Step")
+    ax[t][sys].set_ylabel("Error")
+
+    # Apply the formatter to the x-axis
+    # ax[t][sys].xaxis.set_major_formatter(formatter)
+    # ax[t][sys].legend()
+
+    # # Rotate the x-axis labels
+    # ax[t][sys].tick_params(axis='x', labelrotation=45)  # Rotate labels to 45 degrees
+    # # Adjust the label size if necessary
+    # ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
+
+    x_label_values = [int(x[0]) for x in error_checkpoints_tuples]
+    ax[t][sys].set_xticklabels(x_label_values, rotation=45, fontsize=10)  # Rotate labels for better fit
+
+    if yax == "log":
+        # set y-axis to log scale
+        ax[t][sys].set_yscale('log')
+    if xax == "log":
+        # set x-axis to log scale
+        ax[t][sys].set_xscale('log')
+
+    # add a legend 
+    ax[t][sys].legend()
+
+    return ax
+
+def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted):
+    
+    fig.text(0.5, 0, "The error bars are 3*std.", ha='center', va='bottom', fontsize=12)
+    # Adjust layout to make room for the rotated x-axis labels
+    plt.tight_layout()
+    #get the parent directory of the ckpt_path
+    parent_dir = os.path.dirname(config.ckpt_path)
+
+    #get the parent directory of the parent directory
+    parent_parent_dir = os.path.dirname(parent_dir)
+    os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ".png")
+    return None
+
+def save_figure_c(fig, config, kfnorm, olsnorm, yax, xax, subtracted):
+    
+    fig.text(0.5, 0, "The error bars are 3*std.", ha='center', va='bottom', fontsize=12)
+    # Adjust layout to make room for the rotated x-axis labels
+    plt.tight_layout()
+    #get the parent directory of the ckpt_path
+    parent_dir = os.path.dirname(config.ckpt_path)
+
+    #get the parent directory of the parent directory
+    parent_parent_dir = os.path.dirname(parent_dir)
+    os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_find_opt_c" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ".png")
+    return None
 
 # main function
 
@@ -159,6 +247,14 @@ if __name__ == '__main__':
         #make a new figure
         fig, ax = plt.subplots(3, 3, figsize=(30, 20))
 
+        fig2, ax2 = plt.subplots(3, 3, figsize=(30, 20))
+
+        figc, axc = plt.subplots(3, 1, figsize=(10, 20))
+
+        # set the axis scaling
+        yax = "log"
+        xax = "linear"
+
         for sys in range(config.num_val_tasks):
             # Filter and transform sys_error_checkpoints_tuples for the current system sys
             error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
@@ -173,13 +269,17 @@ if __name__ == '__main__':
 
                 #set the y_values to be the error
                 y_values = [x[1][t][0] for x in error_checkpoints_tuples]
-
-                if sys == 0 and t == 0:
-                    print("\n\nx_values", x_values)
-                    print("\n\ny_values", y_values)
                 
-                # Fit a line to the data
-                y_fit, a, b, c = loglogfit(x_values, y_values)
+                #remove the first rem elements of x_values and y_values
+                rem = 0
+                x_values = x_values[rem:]
+                y_values = y_values[rem:]
+
+                # Fit a line to the data (line on log-log scale)
+                y_fit_loglog, a_loglog, b_loglog, c_loglog = loglogfit(x_values, y_values)
+
+                # Fit a line to the data (line on log-linear scale)
+                y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_values, y_values)
 
                 # Fit a regularized line to the data
                 # Initial guess for parameters
@@ -188,63 +288,32 @@ if __name__ == '__main__':
                 lambda_reg = 1e-2
                 a_opt, b_opt, c_opt = loglogfit_regularized(initial_guess, x_values, y_values, lambda_reg)
 
-                print(f"Optimized parameters: a={a_opt}, b={b_opt}, c={c_opt}")
                 # Generate y-values based on the optimized model
                 fitted_y_values_opt = model_function(x_values, a_opt, b_opt, c_opt)
 
-                if sys == 2:
-                    subtract = c
-                else:
-                    subtract = c_opt
+                # closed form solution for loglin fit
+                axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values, y_values, irreducible_error_load[sys], axc, sys, ts[t])
 
-                ax[t][sys].plot(x_values, y_values-subtract, marker='o', label="Mean")
+                # get index for minimum lin error
+                min_err_lin_idx = np.argmin(err_lin_vals)
 
-                ax[t][sys].plot(x_values, y_fit-subtract, label="Fit y-s = e^b*x^a, a=%g, b=%g, c=%g, s=%g" % (a, b, c, subtract))
+                #input the minimum c value into the model function loglin
+                yfit_optc = model_function_loglin(x_values, a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx])
 
-                ax[t][sys].plot(x_values, fitted_y_values_opt-subtract, label="Regularized Fit y-s = e^b*x^a, a=%g, b=%g, c=%g, s=%g" % (a_opt, b_opt, c_opt, subtract))
+                subtract = c_vals[min_err_lin_idx]
 
-                # Assuming the above prints confirm the lists are 1-dimensional
-                y1 = [x[1][t][1] for x in error_checkpoints_tuples]
-                y2 = [x[1][t][2] for x in error_checkpoints_tuples]
-                x = np.arange(len(error_checkpoints_tuples))
+                ax = plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
 
-                ax[t][sys].fill_between(x_values, y1-subtract, y2-subtract, alpha=0.2)
-                ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")))
-                ax[t][sys].set_xlabel("Checkpoint Step")
-                ax[t][sys].set_ylabel("Error")
+                #plot the optimal c value
+                ax[sys].plot(x_values, yfit_optc-subtract, label="Optimal c=%g" % c_vals[min_err_lin_idx])
+                ax2[sys].plot(x_values, yfit_optc, label="Optimal c=%g" % c_vals[min_err_lin_idx])
 
-                # Apply the formatter to the x-axis
-                # ax[t][sys].xaxis.set_major_formatter(formatter)
-                # ax[t][sys].legend()
+                ax2 = plot_train_conv(ax2, np.float64(0.0), error_checkpoints_tuples, y_values, x_values, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
 
-                # # Rotate the x-axis labels
-                # ax[t][sys].tick_params(axis='x', labelrotation=45)  # Rotate labels to 45 degrees
-                # # Adjust the label size if necessary
-                # ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
-
-                x_label_values = [int(x[0]) for x in error_checkpoints_tuples]
-                # Assuming `x_label_values` is a list of values you want as labels on the x-axis
-                x_label_positions = np.arange(len(x_label_values))  # Positions where labels should appear
-
-                # Set the positions and labels for the x-axis ticks
-                ax[t][sys].set_xticks(x_label_positions)
-                ax[t][sys].set_xticklabels(x_label_values, rotation=45, fontsize=10)  # Rotate labels for better fit
-                # # set y-axis to log scale
-                # ax[t][sys].set_yscale('log')
-                # ax[t][sys].set_xscale('log')
-                # add a legend 
-                ax[t][sys].legend()
-
-        fig.text(0.5, 0, "The error bars are 3*std.", ha='center', va='bottom', fontsize=12)
-        # Adjust layout to make room for the rotated x-axis labels
-        plt.tight_layout()
-        #get the parent directory of the ckpt_path
-        parent_dir = os.path.dirname(config.ckpt_path)
-
-        #get the parent directory of the parent directory
-        parent_parent_dir = os.path.dirname(parent_dir)
-        os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("-changing" if config.changing else ""))
+            
+        save_figure(fig, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=True)
+        save_figure(fig2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
+        save_figure_c(figc, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
 
     else:
         # instantiate gpt2 model
