@@ -53,6 +53,10 @@ def collect_data(config, output_dir):
             samples = lsg.generate_dataset(trace_num, config.n_positions + 1).reshape(-1, config.n_positions + 1)["environment"]
         print("Saving", len(samples), "samples for", name)
 
+        # check if samples contains nan
+        if torch.isnan(samples).any():
+            raise ValueError("samples contain nan in collect_data.py")
+
         with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}.pkl", "wb") as f:
             pickle.dump(samples, f)
 
