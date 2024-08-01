@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from infrastructure import utils
+import traceback
 
 
 """
@@ -179,6 +180,10 @@ def safe_inverse(A):
         if "singular" in str(e):
             print("Matrix is singular, using pseudoinverse.")
             A_inv = torch.pinverse(A)
+            # Extract and print the line number
+            tb = traceback.extract_tb(e.__traceback__)
+            for frame in tb:
+                print(f"Exception occurred on line {frame.lineno} in {frame.filename}")
         else:
            # If the error is due to another issue, re-raise the exception
            raise e
