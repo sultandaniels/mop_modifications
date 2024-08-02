@@ -32,7 +32,7 @@ def closed_form_loglin(x, y, c):
     n = len(x)
     x = np.array(x).reshape((n,1))
     y = np.array(y).reshape((n,1))
-    u = y - c*np.ones((n,1))
+    u = np.abs(y - c*np.ones((n,1)))
     log_u = np.log(u)
 
     A = closed_form_loglin_constants(x)
@@ -47,10 +47,9 @@ def closed_form_loglin(x, y, c):
     err_lin = diff_lin.T @ diff_lin
     return a,b, err, err_lin
 
-def plot_closed_form_loglin_err(x, y, irreducible_error, ax, sys, t):
+def plot_closed_form_loglin_err(x, y, irreducible_error, ax, sys, t, min, max):
     amt = int(1e5)
-    print("\n\nirreducible_error", irreducible_error)
-    c_vals = np.linspace(0, 1.5, amt)
+    c_vals = np.linspace(min, max, amt)
     err_vals = np.zeros(amt)
     err_lin_vals = np.zeros(amt)
     a_vals = np.zeros(amt)
@@ -61,7 +60,7 @@ def plot_closed_form_loglin_err(x, y, irreducible_error, ax, sys, t):
 
     # plt.plot(c_vals, err_vals, label="Error", marker='o')
     # plt.title("Log Error vs c")
-    ax[sys].plot(c_vals, err_lin_vals, marker='o', label="t="+str(t))
+    ax[sys].plot(c_vals, err_lin_vals, marker='.', label="t="+str(t))
     ax[sys].set_title("Error vs c for system " + str(sys) + ". Irreducible error: " + str(irreducible_error))
     ax[sys].set_xlabel("c")
     ax[sys].set_ylabel("Error")
@@ -89,9 +88,7 @@ def loss(lambda_reg, x_values, y_values, params):
     loss_value += lambda_reg * b**2
     return loss_value
 
-def loglogfit(x_values, y_values):
-    # Initial guess for the parameters [a, b, c]
-    initial_guess = [-1.0, 0.0, 1.0]
+def loglogfit(x_values, y_values, initial_guess):
     
     # Use curve_fit to fit the model function to the data
     params, covariance = curve_fit(model_function, x_values, y_values, p0=initial_guess)
@@ -106,9 +103,7 @@ def loglogfit(x_values, y_values):
     
     return fitted_y_values, a, b, c
 
-def loglinfit(x_values, y_values):
-    # Initial guess for the parameters [a, b, c]
-    initial_guess = [-1e-5, 0.5, 1.0]
+def loglinfit(x_values, y_values, initial_guess):
     
     # Use curve_fit to fit the model function to the data
     params, covariance = curve_fit(model_function_loglin, x_values, y_values, p0=initial_guess)

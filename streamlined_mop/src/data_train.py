@@ -52,7 +52,7 @@ def preds_thread(make_preds, resume_train, train_conv):
     return run_preds, run_deg_kf_test, excess, shade
 
 
-def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax, xax, rem):
+def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax, xax, rem):
 
     if subtract > 0:
         plot_label_mean = "Mean - s, s=%g" % subtract
@@ -87,16 +87,17 @@ def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, 
     ax[t][sys].set_xlabel("Checkpoint Step")
     ax[t][sys].set_ylabel("Error")
 
-    # Apply the formatter to the x-axis
+    # # Apply the formatter to the x-axis
     # ax[t][sys].xaxis.set_major_formatter(formatter)
     # ax[t][sys].legend()
 
-    # # Rotate the x-axis labels
-    # ax[t][sys].tick_params(axis='x', labelrotation=45)  # Rotate labels to 45 degrees
-    # # Adjust the label size if necessary
-    # ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
+    # Rotate the x-axis labels
+    ax[t][sys].tick_params(axis='x', labelrotation=45)  # Rotate labels to 45 degrees
+    # Adjust the label size if necessary
+    ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
 
     x_label_values = [int(x[0]) for x in error_checkpoints_tuples]
+    print("len of x_label_values", len(x_label_values))
     ax[t][sys].set_xticklabels(x_label_values, rotation=45, fontsize=10)  # Rotate labels for better fit
 
     if yax == "log":
@@ -251,12 +252,14 @@ if __name__ == '__main__':
 
         figc, axc = plt.subplots(3, 1, figsize=(10, 20))
 
+        figc_2, axc_2 = plt.subplots(3, 1, figsize=(10, 20))
+
         # set the axis scaling
         yax = "log"
-        xax = "linear"
+        xax = "log"
 
         for sys in range(config.num_val_tasks):
-            # Filter and transform sys_error_checkpoints_tuples for the current system sys
+            # Filter bairand transform sys_error_checkpoints_tuples for the current system sys
             error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
             
             #sort the error_checkpoints_tuples by the step
@@ -274,16 +277,38 @@ if __name__ == '__main__':
                 rem = 0
                 x_values = x_values[rem:]
                 y_values = y_values[rem:]
+                print('len(x_values)', len(x_values))
+
+                # closed form solution for loglin fit
+                axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values, y_values, irreducible_error_load[sys], axc, sys, ts[t], 0.0, np.mean(y_values))
+
+                # get index for minimum lin error
+                min_err_lin_idx = np.argmin(err_lin_vals)
+
+                #get min c value
+                min_c = c_vals[min_err_lin_idx]
+                interval = 7e-3
+                axc_2, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values, y_values, irreducible_error_load[sys], axc_2, sys, ts[t], min_c - interval, min_c + interval)
+
+
+                #input the minimum c value into the model function loglin
+                yfit_optc = model_function_loglin(x_values, a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx])
+
+                # get index for minimum lin error
+                min_err_lin_idx = np.argmin(err_lin_vals)
+
+                print("c_vals[min_err_lin_idx]", c_vals[min_err_lin_idx])
+
+                #initial guess for the parameters
+                initial_guess = [a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx]]
 
                 # Fit a line to the data (line on log-log scale)
-                y_fit_loglog, a_loglog, b_loglog, c_loglog = loglogfit(x_values, y_values)
+                y_fit_loglog, a_loglog, b_loglog, c_loglog = loglogfit(x_values, y_values, initial_guess)
 
                 # Fit a line to the data (line on log-linear scale)
-                y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_values, y_values)
+                y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_values, y_values, initial_guess)
 
                 # Fit a regularized line to the data
-                # Initial guess for parameters
-                initial_guess = [-1.0, 0.0, 1.0]
                 # Regularization strength
                 lambda_reg = 1e-2
                 a_opt, b_opt, c_opt = loglogfit_regularized(initial_guess, x_values, y_values, lambda_reg)
@@ -291,29 +316,23 @@ if __name__ == '__main__':
                 # Generate y-values based on the optimized model
                 fitted_y_values_opt = model_function(x_values, a_opt, b_opt, c_opt)
 
-                # closed form solution for loglin fit
-                axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values, y_values, irreducible_error_load[sys], axc, sys, ts[t])
+                subtract = c_loglog #c_vals[min_err_lin_idx]
 
-                # get index for minimum lin error
-                min_err_lin_idx = np.argmin(err_lin_vals)
-
-                #input the minimum c value into the model function loglin
-                yfit_optc = model_function_loglin(x_values, a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx])
-
-                subtract = c_vals[min_err_lin_idx]
-
-                ax = plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
+                ax = plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
 
                 #plot the optimal c value
-                ax[sys].plot(x_values, yfit_optc-subtract, label="Optimal c=%g" % c_vals[min_err_lin_idx])
-                ax2[sys].plot(x_values, yfit_optc, label="Optimal c=%g" % c_vals[min_err_lin_idx])
+                ax[t][sys].plot(x_values, yfit_optc-subtract, label="Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
+                ax[t][sys].legend()
 
-                ax2 = plot_train_conv(ax2, np.float64(0.0), error_checkpoints_tuples, y_values, x_values, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
+                ax2 = plot_train_conv(ax2, np.float64(0.0), error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
+                ax2[t][sys].plot(x_values, yfit_optc, label="Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
+                ax2[t][sys].legend()
 
             
         save_figure(fig, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=True)
         save_figure(fig2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
         save_figure_c(figc, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
+        save_figure_c(figc_2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
 
     else:
         # instantiate gpt2 model
