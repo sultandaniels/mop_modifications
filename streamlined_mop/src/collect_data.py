@@ -54,7 +54,8 @@ def collect_data(config, output_dir):
         print("Saving", len(samples), "samples for", name)
 
         # check if samples contains nan
-        if torch.isnan(samples).any():
+        samples_tensor = samples.to_tensor()
+        if torch.isnan(samples_tensor).any():
             raise ValueError("samples contain nan in collect_data.py")
 
         with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}.pkl", "wb") as f:
