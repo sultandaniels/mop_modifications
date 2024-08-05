@@ -1179,6 +1179,14 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
 
     return None
 
+# Sort handles and labels based on "MOP" part or "_analytical" part
+# Extracting the number after "MOP" or "_analytical" and using it for sorting
+def extract_sort_key(label):
+    if "_analytical" in label:
+        return int(label.split("_analytical")[1])
+    else:
+        return int(label.split("MOP")[1])
+
 
 def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems, shade, fig, ax, ts, kal_errors):
     excess = False
@@ -1257,9 +1265,8 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
         # Step 1: Collect legend handles and labels
         handles, labels = ax[sys].get_legend_handles_labels()  # handles and labels of the legend
 
-        # Step 2: Sort handles and labels based on "MOP" part
-        # Extracting the number after "MOP" and using it for sorting
-        sorted_handles_labels = sorted(zip(handles, labels), key=lambda hl: int(hl[1].split("MOP")[1]))
+        # Step 2: Sort handles and labels
+        sorted_handles_labels = sorted(zip(handles, labels), key=lambda hl: extract_sort_key(hl[1]))
         sorted_handles, sorted_labels = zip(*sorted_handles_labels)
 
         # Step 3: Create the legend with sorted handles and labels
