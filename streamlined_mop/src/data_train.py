@@ -35,7 +35,6 @@ def preds_thread(make_preds, resume_train, train_conv):
     excess = False #run the excess plots
     shade = True
     config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=96000.ckpt")
-    print("ckpt_path", config.ckpt_path)
 
     if resume_train:
         #get the parent directory of the ckpt_path
@@ -214,17 +213,17 @@ if __name__ == '__main__':
     elif train_conv:
         run_preds, run_deg_kf_test, excess, shade = preds_thread(make_preds, resume_train, train_conv)
 
-        #load the prediction errors from the step=40000 prediction_errors file
-        num_systems = config.num_val_tasks
-        config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
-        err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
+        kal_errors = None
+        if kfnorm or olsnorm:
+            #load the prediction errors from the step=40000 prediction_errors file
+            num_systems = config.num_val_tasks
+            config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
+            err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
 
-        if kfnorm:
-            kal_errors = np.mean(err_lss_load["Kalman"], axis=1)
-        elif olsnorm:
-            kal_errors = np.mean(err_lss_load["OLS_ir_length3_orig"], axis=1)
-        else:
-            kal_errors = None
+            if kfnorm:
+                kal_errors = np.mean(err_lss_load["Kalman"], axis=1)
+            elif olsnorm:
+                kal_errors = np.mean(err_lss_load["OLS_ir_length3_orig"], axis=1)
 
         #for loop to iterate through all the checkpoints in the output directory
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
@@ -232,16 +231,19 @@ if __name__ == '__main__':
         filecount = 0
 
         sys_error_checkpoints_tuples = []
+        sys_error_an_checkpoints_tuples = []
         ts = [50, 100, 200]
         for filename in os.listdir(output_dir + "/checkpoints/"):
             filecount += 1
             print("filecount:", filecount)
             config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
             print("\n\n\nckpt_path", config.ckpt_path)
-            step_avg_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts, kal_errors) #create the convergence plots and return the step and average error tuple
+            step_avg_tup, step_avg_an_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts, kal_errors) #create the convergence plots and return the step and average error tuple
 
             # print("step_avg_tup[1]", step_avg_tup[1])
             sys_error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
+
+            sys_error_an_checkpoints_tuples.append(step_avg_an_tup) #append the tuple to the list of tuples
 
         #plot the error_checkpoints_tuples
         print("\n\nPlotting error_checkpoints_tuples")
@@ -252,7 +254,7 @@ if __name__ == '__main__':
 
         figc, axc = plt.subplots(3, 1, figsize=(10, 20))
 
-        figc_2, axc_2 = plt.subplots(3, 1, figsize=(10, 20))
+        figc_an, axc_an = plt.subplots(3, 1, figsize=(10, 20))
 
         # set the axis scaling
         yax = "log"
@@ -261,38 +263,69 @@ if __name__ == '__main__':
         for sys in range(config.num_val_tasks):
             # Filter bairand transform sys_error_checkpoints_tuples for the current system sys
             error_checkpoints_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
+
+            error_checkpoints_an_tuples = [(str(x[0]), x[1][sys]) for x in sys_error_an_checkpoints_tuples if isinstance(x[1], list) and len(x[1]) > sys]
             
             #sort the error_checkpoints_tuples by the step
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
+
+            error_checkpoints_an_tuples = sorted(error_checkpoints_an_tuples, key=lambda x: int(x[0]))
+
+            # Debugging: Print the structure of error_checkpoints_an_tuples
+            for idx, x in enumerate(error_checkpoints_tuples):
+                print(f"Index {idx}: {x}")
+
+            print("\n\n\n analytical")
+
+            # Debugging: Print the structure of error_checkpoints_an_tuples
+            for idx, x in enumerate(error_checkpoints_an_tuples):
+                print(f"Index {idx}: {x}")
         
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
+
+                # Ensure that the indices are valid before accessing them
+                try:
+                    y_an_values = [x[1][t][0] for x in error_checkpoints_an_tuples]
+                except IndexError as e:
+                    print(f"IndexError: {e}")
+                    print(f"Error occurred at t={t} with error_checkpoints_an_tuples={error_checkpoints_an_tuples}")
+                    raise
 
                 x_values = [float(x[0]) for x in error_checkpoints_tuples]
 
                 #set the y_values to be the error
                 y_values = [x[1][t][0] for x in error_checkpoints_tuples]
+                y_an_values = [x[1][t][0] for x in error_checkpoints_an_tuples]
                 
                 #remove the first rem elements of x_values and y_values
                 rem = 0
                 x_values = x_values[rem:]
                 y_values = y_values[rem:]
+                y_an_values = y_an_values[rem:]
                 print('len(x_values)', len(x_values))
 
                 # closed form solution for loglin fit
                 axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values, y_values, irreducible_error_load[sys], axc, sys, ts[t], 0.0, np.mean(y_values))
+                axc_an, a_vals_an, b_vals_an, c_vals_an, err_vals_an, err_lin_vals_an = plot_closed_form_loglin_err(x_values, y_an_values, irreducible_error_load[sys], axc_an, sys, ts[t], 0.0, np.mean(y_an_values))
 
                 # get index for minimum lin error
                 min_err_lin_idx = np.argmin(err_lin_vals)
+                min_err_lin_idx_an = np.argmin(err_lin_vals_an)
 
                 #get min c value
                 min_c = c_vals[min_err_lin_idx]
                 interval = 7e-3
-                axc_2, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values, y_values, irreducible_error_load[sys], axc_2, sys, ts[t], min_c - interval, min_c + interval)
+                axc_an, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values, y_values, irreducible_error_load[sys], axc_an, sys, ts[t], min_c - interval, min_c + interval)
+
+                min_c_an = c_vals_an[min_err_lin_idx_an]
+                axc_an, a_vals_an, b_vals_an, c_vals_an, err_vals_an, err_lin_vals_an = plot_closed_form_loglin_err(x_values, y_an_values, irreducible_error_load[sys], axc_an, sys, ts[t], min_c_an - interval, min_c_an + interval)
 
 
                 #input the minimum c value into the model function loglin
                 yfit_optc = model_function_loglin(x_values, a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx])
+
+                yfit_optc_an = model_function_loglin(x_values, a_vals_an[min_err_lin_idx_an], b_vals_an[min_err_lin_idx_an], c_vals_an[min_err_lin_idx_an])
 
                 # get index for minimum lin error
                 min_err_lin_idx = np.argmin(err_lin_vals)
@@ -322,17 +355,20 @@ if __name__ == '__main__':
 
                 #plot the optimal c value
                 ax[t][sys].plot(x_values, yfit_optc-subtract, label="Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
+                ax[t][sys].plot(x_values, yfit_optc_an-subtract, label="Least Squares Optimal Analytical c=%g, a=%g, b=%g" % (c_vals_an[min_err_lin_idx], a_vals_an[min_err_lin_idx], b_vals_an[min_err_lin_idx]), linestyle='--')
                 ax[t][sys].legend()
+                
 
                 ax2 = plot_train_conv(ax2, np.float64(0.0), error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
                 ax2[t][sys].plot(x_values, yfit_optc, label="Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
+                ax2[t][sys].plot(x_values, yfit_optc_an, label="Least Squares Optimal Analytical c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
                 ax2[t][sys].legend()
 
             
         save_figure(fig, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=True)
         save_figure(fig2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
         save_figure_c(figc, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
-        save_figure_c(figc_2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
+        save_figure_c(figc_an, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
 
     else:
         # instantiate gpt2 model

@@ -93,8 +93,9 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
     ax.grid()
     handles = []
     err_avg_t = []
+    err_avg_t_an = []
     for i, (name, err_ls) in enumerate(err_lss.items()):
-        if name == "MOP":
+        if name == "MOP" or name == "MOP_analytical":
             # print("\n\nplotting MOP at step:", train_steps, "\n\n")
             avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
 
@@ -109,9 +110,12 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
 
                 #set err_avg_t to be the value of avg at the t'th step
                 for t in ts:
-                    # err_avg_t.append((median[t], q1[t], q3[t]))
-                    err_avg_t.append((avg[t], avg[t] - std[t], avg[t] + std[t]))                    
-
+                    if name == "MOP":
+                        # err_avg_t.append((median[t], q1[t], q3[t]))
+                        err_avg_t.append((avg[t], avg[t] - std[t], avg[t] + std[t]))
+                    elif name == "MOP_analytical":
+                        # err_avg_t_an.append((median[t], q1[t], q3[t]))
+                        err_avg_t_an.append((avg[t], avg[t] - std[t], avg[t] + std[t]))                    
             else: #subtract the irreducible error
                 print("\nNormalized")
                 handles.extend(ax.plot(avg - err_irreducible[sys], label=name + train_steps if name != "OLS_wentinn" else "OLS_ir_length2_unreg", linewidth=3, marker='o' if name == "MOP" else ".", color = colors[j-1]))
@@ -120,9 +124,13 @@ def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, no
 
                 #set err_avg_t to be the value of avg at the t'th step
                 for t in ts:
-                    # err_avg_t.append((median[t] - kal_err[sys][t], q1[t] - kal_err[sys][t], q3[t] - kal_err[sys][t]))
-                    err_avg_t.append((avg[t] - kal_err[sys][t], avg[t] - std[t] - kal_err[sys][t], avg[t] + std[t] - kal_err[sys][t]))
-    return handles, err_avg_t
+                    if name == "MOP":
+                        # err_avg_t.append((median[t] - kal_err[sys][t], q1[t] - kal_err[sys][t], q3[t] - kal_err[sys][t]))
+                        err_avg_t.append((avg[t] - kal_err[sys][t], avg[t] - std[t] - kal_err[sys][t], avg[t] + std[t] - kal_err[sys][t]))
+                    elif name == "MOP_analytical":
+                        # err_avg_t_an.append((median[t] - kal_err[sys][t], q1[t] - kal_err[sys][t], q3[t] - kal_err[sys][t]))
+                        err_avg_t_an.append((avg[t] - kal_err[sys][t], avg[t] - std[t] - kal_err[sys][t], avg[t] + std[t] - kal_err[sys][t]))
+    return handles, err_avg_t, err_avg_t_an
 
 def spectrum(A, k):
     spec_rad = np.max(np.abs(np.linalg.eigvals(A)))

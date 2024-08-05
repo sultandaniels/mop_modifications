@@ -618,24 +618,45 @@ def compute_errors_conv(config, C_dist, run_deg_kf_test, wentinn_data):
         # get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
 
-        with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
-            samples = pickle.load(f)
-            # for every 2000 entries in samples, get the observation values and append them to the ys list
-            i = 0
-            ys = np.zeros((num_systems, num_trials, config.n_positions + 1, config.ny))
-            for entry in samples:
-                ys[math.floor(i / num_trials), i % num_trials] = entry["obs"]
-                i += 1
-            ys = ys.astype(np.float32)
-            del samples  # Delete the variable
-            gc.collect()  # Start the garbage collector
 
         # open fsim file
         with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
             sim_objs = pickle.load(f)
 
+        with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
+            samples = pickle.load(f)
+            # for every 2000 entries in samples, get the observation values and append them to the ys list
+            ys = np.stack(
+                [entry["obs"] for entry in samples], axis=0
+            ).reshape((num_systems, num_trials, config.n_positions + 1, config.ny)).astype(np.float32)
+
+            prev_xs = np.concatenate([
+                np.zeros((num_systems, num_trials, 1, config.nx)),
+                np.stack(
+                    [entry["states"][:-1] for entry in samples], axis=0
+                ).reshape((num_systems, num_trials, config.n_positions, config.nx)).astype(np.float32)
+            ], axis=2)
+            print(f"Shape of prev_xs: {prev_xs.shape}")
+
+            # Debugging: Print the shape of each matrix multiplication result
+            for idx, sim_obj in enumerate(sim_objs):
+                result = sim_obj.C @ sim_obj.A
+                print(f"Shape of sim_obj.C @ sim_obj.A for sim_obj {idx}: {result.shape}")
+
+            # Stack the results
+            stacked_matrix = np.stack([sim_obj.C @ sim_obj.A for sim_obj in sim_objs], axis=0)
+            print(f"Shape of stacked_matrix: {stacked_matrix.shape}")
+
+            reshaped_matrix = stacked_matrix[:, None].transpose(0,1,3,2)
+            print(f"Shape of reshaped_matrix: {reshaped_matrix.shape}")
+
+            noiseless_ys = prev_xs @ reshaped_matrix
+
+            gc.collect()  # Start the garbage collector
+
     # Transformer Predictions
     start = time.time()  # start the timer for transformer predictions
+    print("started transformer predictions")
     with torch.no_grad():  # no gradients
         I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)  # get the inputs (observations without the last one)
         # if config.dataset_typ == "drone":  # if the dataset type is drone
@@ -666,12 +687,16 @@ def compute_errors_conv(config, C_dist, run_deg_kf_test, wentinn_data):
     print("time elapsed for MOP Pred:", (end - start) / 60, "min")  # print the time elapsed for transformer predictions
 
     errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2  # get the errors of transformer predictions
+    noiseless_errs_tf = np.linalg.norm((noiseless_ys - preds_tf), axis=-1) ** 2 + np.array([
+        (np.linalg.norm(sim_obj.C) * sim_obj.sigma_w) ** 2 + config.ny * (sim_obj.sigma_v ** 2)
+        for sim_obj in sim_objs])[:, None, None]
 
     # zero predictor predictions
     errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2  # get the errors of zero predictions
 
     err_lss = collections.OrderedDict([
         ("MOP", errs_tf),
+        ("MOP_analytical", noiseless_errs_tf),
         ("Zero", errs_zero)
     ])
     print("err_lss keys:", err_lss.keys())
@@ -714,8 +739,26 @@ def save_preds(run_deg_kf_test, config):
             "wb") as f:
         pickle.dump(irreducible_error, f)
 
+def save_preds_conv_helper(save_dir, run_deg_kf_test, config):
+    os.makedirs(save_dir, exist_ok=True)
 
-def save_preds_conv(run_deg_kf_test, config):
+    err_lss, irreducible_error = compute_errors_conv(config, config.C_dist, run_deg_kf_test,
+                                                        wentinn_data=False)  # , emb_dim)
+
+    # save err_lss and irreducible_error to a file
+    with open(
+            save_dir + f"/{config.dataset_typ}_err_lss.pkl",
+            "wb") as f:
+        pickle.dump(err_lss, f)
+
+    with open(
+            save_dir + f"/{config.dataset_typ}_irreducible_error.pkl",
+            "wb") as f:
+        pickle.dump(irreducible_error, f)
+    return
+
+
+def save_preds_conv(make_preds, run_deg_kf_test, config):
     # get the step size from the ckpt_path
     step_size = config.ckpt_path.split("/")[-1].split("_")[-1]
     print("step_size: %r" % step_size)
@@ -727,28 +770,21 @@ def save_preds_conv(run_deg_kf_test, config):
     # get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
 
+    save_dir = parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size
+
     # a boolean for whether the below directory exists
-    if not os.path.exists(
-            parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size):  # if the directory does not exist
-        os.makedirs(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size, exist_ok=True)
-
-        err_lss, irreducible_error = compute_errors_conv(config, config.C_dist, run_deg_kf_test,
-                                                         wentinn_data=False)  # , emb_dim)
-
-        # save err_lss and irreducible_error to a file
-        with open(
-                parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl",
-                "wb") as f:
-            pickle.dump(err_lss, f)
-
-        with open(
-                parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl",
-                "wb") as f:
-            pickle.dump(irreducible_error, f)
-        return
+    if make_preds:
+        save_preds_conv_helper(save_dir, run_deg_kf_test, config)
     else:
-        print("The directory for ", step_size, " already exists")
-        return
+        # check if save_dir exists
+        if os.path.exists(save_dir):
+            print("The directory for ", step_size, " already exists")
+        else:
+            print("The directory for ", step_size, " does not exist")
+            save_preds_conv_helper(save_dir, run_deg_kf_test, config)
+    return
+
+        
 
 
 def load_preds(run_deg_kf_test, excess, num_systems, config):
@@ -1150,7 +1186,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     print("\n\n", "config path:", config.ckpt_path)
     if run_preds:
         print("\n\nRunning predictions")
-        save_preds_conv(run_deg_kf_test, config)  # save the predictions to a file
+        save_preds_conv(run_preds, run_deg_kf_test, config)  # save the predictions to a file
     print("\n\nLoading predictions")
     # load the prediction errors from the file
     err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess,
@@ -1208,13 +1244,15 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     ]
     print("\n\nPlotting predictions")
     sys_errs = []
+    sys_errs_an = []
     for sys in range(len(irreducible_error_load)):
         # plot transformer, KF and FIR errors
         # get the checkpoint steps number from the checkpoint path
         ckpt_steps = config.ckpt_path.split("step=")[1].split(".")[0]  # get the checkpoint steps number
-        handles, err_avg_t = plot_errs_conv(ts, j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps,
+        handles, err_avg_t, err_avg_t_an = plot_errs_conv(ts, j, colors, sys, err_lss_load, irreducible_error_load, ckpt_steps,
                                             kfnorm, ax=ax[sys], shade=shade, kal_err=kal_errors)  # plot the errors
         sys_errs.append(err_avg_t)  # append the system number and the error average at step t
+        sys_errs_an.append(err_avg_t_an)  # append the system number and the error average at step t
 
         # Step 1: Collect legend handles and labels
         handles, labels = ax[sys].get_legend_handles_labels()  # handles and labels of the legend
@@ -1254,7 +1292,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_conv" + (
         "_normalized" if kfnorm else "") + ("-changing" if config.changing else ""))
 
-    return (ckpt_steps, sys_errs)  # return the checkpoint steps number and the system errors
+    return (ckpt_steps, sys_errs), (ckpt_steps, sys_errs_an)  # return the checkpoint steps number and the system errors
 
 
 ####################################################################################################
