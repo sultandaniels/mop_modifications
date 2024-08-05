@@ -214,16 +214,15 @@ if __name__ == '__main__':
         run_preds, run_deg_kf_test, excess, shade = preds_thread(make_preds, resume_train, train_conv)
 
         kal_errors = None
-        if kfnorm or olsnorm:
-            #load the prediction errors from the step=40000 prediction_errors file
-            num_systems = config.num_val_tasks
-            config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
-            err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
+        #load the prediction errors from the step=40000 prediction_errors file
+        num_systems = config.num_val_tasks
+        config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
+        err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
 
-            if kfnorm:
-                kal_errors = np.mean(err_lss_load["Kalman"], axis=1)
-            elif olsnorm:
-                kal_errors = np.mean(err_lss_load["OLS_ir_length3_orig"], axis=1)
+        if kfnorm:
+            kal_errors = np.mean(err_lss_load["Kalman"], axis=1)
+        elif olsnorm:
+            kal_errors = np.mean(err_lss_load["OLS_ir_length3_orig"], axis=1)
 
         #for loop to iterate through all the checkpoints in the output directory
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
