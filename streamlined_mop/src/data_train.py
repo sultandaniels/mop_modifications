@@ -76,10 +76,10 @@ def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, 
     y2 = [x[1][t][2] for x in error_checkpoints_tuples]
     x = np.arange(len(error_checkpoints_tuples))
 
-    #remove the first rem elements of y1, y2, and x
-    y1 = y1[rem:]
-    y2 = y2[rem:]
-    x = x[rem:]
+    #remove the entries after rem of y1, y2, and x
+    y1 = y1[:rem]
+    y2 = y2[:rem]
+    x = x[:rem]
 
     ax[t][sys].fill_between(x_values, y1-subtract, y2-subtract, alpha=0.2)
     ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")))
@@ -138,6 +138,39 @@ def save_figure_c(fig, config, kfnorm, olsnorm, yax, xax, subtracted):
     os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
     fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_find_opt_c" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ".png")
     return None
+
+def get_opposite_color(hex_color):
+    # Remove the hash symbol if present
+    hex_color = hex_color.lstrip('#')
+
+    # Convert hex to RGB
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+
+    # Calculate the complementary color
+    comp_r = 255 - r
+    comp_g = 255 - g
+    comp_b = 255 - b
+
+    # Convert the complementary RGB back to hex
+    comp_hex = f'#{comp_r:02x}{comp_g:02x}{comp_b:02x}'
+
+    return comp_hex
+
+def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label):
+    #compute the element-wise squared error between y_values and yfit_optc
+    log_opt_err = (y_values - fit_y)**2
+
+    #generate a random hex color
+    hex_color = '#%02X%02X%02X' % (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
+    opp_hex_color = get_opposite_color(hex_color)
+
+    #plot the error vs x_values on ax_err on a linear linear scale. Have the curve entries before and after rem be different colors
+    ax_err[t].plot(x_values[:rem], log_opt_err[:rem], label=plot_label + " t="+str(ts[t]), marker='.', color=hex_color)
+    ax_err[t].plot(x_values[rem:], log_opt_err[rem:], label=plot_label + " t="+str(ts[t]), marker='.', color=opp_hex_color)
+    return ax_err
+
 
 # main function
 
@@ -253,6 +286,8 @@ if __name__ == '__main__':
 
         figc, axc = plt.subplots(3, 1, figsize=(10, 20))
 
+        fig_err, ax_err = plt.subplots(3, 1, figsize=(10, 20))
+
         figc_an, axc_an = plt.subplots(3, 1, figsize=(10, 20))
 
         # set the axis scaling
@@ -295,36 +330,49 @@ if __name__ == '__main__':
 
                 #set the y_values to be the error
                 y_values = [x[1][t][0] for x in error_checkpoints_tuples]
-                y_an_values = [x[1][t][0] for x in error_checkpoints_an_tuples]
+
+                #analytical
+                # y_an_values = [x[1][t][0] for x in error_checkpoints_an_tuples]
                 
                 #remove the first rem elements of x_values and y_values
                 rem = 0
-                x_values = x_values[rem:]
-                y_values = y_values[rem:]
-                y_an_values = y_an_values[rem:]
+                x_values_train = x_values[:rem]
+                y_values_train = y_values[:rem]
+
+                # #analytical
+                # y_an_values = y_an_values[rem:]
                 print('len(x_values)', len(x_values))
 
                 # closed form solution for loglin fit
-                axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values, y_values, irreducible_error_load[sys], axc, sys, ts[t], 0.0, np.mean(y_values))
-                axc_an, a_vals_an, b_vals_an, c_vals_an, err_vals_an, err_lin_vals_an = plot_closed_form_loglin_err(x_values, y_an_values, irreducible_error_load[sys], axc_an, sys, ts[t], 0.0, np.mean(y_an_values))
+                axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values_train, y_values_train, irreducible_error_load[sys], axc, sys, ts[t], 0.0, np.mean(y_values_train))
+
+
+                # #analytical
+                # axc_an, a_vals_an, b_vals_an, c_vals_an, err_vals_an, err_lin_vals_an = plot_closed_form_loglin_err(x_values, y_an_values, irreducible_error_load[sys], axc_an, sys, ts[t], 0.0, np.mean(y_an_values))
 
                 # get index for minimum lin error
                 min_err_lin_idx = np.argmin(err_lin_vals)
-                min_err_lin_idx_an = np.argmin(err_lin_vals_an)
+
+                # #analytical
+                # min_err_lin_idx_an = np.argmin(err_lin_vals_an)
 
                 #get min c value
                 min_c = c_vals[min_err_lin_idx]
                 interval = 7e-3
-                axc_an, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values, y_values, irreducible_error_load[sys], axc_an, sys, ts[t], min_c - interval, min_c + interval)
-
-                min_c_an = c_vals_an[min_err_lin_idx_an]
-                axc_an, a_vals_an, b_vals_an, c_vals_an, err_vals_an, err_lin_vals_an = plot_closed_form_loglin_err(x_values, y_an_values, irreducible_error_load[sys], axc_an, sys, ts[t], min_c_an - interval, min_c_an + interval)
-
-
-                #input the minimum c value into the model function loglin
+                axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values_train, y_values_train, irreducible_error_load[sys], axc, sys, ts[t], min_c - interval, min_c + interval)
+                
+                #get fitted y values from model function
                 yfit_optc = model_function_loglin(x_values, a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx])
 
-                yfit_optc_an = model_function_loglin(x_values, a_vals_an[min_err_lin_idx_an], b_vals_an[min_err_lin_idx_an], c_vals_an[min_err_lin_idx_an])
+                #plot error
+                ax_err = fit_curves_err(yfit_optc, y_values, x_values, rem, ax_err, "Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]))
+
+                # #analytical
+                # min_c_an = c_vals_an[min_err_lin_idx_an]
+                # axc_an, a_vals_an, b_vals_an, c_vals_an, err_vals_an, err_lin_vals_an = plot_closed_form_loglin_err(x_values, y_an_values, irreducible_error_load[sys], axc_an, sys, ts[t], min_c_an - interval, min_c_an + interval)
+
+                # #analytical
+                # yfit_optc_an = model_function_loglin(x_values, a_vals_an[min_err_lin_idx_an], b_vals_an[min_err_lin_idx_an], c_vals_an[min_err_lin_idx_an])
 
                 # get index for minimum lin error
                 min_err_lin_idx = np.argmin(err_lin_vals)
@@ -354,20 +402,29 @@ if __name__ == '__main__':
 
                 #plot the optimal c value
                 ax[t][sys].plot(x_values, yfit_optc-subtract, label="Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
-                ax[t][sys].plot(x_values, yfit_optc_an-subtract, label="Least Squares Optimal Analytical c=%g, a=%g, b=%g" % (c_vals_an[min_err_lin_idx], a_vals_an[min_err_lin_idx], b_vals_an[min_err_lin_idx]), linestyle='--')
-                ax[t][sys].legend()
                 
+                # #analytical
+                # ax[t][sys].plot(x_values, yfit_optc_an-subtract, label="Least Squares Optimal Analytical c=%g, a=%g, b=%g" % (c_vals_an[min_err_lin_idx], a_vals_an[min_err_lin_idx], b_vals_an[min_err_lin_idx]), linestyle='--')
+
+                ax[t][sys].legend()
 
                 ax2 = plot_train_conv(ax2, np.float64(0.0), error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
                 ax2[t][sys].plot(x_values, yfit_optc, label="Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
-                ax2[t][sys].plot(x_values, yfit_optc_an, label="Least Squares Optimal Analytical c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
-                ax2[t][sys].legend()
 
+                # #analytical
+                # ax2[t][sys].plot(x_values, yfit_optc_an, label="Least Squares Optimal Analytical c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
+
+                ax2[t][sys].legend()
             
         save_figure(fig, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=True)
         save_figure(fig2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
         save_figure_c(figc, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
-        save_figure_c(figc_an, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
+
+        save_figure(fig_err, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False)
+
+
+        # #analytical
+        # save_figure_c(figc_an, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
 
     else:
         # instantiate gpt2 model
