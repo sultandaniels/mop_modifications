@@ -291,8 +291,8 @@ if __name__ == '__main__':
         figc_an, axc_an = plt.subplots(3, 1, figsize=(10, 20))
 
         # set the axis scaling
-        yax = "log"
-        xax = "log"
+        yax = "lin"
+        xax = "lin"
 
         for sys in range(config.num_val_tasks):
             # Filter bairand transform sys_error_checkpoints_tuples for the current system sys
