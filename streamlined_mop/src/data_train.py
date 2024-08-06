@@ -385,7 +385,7 @@ if __name__ == '__main__':
                 # Fit a regularized line to the data
                 # Regularization strength
                 lambda_reg = 1e-2
-                a_opt, b_opt, c_opt = loglogfit_regularized(initial_guess, x_values, y_train, lambda_reg)
+                a_opt, b_opt, c_opt = loglogfit_regularized(initial_guess, x_train, y_train, lambda_reg)
 
                 # Generate y-values based on the optimized model
                 fitted_y_values_opt = model_function(x_values, a_opt, b_opt, c_opt)
