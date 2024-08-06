@@ -77,9 +77,9 @@ def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, 
     x = np.arange(len(error_checkpoints_tuples))
 
     #remove the entries after rem of y1, y2, and x
-    y1 = y1[:rem]
-    y2 = y2[:rem]
-    x = x[:rem]
+    y1 = y1
+    y2 = y2
+    x = x
 
     ax[t][sys].fill_between(x_values, y1-subtract, y2-subtract, alpha=0.2)
     ax[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]) + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")))
