@@ -390,7 +390,7 @@ if __name__ == '__main__':
                 # Generate y-values based on the optimized model
                 fitted_y_values_opt = model_function(x_values, a_opt, b_opt, c_opt)
 
-                ax_err = fit_curves_err(fitted_y_values_opt, y_values, x_values, rem, ax_err, "Regularized Fit y = e^bx^a, c=%g, a=%g, b=%g" % (c_opt, a_opt, b_opt), t, ts, sys)
+                # ax_err = fit_curves_err(fitted_y_values_opt, y_values, x_values, rem, ax_err, "Regularized Fit y = e^bx^a, c=%g, a=%g, b=%g" % (c_opt, a_opt, b_opt), t, ts, sys)
 
                 subtract = c_loglog #c_vals[min_err_lin_idx]
 
