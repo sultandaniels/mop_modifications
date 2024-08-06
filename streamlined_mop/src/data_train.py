@@ -373,19 +373,19 @@ if __name__ == '__main__':
                 initial_guess = [a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx]]
 
                 # Fit a line to the data (line on log-log scale)
-                y_fit_loglog, a_loglog, b_loglog, c_loglog = loglogfit(x_train, x_values, y_values, initial_guess)
+                y_fit_loglog, a_loglog, b_loglog, c_loglog = loglogfit(x_train, x_values, y_train, initial_guess)
 
                 ax_err = fit_curves_err(y_fit_loglog, y_values, x_values, rem, ax_err, "y = e^bx^a + c, c=%g, a=%g, b=%g" % (c_loglog, a_loglog, b_loglog), t, ts, sys)
 
                 # Fit a line to the data (line on log-linear scale)
-                y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_train, x_values, y_values, initial_guess)
+                y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_train, x_values, y_train, initial_guess)
 
                 ax_err = fit_curves_err(y_fit_loglin, y_values, x_values, rem, ax_err, "y = e^be^(ax) + c, c=%g, a=%g, b=%g" % (c_loglin, a_loglin, b_loglin), t, ts, sys)
 
                 # Fit a regularized line to the data
                 # Regularization strength
                 lambda_reg = 1e-2
-                a_opt, b_opt, c_opt = loglogfit_regularized(initial_guess, x_values, y_values, lambda_reg)
+                a_opt, b_opt, c_opt = loglogfit_regularized(initial_guess, x_values, y_train, lambda_reg)
 
                 # Generate y-values based on the optimized model
                 fitted_y_values_opt = model_function(x_values, a_opt, b_opt, c_opt)
