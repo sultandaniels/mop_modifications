@@ -160,15 +160,13 @@ def get_opposite_color(hex_color):
 
 def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sys):
     #compute the element-wise squared error between y_values and yfit_optc
-    log_opt_err = (y_values - fit_y)**2
-
-    #generate a random hex color
-    hex_color = '#%02X%02X%02X' % (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
-    opp_hex_color = get_opposite_color(hex_color)
+    opt_err = (y_values - fit_y)**2
 
     #plot the error vs x_values on ax_err on a linear linear scale. Have the curve entries before and after rem be different colors
-    ax_err[t][sys].plot(x_values[:rem], log_opt_err[:rem], label=plot_label + " t="+str(ts[t]), marker='.', color=hex_color)
-    ax_err[t][sys].plot(x_values[rem:], log_opt_err[rem:], label=plot_label + " t="+str(ts[t]), marker='.', color=opp_hex_color)
+    ax_err[t][sys].plot(x_values, opt_err, label=plot_label + " t="+str(ts[t]), marker='.')
+
+    #plot a vertical line at x = rem
+    ax_err[t][sys].axvline(x=rem, color='r', linestyle='--', label="Train-Test Split")
     return ax_err
 
 
