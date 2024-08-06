@@ -286,7 +286,7 @@ if __name__ == '__main__':
 
         figc, axc = plt.subplots(3, 1, figsize=(10, 20))
 
-        fig_err, ax_err = plt.subplots(3, 3, figsize=(10, 20))
+        fig_err, ax_err = plt.subplots(3, 3, figsize=(30, 20))
 
         figc_an, axc_an = plt.subplots(3, 1, figsize=(10, 20))
 
