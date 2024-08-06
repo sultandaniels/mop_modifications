@@ -304,16 +304,6 @@ if __name__ == '__main__':
             error_checkpoints_tuples = sorted(error_checkpoints_tuples, key=lambda x: int(x[0]))
 
             error_checkpoints_an_tuples = sorted(error_checkpoints_an_tuples, key=lambda x: int(x[0]))
-
-            # Debugging: Print the structure of error_checkpoints_an_tuples
-            for idx, x in enumerate(error_checkpoints_tuples):
-                print(f"Index {idx}: {x}")
-
-            print("\n\n\n analytical")
-
-            # Debugging: Print the structure of error_checkpoints_an_tuples
-            for idx, x in enumerate(error_checkpoints_an_tuples):
-                print(f"Index {idx}: {x}")
         
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
@@ -341,7 +331,6 @@ if __name__ == '__main__':
 
                 # #analytical
                 # y_an_values = y_an_values[rem:]
-                print('len(x_values)', len(x_values))
 
                 # closed form solution for loglin fit
                 axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values_train, y_values_train, irreducible_error_load[sys], axc, sys, ts[t], 0.0, np.mean(y_values_train))
@@ -360,6 +349,9 @@ if __name__ == '__main__':
                 min_c = c_vals[min_err_lin_idx]
                 interval = 7e-3
                 axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values_train, y_values_train, irreducible_error_load[sys], axc, sys, ts[t], min_c - interval, min_c + interval)
+
+                # get index for minimum lin error
+                min_err_lin_idx = np.argmin(err_lin_vals)
                 
                 #get fitted y values from model function
                 yfit_optc = model_function_loglin(x_values, a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx])
@@ -374,8 +366,6 @@ if __name__ == '__main__':
                 # #analytical
                 # yfit_optc_an = model_function_loglin(x_values, a_vals_an[min_err_lin_idx_an], b_vals_an[min_err_lin_idx_an], c_vals_an[min_err_lin_idx_an])
 
-                # get index for minimum lin error
-                min_err_lin_idx = np.argmin(err_lin_vals)
 
                 print("c_vals[min_err_lin_idx]", c_vals[min_err_lin_idx])
 
