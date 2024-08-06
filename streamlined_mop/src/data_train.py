@@ -334,8 +334,8 @@ if __name__ == '__main__':
                 #analytical
                 # y_an_values = [x[1][t][0] for x in error_checkpoints_an_tuples]
                 
-                #remove the first rem elements of x_values and y_values
-                rem = 0
+                #keep only the first rem elements of x_values and y_values
+                rem = np.ceil(len(x_values)/2)
                 x_values_train = x_values[:rem]
                 y_values_train = y_values[:rem]
 
