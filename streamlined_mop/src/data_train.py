@@ -326,14 +326,15 @@ if __name__ == '__main__':
                 
                 #keep only the first rem elements of x_values and y_values
                 rem = int(np.ceil(len(x_values)/2))
-                x_values_train = x_values[:rem]
-                y_values_train = y_values[:rem]
+                x_train = x_values[:rem]
+                y_train = y_values[:rem]
 
                 # #analytical
                 # y_an_values = y_an_values[rem:]
 
+                ##### create a helper function for log optimization #######################################
                 # closed form solution for loglin fit
-                axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values_train, y_values_train, irreducible_error_load[sys], axc, sys, ts[t], 0.0, np.mean(y_values_train))
+                axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_train, y_train, irreducible_error_load[sys], axc, sys, ts[t], 0.0, np.mean(y_train))
 
 
                 # #analytical
@@ -348,16 +349,18 @@ if __name__ == '__main__':
                 #get min c value
                 min_c = c_vals[min_err_lin_idx]
                 interval = 7e-3
-                axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_values_train, y_values_train, irreducible_error_load[sys], axc, sys, ts[t], min_c - interval, min_c + interval)
+                axc, a_vals, b_vals, c_vals, err_vals, err_lin_vals = plot_closed_form_loglin_err(x_train, y_train, irreducible_error_load[sys], axc, sys, ts[t], min_c - interval, min_c + interval)
 
                 # get index for minimum lin error
                 min_err_lin_idx = np.argmin(err_lin_vals)
                 
                 #get fitted y values from model function
                 yfit_optc = model_function_loglin(x_values, a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx])
+                ###########################################################################################
 
                 #plot error
                 ax_err = fit_curves_err(yfit_optc, y_values, x_values, rem, ax_err, "Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), t, ts, sys)
+
 
                 # #analytical
                 # min_c_an = c_vals_an[min_err_lin_idx_an]
@@ -366,17 +369,18 @@ if __name__ == '__main__':
                 # #analytical
                 # yfit_optc_an = model_function_loglin(x_values, a_vals_an[min_err_lin_idx_an], b_vals_an[min_err_lin_idx_an], c_vals_an[min_err_lin_idx_an])
 
-
-                print("c_vals[min_err_lin_idx]", c_vals[min_err_lin_idx])
-
                 #initial guess for the parameters
                 initial_guess = [a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx]]
 
                 # Fit a line to the data (line on log-log scale)
-                y_fit_loglog, a_loglog, b_loglog, c_loglog = loglogfit(x_values, y_values, initial_guess)
+                y_fit_loglog, a_loglog, b_loglog, c_loglog = loglogfit(x_train, x_values, y_values, initial_guess)
+
+                ax_err = fit_curves_err(y_fit_loglog, y_values, x_values, rem, ax_err, "y = e^bx^a + c, c=%g, a=%g, b=%g" % (c_loglog, a_loglog, b_loglog), t, ts, sys)
 
                 # Fit a line to the data (line on log-linear scale)
-                y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_values, y_values, initial_guess)
+                y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_train, x_values, y_values, initial_guess)
+
+                ax_err = fit_curves_err(y_fit_loglin, y_values, x_values, rem, ax_err, "y = e^be^(ax) + c, c=%g, a=%g, b=%g" % (c_loglin, a_loglin, b_loglin), t, ts, sys)
 
                 # Fit a regularized line to the data
                 # Regularization strength
@@ -385,6 +389,8 @@ if __name__ == '__main__':
 
                 # Generate y-values based on the optimized model
                 fitted_y_values_opt = model_function(x_values, a_opt, b_opt, c_opt)
+
+                ax_err = fit_curves_err(fitted_y_values_opt, y_values, x_values, rem, ax_err, "Regularized Fit y = e^bx^a, c=%g, a=%g, b=%g" % (c_opt, a_opt, b_opt), t, ts, sys)
 
                 subtract = c_loglog #c_vals[min_err_lin_idx]
 

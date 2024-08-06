@@ -88,10 +88,10 @@ def loss(lambda_reg, x_values, y_values, params):
     loss_value += lambda_reg * b**2
     return loss_value
 
-def loglogfit(x_values, y_values, initial_guess):
+def loglogfit(x_train, x_values, y_train, initial_guess):
     
     # Use curve_fit to fit the model function to the data
-    params, covariance = curve_fit(model_function, x_values, y_values, p0=initial_guess)
+    params, covariance = curve_fit(model_function, x_train, y_train, p0=initial_guess)
     
     # Extract the parameters
     a, b, c = params
@@ -103,10 +103,10 @@ def loglogfit(x_values, y_values, initial_guess):
     
     return fitted_y_values, a, b, c
 
-def loglinfit(x_values, y_values, initial_guess):
+def loglinfit(x_train, x_values, y_train, initial_guess):
     
     # Use curve_fit to fit the model function to the data
-    params, covariance = curve_fit(model_function_loglin, x_values, y_values, p0=initial_guess)
+    params, covariance = curve_fit(model_function_loglin, x_train, y_train, p0=initial_guess)
     
     # Extract the parameters
     a, b, c = params
@@ -116,10 +116,11 @@ def loglinfit(x_values, y_values, initial_guess):
     
     return fitted_y_values, a, b, c
 
-def loglogfit_linear(x_values, y_values):
+def loglogfit_linear(x_train, x_values, y_train):
     # For a log-log scale regression
-    log_x = np.log(x_values)
-    log_y = np.log(y_values)
+    log_x = np.log(x_train)
+    log_x_values = np.log(x_values)
+    log_y = np.log(y_train)
 
     # Set up the design matrix for a linear model
     A = np.vstack([log_x, np.ones(len(log_x))]).T
@@ -129,15 +130,15 @@ def loglogfit_linear(x_values, y_values):
 
     # To plot or use the regression line:
     # Convert back if you're working on a log-log scale
-    predicted_y = np.exp(m * log_x + c)
+    predicted_y = np.exp(m * log_x_values + c)
     return predicted_y, m, c
 
-def loglogfit_regularized(initial_guess, x_values, y_values, lambda_reg=0.01):
+def loglogfit_regularized(initial_guess, x_train, y_train, lambda_reg=0.01):
     ## regularized version
     # Initial guess for parameters
 
     # Perform the minimization
-    result = minimize(lambda params: loss(lambda_reg, x_values, y_values, params), initial_guess)
+    result = minimize(lambda params: loss(lambda_reg, x_train, y_train, params), initial_guess)
 
     # Extract the optimized parameters
     a_opt, b_opt, c_opt = result.x
