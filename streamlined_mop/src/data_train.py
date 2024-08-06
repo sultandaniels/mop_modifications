@@ -165,8 +165,9 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
     #plot the error vs x_values on ax_err on a linear linear scale. Have the curve entries before and after rem be different colors
     ax_err[t][sys].plot(x_values, opt_err, label=plot_label + " t="+str(ts[t]), marker='.')
 
-    #plot a vertical line at x = rem
-    ax_err[t][sys].axvline(x=x_values[rem], color='r', linestyle='--', label="Train-Test Split")
+    if sys == 0 and t == 0:
+        #plot a vertical line at x = rem
+        ax_err[t][sys].axvline(x=x_values[rem], color='r', linestyle='--', label="Train-Test Split")
     return ax_err
 
 
