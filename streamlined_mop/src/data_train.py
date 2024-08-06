@@ -166,7 +166,7 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
     ax_err[t][sys].plot(x_values, opt_err, label=plot_label + " t="+str(ts[t]), marker='.')
 
     #plot a vertical line at x = rem
-    ax_err[t][sys].axvline(x=rem, color='r', linestyle='--', label="Train-Test Split")
+    ax_err[t][sys].axvline(x=x_values[rem], color='r', linestyle='--', label="Train-Test Split")
     return ax_err
 
 
