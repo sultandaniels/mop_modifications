@@ -111,7 +111,7 @@ def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, 
 
     return ax
 
-def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted):
+def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted, err=False):
     
     fig.text(0.5, 0, "The error bars are 3*std.", ha='center', va='bottom', fontsize=12)
     # Adjust layout to make room for the rotated x-axis labels
@@ -122,7 +122,7 @@ def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted):
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
     os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ".png")
+    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ("_fit_err" if err else "") + ".png")
     return None
 
 def save_figure_c(fig, config, kfnorm, olsnorm, yax, xax, subtracted):
@@ -158,7 +158,7 @@ def get_opposite_color(hex_color):
 
     return comp_hex
 
-def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label):
+def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sys):
     #compute the element-wise squared error between y_values and yfit_optc
     log_opt_err = (y_values - fit_y)**2
 
@@ -167,8 +167,8 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label):
     opp_hex_color = get_opposite_color(hex_color)
 
     #plot the error vs x_values on ax_err on a linear linear scale. Have the curve entries before and after rem be different colors
-    ax_err[t].plot(x_values[:rem], log_opt_err[:rem], label=plot_label + " t="+str(ts[t]), marker='.', color=hex_color)
-    ax_err[t].plot(x_values[rem:], log_opt_err[rem:], label=plot_label + " t="+str(ts[t]), marker='.', color=opp_hex_color)
+    ax_err[t][sys].plot(x_values[:rem], log_opt_err[:rem], label=plot_label + " t="+str(ts[t]), marker='.', color=hex_color)
+    ax_err[t][sys].plot(x_values[rem:], log_opt_err[rem:], label=plot_label + " t="+str(ts[t]), marker='.', color=opp_hex_color)
     return ax_err
 
 
@@ -286,7 +286,7 @@ if __name__ == '__main__':
 
         figc, axc = plt.subplots(3, 1, figsize=(10, 20))
 
-        fig_err, ax_err = plt.subplots(3, 1, figsize=(10, 20))
+        fig_err, ax_err = plt.subplots(3, 3, figsize=(10, 20))
 
         figc_an, axc_an = plt.subplots(3, 1, figsize=(10, 20))
 
@@ -365,7 +365,7 @@ if __name__ == '__main__':
                 yfit_optc = model_function_loglin(x_values, a_vals[min_err_lin_idx], b_vals[min_err_lin_idx], c_vals[min_err_lin_idx])
 
                 #plot error
-                ax_err = fit_curves_err(yfit_optc, y_values, x_values, rem, ax_err, "Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]))
+                ax_err = fit_curves_err(yfit_optc, y_values, x_values, rem, ax_err, "Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), t, ts, sys)
 
                 # #analytical
                 # min_c_an = c_vals_an[min_err_lin_idx_an]
@@ -415,12 +415,13 @@ if __name__ == '__main__':
                 # ax2[t][sys].plot(x_values, yfit_optc_an, label="Least Squares Optimal Analytical c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
 
                 ax2[t][sys].legend()
+                ax_err[t][sys].legend()
             
         save_figure(fig, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=True)
         save_figure(fig2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
         save_figure_c(figc, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
 
-        save_figure(fig_err, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False)
+        save_figure(fig_err, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=True)
 
 
         # #analytical
