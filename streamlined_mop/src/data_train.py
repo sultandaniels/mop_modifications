@@ -158,7 +158,7 @@ def get_opposite_color(hex_color):
 
     return comp_hex
 
-def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sys):
+def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sys, past_y_max=0):
     #compute the element-wise squared error between y_values and yfit_optc
     opt_err = (y_values - fit_y)**2
 
@@ -177,14 +177,11 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
     x_values = np.array(x_values)
     opt_err = np.array(opt_err)
     filtered_y = opt_err[(x_values >= lower_x_limit) & (x_values <= upper_x_limit)]
-    # Set the y-axis limits based on the filtered data
-    print("\n\nfiltered_y.min()", filtered_y.min())
-    print("filtered_y.max()", filtered_y.max())
-    print("\n\nopterr min", opt_err.min())
-    print("opterr max", opt_err.max())
-    ax_err[t][sys].set_ylim([filtered_y.min(), filtered_y.max()])
-    ax_err[t][sys].figure.canvas.draw()
-    return ax_err
+    if filtered_y.max() > past_y_max:
+        ax_err[t][sys].set_ylim([0, filtered_y.max()])
+        ax_err[t][sys].figure.canvas.draw()
+        past_y_max = filtered_y.max()
+    return ax_err, filtered_y.max()
 
 
 # main function
@@ -374,7 +371,7 @@ if __name__ == '__main__':
                 ###########################################################################################
 
                 #plot error
-                ax_err = fit_curves_err(yfit_optc, y_values, x_values, rem, ax_err, "Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), t, ts, sys)
+                ax_err, p = fit_curves_err(yfit_optc, y_values, x_values, rem, ax_err, "Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), t, ts, sys)
 
 
                 # #analytical
@@ -390,12 +387,12 @@ if __name__ == '__main__':
                 # Fit a line to the data (line on log-log scale)
                 y_fit_loglog, a_loglog, b_loglog, c_loglog = loglogfit(x_train, x_values, y_train, initial_guess)
 
-                ax_err = fit_curves_err(y_fit_loglog, y_values, x_values, rem, ax_err, "y = e^bx^a + c, c=%g, a=%g, b=%g" % (c_loglog, a_loglog, b_loglog), t, ts, sys)
+                ax_err, p = fit_curves_err(y_fit_loglog, y_values, x_values, rem, ax_err, "y = e^bx^a + c, c=%g, a=%g, b=%g" % (c_loglog, a_loglog, b_loglog), t, ts, sys, past_y_max=p)
 
                 # Fit a line to the data (line on log-linear scale)
                 y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_train, x_values, y_train, initial_guess)
 
-                ax_err = fit_curves_err(y_fit_loglin, y_values, x_values, rem, ax_err, "y = e^be^(ax) + c, c=%g, a=%g, b=%g" % (c_loglin, a_loglin, b_loglin), t, ts, sys)
+                ax_err, p = fit_curves_err(y_fit_loglin, y_values, x_values, rem, ax_err, "y = e^be^(ax) + c, c=%g, a=%g, b=%g" % (c_loglin, a_loglin, b_loglin), t, ts, sys, past_y_max=p)
 
                 # Fit a regularized line to the data
                 # Regularization strength
@@ -411,7 +408,7 @@ if __name__ == '__main__':
                 last_val = y_train[-1]
                 yfit_dumb = np.full(len(x_values), last_val)
                 print("shape of yfit_dumb", yfit_dumb.shape)
-                ax_err = fit_curves_err(yfit_dumb, y_values, x_values, rem, ax_err, "Dumb Predictor", t, ts, sys)
+                ax_err, p = fit_curves_err(yfit_dumb, y_values, x_values, rem, ax_err, "Dumb Predictor", t, ts, sys, past_y_max=p)
 
 
 
