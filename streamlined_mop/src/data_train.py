@@ -420,7 +420,7 @@ if __name__ == '__main__':
 
                 ax2[t][sys].legend()
                 ax_err[t][sys].set_xlim([50000, x_values[-1]])
-                ax_err[t][sys].autoscale(axis='y')
+                ax_err[t][sys].autoscale(enable=True, axis='y')
                 ax_err[t][sys].legend()
             
         save_figure(fig, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=True)

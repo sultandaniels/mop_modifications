@@ -53,16 +53,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run Predictions or not.')
 
     # Add the arguments
-    parser.add_argument('--saved_preds', help='Boolean. Just plot the errors for a previously evaluated checkpoint', action='store_true')
+    parser.add_argument('--val', help='Boolean. only generate validation data', action='store_true')
+    parser.add_argument('--train', help='Boolean. only generate training data', action='store_true')
+
 
     # Parse the arguments
     args = parser.parse_args()
 
     # Now you can use the flag
-    print("saved preds arg", args.saved_preds)
-    saved_preds = args.saved_preds
+    if args.val:
+        only = "val"
+    elif args.train:
+        only = "train"
+    else:
+        only = ""
+
     config = Config()
     model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
                  n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
-    collect_data(model, config, "../outputs/GPT2/240320_014524.c78f58", only="train")
-    collect_data(model, config, "../outputs/GPT2/240320_014524.c78f58", only="val")
+    
+    collect_data(model, config, "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C", only)
