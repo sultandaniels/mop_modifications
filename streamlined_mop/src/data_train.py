@@ -280,15 +280,15 @@ if __name__ == '__main__':
         #plot the error_checkpoints_tuples
         print("\n\nPlotting error_checkpoints_tuples")
         #make a new figure
-        fig, ax = plt.subplots(3, 3, figsize=(30, 20))
+        fig, ax = plt.subplots(len(ts), config.num_val_tasks, figsize=(30, 20))
 
-        fig2, ax2 = plt.subplots(3, 3, figsize=(30, 20))
+        fig2, ax2 = plt.subplots(len(ts), config.num_val_tasks, figsize=(30, 20))
 
-        figc, axc = plt.subplots(3, 1, figsize=(10, 20))
+        figc, axc = plt.subplots(config.num_val_tasks, 1, figsize=(10, 20))
 
-        fig_err, ax_err = plt.subplots(3, 3, figsize=(30, 20))
+        fig_err, ax_err = plt.subplots(len(ts), config.num_val_tasks, figsize=(30, 20))
 
-        figc_an, axc_an = plt.subplots(3, 1, figsize=(10, 20))
+        figc_an, axc_an = plt.subplots(len(ts), config.num_val_tasks, figsize=(30, 20))
 
         # set the axis scaling
         yax = "lin"
@@ -421,6 +421,7 @@ if __name__ == '__main__':
                 ax2[t][sys].legend()
                 ax_err[t][sys].set_xlim([50000, x_values[-1]])
                 ax_err[t][sys].autoscale(enable=True, axis='y')
+                ax_err[t][sys].tight_layout()
                 ax_err[t][sys].legend()
             
         save_figure(fig, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=True)
