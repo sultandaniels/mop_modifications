@@ -96,7 +96,6 @@ def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, 
     ax[t][sys].tick_params(axis='x', labelsize=10)  # Adjust label size to 10 or any suitable size
 
     x_label_values = [int(x[0]) for x in error_checkpoints_tuples]
-    print("len of x_label_values", len(x_label_values))
     ax[t][sys].set_xticklabels(x_label_values, rotation=45, fontsize=10)  # Rotate labels for better fit
 
     if yax == "log":
@@ -411,7 +410,7 @@ if __name__ == '__main__':
                 #dumb predictor
                 last_val = y_train[-1]
                 yfit_dumb = np.full(len(x_values), last_val)
-                print("shape of yfit_dumb", yfit_dumb.shape)
+                print("\npast y max before dumb predictor", p)
                 ax_err, p = fit_curves_err(yfit_dumb, y_values, x_values, rem, ax_err, "Dumb Predictor", t, ts, sys, past_y_max=p)
 
 
