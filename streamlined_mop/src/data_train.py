@@ -430,7 +430,6 @@ if __name__ == '__main__':
                 # ax2[t][sys].plot(x_values, yfit_optc_an, label="Least Squares Optimal Analytical c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
 
                 ax2[t][sys].legend()
-                ax_err[t][sys].tight_layout()
                 ax_err[t][sys].legend()
                 fig_err.tight_layout()
             
