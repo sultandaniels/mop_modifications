@@ -182,7 +182,7 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
     print("filtered_y.max()", filtered_y.max())
     print("\n\nopterr min", opt_err.min())
     print("opterr max", opt_err.max())
-    ax_err[t][sys].set_ylim(filtered_y.min(), filtered_y.max())
+    ax_err[t][sys].set_ylim([filtered_y.min(), filtered_y.max()])
     ax_err[t][sys].autoscale(enable=True, axis='y')
     return ax_err
 
