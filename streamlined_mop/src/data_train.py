@@ -169,6 +169,15 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
     if "Least Squares Optimal c" in plot_label:
         #plot a vertical line at x = rem
         ax_err[t][sys].axvline(x=x_values[rem], color='r', linestyle='--', label="Train-Test Split")
+
+    lower_x_limit = 50000
+    upper_x_limit = x_values[-1]
+    ax_err[t][sys].set_xlim([lower_x_limit, upper_x_limit])
+    # Filter the data based on the new x-axis limits
+    filtered_y = opt_err[(x_values >= lower_x_limit) & (x_values <= upper_x_limit)]
+    # Set the y-axis limits based on the filtered data
+    ax.set_ylim(filtered_y.min(), filtered_y.max())
+    ax_err[t][sys].autoscale(enable=True, axis='y')
     return ax_err
 
 
@@ -419,8 +428,6 @@ if __name__ == '__main__':
                 # ax2[t][sys].plot(x_values, yfit_optc_an, label="Least Squares Optimal Analytical c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')
 
                 ax2[t][sys].legend()
-                ax_err[t][sys].set_xlim([50000, x_values[-1]])
-                ax_err[t][sys].autoscale(enable=True, axis='y')
                 ax_err[t][sys].tight_layout()
                 ax_err[t][sys].legend()
                 fig_err.tight_layout()
