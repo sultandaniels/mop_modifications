@@ -98,8 +98,6 @@ def loglogfit(x_train, x_values, y_train, initial_guess):
     
     # Generate y-values based on the fitted model
     fitted_y_values = model_function(x_values, a, b, c)
-
-    print("Fitted parameters: a=%g, b=%g, c=%g" % (a, b, c))
     
     return fitted_y_values, a, b, c
 
@@ -134,7 +132,6 @@ def loglogfit_linear(x_train, x_values, y_train):
     return predicted_y, m, c
 
 def loglogfit_regularized(initial_guess, x_train, y_train, lambda_reg=0.01):
-    print("len(y_train):", len(y_train))
     ## regularized version
     # Initial guess for parameters
 

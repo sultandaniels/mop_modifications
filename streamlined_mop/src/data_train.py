@@ -181,6 +181,10 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
         ax_err[t][sys].set_ylim([0, filtered_y.max()])
         ax_err[t][sys].figure.canvas.draw()
         past_y_max = filtered_y.max()
+
+    if t == 0 and sys == 0:
+        print("\n\nplot_label", plot_label)
+        print("past_y_max", past_y_max)
     return ax_err, filtered_y.max()
 
 
