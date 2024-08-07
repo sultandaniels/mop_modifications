@@ -392,6 +392,14 @@ if __name__ == '__main__':
 
                 # ax_err = fit_curves_err(fitted_y_values_opt, y_values, x_values, rem, ax_err, "Regularized Fit y = e^bx^a, c=%g, a=%g, b=%g" % (c_opt, a_opt, b_opt), t, ts, sys)
 
+                #dumb predictor
+                last_val = y_train[-1]
+                yfit_dumb = np.full(len(x_values), last_val)
+                print("shape of yfit_dumb", yfit_dumb.shape)
+                ax_err = fit_curves_err(yfit_dumb, y_values, x_values, rem, ax_err, "Dumb Predictor", t, ts, sys)
+
+
+
                 subtract = c_loglog #c_vals[min_err_lin_idx]
 
                 ax = plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
