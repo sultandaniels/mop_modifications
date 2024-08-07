@@ -423,6 +423,7 @@ if __name__ == '__main__':
                 ax_err[t][sys].autoscale(enable=True, axis='y')
                 ax_err[t][sys].tight_layout()
                 ax_err[t][sys].legend()
+                fig_err.tight_layout()
             
         save_figure(fig, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=True)
         save_figure(fig2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
