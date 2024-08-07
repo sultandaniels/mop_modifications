@@ -13,7 +13,6 @@ def collect_data(model, config, output_dir, only=""):
 
     logger = logging.getLogger(__name__)
     # config = Config()
-    config.parse_args()
     print("Collecting data for", config.dataset_typ, config.C_dist)
 
 
@@ -50,7 +49,7 @@ def collect_data(model, config, output_dir, only=""):
 if __name__ == "__main__":
 
     # Create the parser
-    parser = argparse.ArgumentParser(description='Run Predictions or not.')
+    parser = argparse.ArgumentParser(description='What data to collect.')
 
     # Add the arguments
     parser.add_argument('--val', help='Boolean. only generate validation data', action='store_true')
@@ -59,6 +58,8 @@ if __name__ == "__main__":
 
     # Parse the arguments
     args = parser.parse_args()
+    print("only val:", args.val)
+    print("only train:", args.train)
 
     # Now you can use the flag
     if args.val:
