@@ -184,7 +184,7 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
     if t == 0 and sys == 0:
         print("\n\nplot_label", plot_label)
         print("past_y_max", past_y_max)
-    return ax_err, filtered_y.max()
+    return ax_err, past_y_max
 
 
 # main function
