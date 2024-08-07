@@ -174,6 +174,8 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
     upper_x_limit = x_values[-1]
     ax_err[t][sys].set_xlim([lower_x_limit, upper_x_limit])
     # Filter the data based on the new x-axis limits
+    x_values = np.array(x_values)
+    opt_err = np.array(opt_err)
     filtered_y = opt_err[(x_values >= lower_x_limit) & (x_values <= upper_x_limit)]
     # Set the y-axis limits based on the filtered data
     ax.set_ylim(filtered_y.min(), filtered_y.max())
