@@ -274,7 +274,7 @@ if __name__ == '__main__':
 
         #for loop to iterate through all the checkpoints in the output directory
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
-        fig, axs = plt.subplots(1, 3, figsize=(40, 20))  # 1 row, 3 columns, with a figure size of 15x5 inches
+        fig, axs = plt.subplots(1, config.num_val_tasks, figsize=(40, 20))  # 1 row, val_tasks columns, with a figure size of 15x5 inches
         filecount = 0
 
         sys_error_checkpoints_tuples = []
