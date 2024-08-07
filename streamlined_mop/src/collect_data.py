@@ -6,9 +6,10 @@ import pickle
 import os
 import numpy as np
 from models import GPT2
+import argparse
 
 #modify collect data so that it can tolerate multiple traces for one system
-def collect_data(model, config, output_dir):
+def collect_data(model, config, output_dir, only=""):
 
     logger = logging.getLogger(__name__)
     # config = Config()
@@ -21,6 +22,8 @@ def collect_data(model, config, output_dir):
     #              n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
 
     for name, num_tasks in zip(["train", "val"], [config.num_tasks, config.num_val_tasks]):
+        if only and name != only: #if only is specified, skip the other dataset
+            continue
         samples = [] #make sure that train and val samples are different
         sim_objs = [] #make sure that train and val sim_objs are different
         print("Generating", num_tasks, "samples for", name)
@@ -43,3 +46,23 @@ def collect_data(model, config, output_dir):
         #save fsim to pickle file
         with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "wb") as f:
             pickle.dump(sim_objs, f)
+
+if __name__ == "__main__":
+
+    # Create the parser
+    parser = argparse.ArgumentParser(description='Run Predictions or not.')
+
+    # Add the arguments
+    parser.add_argument('--saved_preds', help='Boolean. Just plot the errors for a previously evaluated checkpoint', action='store_true')
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Now you can use the flag
+    print("saved preds arg", args.saved_preds)
+    saved_preds = args.saved_preds
+    config = Config()
+    model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
+                 n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
+    collect_data(model, config, "../outputs/GPT2/240320_014524.c78f58", only="train")
+    collect_data(model, config, "../outputs/GPT2/240320_014524.c78f58", only="val")
