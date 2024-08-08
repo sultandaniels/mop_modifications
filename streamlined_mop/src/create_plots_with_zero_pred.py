@@ -697,6 +697,7 @@ def compute_errors_conv(config, C_dist, run_deg_kf_test, wentinn_data):
     ])
     print("err_lss keys:", err_lss.keys())
 
+    print("len of sim_objs:", len(sim_objs))
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error
 
