@@ -181,9 +181,6 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
         ax_err[t][sys].figure.canvas.draw()
         past_y_max = filtered_y.max()
 
-    if t == 0 and sys == 0:
-        print("\n\nplot_label", plot_label)
-        print("past_y_max", past_y_max)
     return ax_err, past_y_max
 
 
@@ -275,7 +272,7 @@ if __name__ == '__main__':
 
         #for loop to iterate through all the checkpoints in the output directory
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
-        fig, axs = plt.subplots(1, config.num_val_tasks, figsize=(40, 20))  # 1 row, val_tasks columns, with a figure size of 15x5 inches
+        fig, axs = plt.subplots(1, config.num_val_tasks, figsize=(100, 20))  # 1 row, val_tasks columns, with a figure size of 100x20 inches
         filecount = 0
 
         sys_error_checkpoints_tuples = []
@@ -302,7 +299,7 @@ if __name__ == '__main__':
 
         figc, axc = plt.subplots(config.num_val_tasks, 1, figsize=(10, 20))
 
-        fig_err, ax_err = plt.subplots(len(ts), config.num_val_tasks, figsize=(30, 20))
+        fig_err, ax_err = plt.subplots(len(ts), config.num_val_tasks, figsize=(80, 30))
 
         figc_an, axc_an = plt.subplots(len(ts), config.num_val_tasks, figsize=(30, 20))
 
@@ -411,7 +408,6 @@ if __name__ == '__main__':
                 #dumb predictor
                 last_val = y_train[-1]
                 yfit_dumb = np.full(len(x_values), last_val)
-                print("\npast y max before dumb predictor", p)
                 ax_err, p = fit_curves_err(yfit_dumb, y_values, x_values, rem, ax_err, "Dumb Predictor", t, ts, sys, past_y_max=p)
 
 
