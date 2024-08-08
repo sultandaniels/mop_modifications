@@ -170,6 +170,14 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
         #plot a vertical line at x = rem
         ax_err[t][sys].axvline(x=x_values[rem], color='r', linestyle='--', label="Train-Test Split")
 
+    #set x and y labels
+    ax_err[t][sys].set_xlabel("Checkpoint Step")
+    ax_err[t][sys].set_ylabel("Squared Error")
+
+    #set the title
+    ax_err[t][sys].set_title("System " + str(sys) + ": t = " + str(ts[t]))
+
+    #set the x-axis limits
     lower_x_limit = 50000
     upper_x_limit = x_values[-1]
     ax_err[t][sys].set_xlim([lower_x_limit, upper_x_limit])
@@ -298,7 +306,7 @@ if __name__ == '__main__':
 
             #create the train_conv directory
             os.makedirs(output_dir + "/train_conv", exist_ok=True)
-            
+
             #save sys_error_checkpoints_tuples to a pickle file
             with open(output_dir + "/train_conv/sys_error_checkpoints_tuples.pkl", "wb") as f:
                 pickle.dump(sys_error_checkpoints_tuples, f)
