@@ -13,6 +13,7 @@ import numpy as np
 from log_log_fit import loglogfit, loglinfit, loss, model_function, model_function_loglin, loglogfit_regularized, closed_form_loglin, plot_closed_form_loglin_err
 from scipy.optimize import curve_fit, minimize
 import sympy as sp
+import pickle
 
 def wandb_train(config_dict, model, output_dir):
     # add ckpt_path to config_dict
@@ -198,6 +199,7 @@ if __name__ == '__main__':
     parser.add_argument('--train_conv', help='Boolean. make predictions for all checkpoints', action='store_true')
     parser.add_argument('--kfnorm', help='Boolean. subtract kalman performance from error', action='store_true')
     parser.add_argument('--olsnorm', help='Boolean. subtract kalman performance from error', action='store_true')
+    parser.add_argument('--t_conv_plot', help='Boolean. plot the convergence plots with t as the indep. var.', action='store_true')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -215,6 +217,8 @@ if __name__ == '__main__':
     kfnorm = args.kfnorm
     print("olsnorm arg", args.olsnorm)
     olsnorm = args.olsnorm
+    print("t_conv_plot arg", args.t_conv_plot)
+    t_conv_plot = args.t_conv_plot
 
 
     config = Config() # create a config object
@@ -272,23 +276,40 @@ if __name__ == '__main__':
 
         #for loop to iterate through all the checkpoints in the output directory
         output_dir = "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C"
-        fig, axs = plt.subplots(1, config.num_val_tasks, figsize=(100, 20))  # 1 row, val_tasks columns, with a figure size of 100x20 inches
+        fig, axs = plt.subplots(1, config.num_val_tasks, figsize=(200, 20))  # 1 row, val_tasks columns, with a figure size of 100x20 inches
         filecount = 0
 
-        sys_error_checkpoints_tuples = []
-        sys_error_an_checkpoints_tuples = []
-        ts = [50, 100, 200]
-        for filename in os.listdir(output_dir + "/checkpoints/"):
-            filecount += 1
-            print("filecount:", filecount)
-            config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
-            print("\n\n\nckpt_path", config.ckpt_path)
-            step_avg_tup, step_avg_an_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts, kal_errors) #create the convergence plots and return the step and average error tuple
+        if make_preds or t_conv_plot:
+            sys_error_checkpoints_tuples = []
+            sys_error_an_checkpoints_tuples = []
+            ts = [50, 100, 200]
+            for filename in os.listdir(output_dir + "/checkpoints/"):
+                filecount += 1
+                print("filecount:", filecount)
+                config.override("ckpt_path", output_dir + "/checkpoints/" + filename)
+                print("\n\n\nckpt_path", config.ckpt_path)
+                step_avg_tup, step_avg_an_tup = convergence_plots(filecount, config, run_preds, run_deg_kf_test, kfnorm, config.num_val_tasks, shade, fig, axs, ts, kal_errors) #create the convergence plots and return the step and average error tuple
 
-            # print("step_avg_tup[1]", step_avg_tup[1])
-            sys_error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
+                # print("step_avg_tup[1]", step_avg_tup[1])
+                sys_error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
 
-            sys_error_an_checkpoints_tuples.append(step_avg_an_tup) #append the tuple to the list of tuples
+                sys_error_an_checkpoints_tuples.append(step_avg_an_tup) #append the tuple to the list of tuples
+
+            #save sys_error_checkpoints_tuples to a pickle file
+            with open(output_dir + "/train_conv/sys_error_checkpoints_tuples.pkl", "wb") as f:
+                pickle.dump(sys_error_checkpoints_tuples, f)
+
+            #save sys_error_an_checkpoints_tuples to a pickle file
+            with open(output_dir + "/train_conv/sys_error_an_checkpoints_tuples.pkl", "wb") as f:
+                pickle.dump(sys_error_an_checkpoints_tuples, f)
+        else:
+            #load sys_error_checkpoints_tuples from a pickle file
+            with open(output_dir + "/train_conv/sys_error_checkpoints_tuples.pkl", "rb") as f:
+                sys_error_checkpoints_tuples = pickle.load(f)
+
+            #load sys_error_an_checkpoints_tuples from a pickle file
+            with open(output_dir + "/train_conv/sys_error_an_checkpoints_tuples.pkl", "rb") as f:
+                sys_error_an_checkpoints_tuples = pickle.load(f)
 
         #plot the error_checkpoints_tuples
         print("\n\nPlotting error_checkpoints_tuples")
@@ -299,7 +320,7 @@ if __name__ == '__main__':
 
         figc, axc = plt.subplots(config.num_val_tasks, 1, figsize=(10, 20))
 
-        fig_err, ax_err = plt.subplots(len(ts), config.num_val_tasks, figsize=(80, 30))
+        fig_err, ax_err = plt.subplots(len(ts), config.num_val_tasks, figsize=(300, 30))
 
         figc_an, axc_an = plt.subplots(len(ts), config.num_val_tasks, figsize=(30, 20))
 
