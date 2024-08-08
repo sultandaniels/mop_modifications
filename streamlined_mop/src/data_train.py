@@ -295,6 +295,10 @@ if __name__ == '__main__':
 
                 sys_error_an_checkpoints_tuples.append(step_avg_an_tup) #append the tuple to the list of tuples
 
+
+            #create the train_conv directory
+            os.makedirs(output_dir + "/train_conv", exist_ok=True)
+            
             #save sys_error_checkpoints_tuples to a pickle file
             with open(output_dir + "/train_conv/sys_error_checkpoints_tuples.pkl", "wb") as f:
                 pickle.dump(sys_error_checkpoints_tuples, f)
