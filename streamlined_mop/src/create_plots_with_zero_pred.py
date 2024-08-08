@@ -699,6 +699,7 @@ def compute_errors_conv(config, C_dist, run_deg_kf_test, wentinn_data):
 
     print("len of sim_objs:", len(sim_objs))
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
+    print("len of irreducible_error:", len(irreducible_error))
     return err_lss, irreducible_error
 
 
@@ -742,6 +743,7 @@ def save_preds_conv_helper(save_dir, run_deg_kf_test, config):
     err_lss, irreducible_error = compute_errors_conv(config, config.C_dist, run_deg_kf_test,
                                                         wentinn_data=False)  # , emb_dim)
 
+    print("helper len of irreducible_error:", len(irreducible_error))
     # save err_lss and irreducible_error to a file
     with open(
             save_dir + f"/{config.dataset_typ}_err_lss.pkl",

@@ -266,6 +266,7 @@ if __name__ == '__main__':
         num_systems = config.num_val_tasks
         config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=40000.ckpt")
         err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
+        print("len of irreducible_error_load", len(irreducible_error_load))
 
         if kfnorm:
             kal_errors = np.mean(err_lss_load["Kalman"], axis=1)
