@@ -344,7 +344,7 @@ if __name__ == '__main__':
 
         figc_an, axc_an = plt.subplots(len(ts), config.num_val_tasks, figsize=(30, 20))
 
-        fig_err_rats, ax_err_rats = plt.subplots(len(ts), 1, figsize=(20, 50))
+        fig_err_rats, ax_err_rats = plt.subplots(len(ts), 1, figsize=(20, 40))
 
         # set the axis scaling
         yax = "lin"
@@ -506,11 +506,11 @@ if __name__ == '__main__':
 
         for t in range(len(ts)):
             #plot the error ratios
-            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["lstsq"])), err_dict_list[t]["lstsq"], label="Least Squares")
-            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglog"])), err_dict_list[t]["loglog"], label="Log-Log")
-            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglin"])), err_dict_list[t]["loglin"], label="Log-Lin")
-            # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglogreg"])), err_dict_list[t]["loglogreg"], label="Log-Log Regularized")
-            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["dumb"])), err_dict_list[t]["dumb"], label="Dumb")
+            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["lstsq"])), err_dict_list[t]["lstsq"], label="Least Squares", LineWidth=2, marker='.')
+            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglog"])), err_dict_list[t]["loglog"], label="Log-Log", LineWidth=2, marker='.')
+            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglin"])), err_dict_list[t]["loglin"], label="Log-Lin", LineWidth=2, marker='.')
+            # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglogreg"])), err_dict_list[t]["loglogreg"], label="Log-Log Regularized", LineWidth=2, marker='.')
+            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["dumb"])), err_dict_list[t]["dumb"], label="Dumb", LineWidth=2, marker='.')
             ax_err_rats[t].set_title("Ratio of MSE over Dummy MSE: t = " + str(ts[t]))
             ax_err_rats[t].set_xlabel("System")
             ax_err_rats[t].set_ylabel("MSE Ratio")
