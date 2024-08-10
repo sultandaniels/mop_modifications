@@ -111,7 +111,7 @@ def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, 
 
     return ax
 
-def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted, err=False):
+def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted, err=False, ratios=False):
     
     fig.text(0.5, 0, "The error bars are 3*std.", ha='center', va='bottom', fontsize=12)
     # Adjust layout to make room for the rotated x-axis labels
@@ -122,7 +122,7 @@ def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted, err=False):
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
     os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ("_fit_err" if err else "") + ".png")
+    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ("_fit_err" if err else "")+ ("_dummy_ratios" if ratios else "") + ".png")
     return None
 
 def save_figure_c(fig, config, kfnorm, olsnorm, yax, xax, subtracted):
@@ -162,6 +162,9 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
     #compute the element-wise squared error between y_values and yfit_optc
     opt_err = (y_values - fit_y)**2
 
+    #compute the mean value of opt_err after the index rem
+    mean_opt_err = np.mean(opt_err[rem:])
+
     #plot the error vs x_values on ax_err on a linear linear scale. Have the curve entries before and after rem be different colors
     ax_err[t][sys].plot(x_values, opt_err, label=plot_label + " t="+str(ts[t]), marker='.')
 
@@ -190,8 +193,12 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
         ax_err[t][sys].figure.canvas.draw()
         past_y_max = filtered_y.max()
 
-    return ax_err, past_y_max
+    return ax_err, past_y_max, mean_opt_err
 
+def initialize_err_list(ts):
+    # create a list of dictionaries to store the errors for each value of t
+    err_dict_list = [{"lstsq": [], "loglog": [], "loglin": [], "loglogreg": [], "dumb": []} for t in range(len(ts))]
+    return err_dict_list
 
 # main function
 
@@ -337,9 +344,16 @@ if __name__ == '__main__':
 
         figc_an, axc_an = plt.subplots(len(ts), config.num_val_tasks, figsize=(30, 20))
 
+        fig_err_rats, ax_err_rats = plt.subplots(len(ts), 1, figsize=(20, 50))
+
         # set the axis scaling
         yax = "lin"
         xax = "lin"
+
+        #initialize the error dictionary list
+        err_dict_list = initialize_err_list(ts)
+
+
 
         for sys in range(config.num_val_tasks):
             # Filter bairand transform sys_error_checkpoints_tuples for the current system sys
@@ -354,6 +368,7 @@ if __name__ == '__main__':
         
             #make a plot for each value of t in ts for each system
             for t in range(len(ts)):
+                #create an error dictionary with the key being the name of the fit and the value being an empty list
 
                 # Ensure that the indices are valid before accessing them
                 try:
@@ -406,8 +421,7 @@ if __name__ == '__main__':
                 ###########################################################################################
 
                 #plot error
-                ax_err, p = fit_curves_err(yfit_optc, y_values, x_values, rem, ax_err, "Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), t, ts, sys)
-
+                ax_err, p, lstsq_mean_err = fit_curves_err(yfit_optc, y_values, x_values, rem, ax_err, "Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), t, ts, sys)
 
                 # #analytical
                 # min_c_an = c_vals_an[min_err_lin_idx_an]
@@ -422,12 +436,14 @@ if __name__ == '__main__':
                 # Fit a line to the data (line on log-log scale)
                 y_fit_loglog, a_loglog, b_loglog, c_loglog = loglogfit(x_train, x_values, y_train, initial_guess)
 
-                ax_err, p = fit_curves_err(y_fit_loglog, y_values, x_values, rem, ax_err, "y = e^bx^a + c, c=%g, a=%g, b=%g" % (c_loglog, a_loglog, b_loglog), t, ts, sys, past_y_max=p)
+                ax_err, p, loglog_mean_err = fit_curves_err(y_fit_loglog, y_values, x_values, rem, ax_err, "y = e^bx^a + c, c=%g, a=%g, b=%g" % (c_loglog, a_loglog, b_loglog), t, ts, sys, past_y_max=p)
+                
+
 
                 # Fit a line to the data (line on log-linear scale)
                 y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_train, x_values, y_train, initial_guess)
 
-                ax_err, p = fit_curves_err(y_fit_loglin, y_values, x_values, rem, ax_err, "y = e^be^(ax) + c, c=%g, a=%g, b=%g" % (c_loglin, a_loglin, b_loglin), t, ts, sys, past_y_max=p)
+                ax_err, p, loglin_mean_err = fit_curves_err(y_fit_loglin, y_values, x_values, rem, ax_err, "y = e^be^(ax) + c, c=%g, a=%g, b=%g" % (c_loglin, a_loglin, b_loglin), t, ts, sys, past_y_max=p)
 
                 # Fit a regularized line to the data
                 # Regularization strength
@@ -437,14 +453,34 @@ if __name__ == '__main__':
                 # Generate y-values based on the optimized model
                 fitted_y_values_opt = model_function(x_values, a_opt, b_opt, c_opt)
 
-                # ax_err = fit_curves_err(fitted_y_values_opt, y_values, x_values, rem, ax_err, "Regularized Fit y = e^bx^a, c=%g, a=%g, b=%g" % (c_opt, a_opt, b_opt), t, ts, sys)
+                # ax_err, p, loglogreg_mean_err = fit_curves_err(fitted_y_values_opt, y_values, x_values, rem, ax_err, "Regularized Fit y = e^bx^a, c=%g, a=%g, b=%g" % (c_opt, a_opt, b_opt), t, ts, sys)
 
                 #dumb predictor
                 last_val = y_train[-1]
                 yfit_dumb = np.full(len(x_values), last_val)
-                ax_err, p = fit_curves_err(yfit_dumb, y_values, x_values, rem, ax_err, "Dumb Predictor", t, ts, sys, past_y_max=p)
+                ax_err, p, dumb_mean_err = fit_curves_err(yfit_dumb, y_values, x_values, rem, ax_err, "Dumb Predictor", t, ts, sys, past_y_max=p)
 
+                #divide the mean errors by the dumb mean error
+                lstsq_mean_err = lstsq_mean_err/dumb_mean_err
+                loglog_mean_err = loglog_mean_err/dumb_mean_err
+                loglin_mean_err = loglin_mean_err/dumb_mean_err
+                # loglogreg_mean_err = loglogreg_mean_err/dumb_mean_err
+                dumb_mean_err = dumb_mean_err/dumb_mean_err
 
+                # add lstsq_mean_err to the err_dict_list
+                err_dict_list[t]["lstsq"].append(lstsq_mean_err)
+
+                # add loglog_mean_err to the err_dict_list
+                err_dict_list[t]["loglog"].append(loglog_mean_err)
+
+                # add loglin_mean_err to the err_dict_list
+                err_dict_list[t]["loglin"].append(loglin_mean_err)
+
+                # # add loglogreg_mean_err to the err_dict_list
+                # err_dict_list[t]["loglogreg"].append(loglogreg_mean_err)
+
+                # add dumb_mean_err to err_dict_list
+                err_dict_list[t]["dumb"].append(dumb_mean_err)
 
                 subtract = c_loglog #c_vals[min_err_lin_idx]
 
@@ -467,12 +503,26 @@ if __name__ == '__main__':
                 ax2[t][sys].legend()
                 ax_err[t][sys].legend()
                 fig_err.tight_layout()
+
+        for t in range(len(ts)):
+            #plot the error ratios
+            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["lstsq"])), err_dict_list[t]["lstsq"], label="Least Squares")
+            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglog"])), err_dict_list[t]["loglog"], label="Log-Log")
+            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglin"])), err_dict_list[t]["loglin"], label="Log-Lin")
+            # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglogreg"])), err_dict_list[t]["loglogreg"], label="Log-Log Regularized")
+            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["dumb"])), err_dict_list[t]["dumb"], label="Dumb")
+            ax_err_rats[t].set_title("Ratio of MSE over Dummy MSE: t = " + str(ts[t]))
+            ax_err_rats[t].set_xlabel("System")
+            ax_err_rats[t].set_ylabel("MSE Ratio")
+            ax_err_rats[t].legend()
             
         save_figure(fig, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=True)
         save_figure(fig2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
         save_figure_c(figc, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
 
+
         save_figure(fig_err, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=True)
+        save_figure(fig_err_rats, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=False, ratios=True)
 
 
         # #analytical
