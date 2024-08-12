@@ -438,8 +438,6 @@ if __name__ == '__main__':
 
                 ax_err, p, loglog_mean_err = fit_curves_err(y_fit_loglog, y_values, x_values, rem, ax_err, "y = e^bx^a + c, c=%g, a=%g, b=%g" % (c_loglog, a_loglog, b_loglog), t, ts, sys, past_y_max=p)
                 
-
-
                 # Fit a line to the data (line on log-linear scale)
                 y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_train, x_values, y_train, initial_guess)
 
@@ -505,12 +503,38 @@ if __name__ == '__main__':
                 fig_err.tight_layout()
 
         for t in range(len(ts)):
+            if t == 0:
+                #get indices of the sorted list 
+                indices = np.argsort(err_dict_list[t]["loglin"])
+                print("indices", indices)
+                print("err_dict_list[t][loglin]", err_dict_list[t]["loglin"])
+
+            
+            #sort err_dict_list[t]["loglin"] by the indices and name it sorted_loglin
+            sorted_loglin = np.array(err_dict_list[t]["loglin"])[indices]
+            #sort err_dict_list[t]["loglog"] by the indices and name it sorted_loglog
+            sorted_loglog = np.array(err_dict_list[t]["loglog"])[indices]
+            #sort err_dict_list[t]["lstsq"] by the indices and name it sorted_lstsq
+            sorted_lstsq = np.array(err_dict_list[t]["lstsq"])[indices]
+            #sort err_dict_list[t]["dumb"] by the indices and name it sorted_dumb
+            sorted_dumb = np.array(err_dict_list[t]["dumb"])[indices]
+            #sort err_dict_list[t]["loglogreg"] by the indices and name it sorted_loglogreg
+            # sorted_loglogreg = np.array(err_dict_list[t]["loglogreg"])[indices]
+
             #plot the error ratios
-            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["lstsq"])), err_dict_list[t]["lstsq"], label="Least Squares", linewidth=2, marker='.')
-            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglog"])), err_dict_list[t]["loglog"], label="Log-Log", linewidth=2, marker='.')
-            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglin"])), err_dict_list[t]["loglin"], label="Log-Lin", linewidth=2, marker='.')
-            # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglogreg"])), err_dict_list[t]["loglogreg"], label="Log-Log Regularized", linewidth=2, marker='.')
-            ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["dumb"])), err_dict_list[t]["dumb"], label="Dumb", linewidth=2, marker='.')
+            ax_err_rats[t].plot(np.arange(len(sorted_lstsq)), sorted_lstsq, label="Least Squares", linewidth=2, marker='.')
+            ax_err_rats[t].plot(np.arange(len(sorted_loglog)), sorted_loglog, label="Log-Log", linewidth=2, marker='.')
+            ax_err_rats[t].plot(np.arange(len(sorted_loglin)), sorted_loglin, label="Log-Lin", linewidth=2, marker='.')
+            # ax_err_rats[t].plot(np.arange(len(sorted_loglogreg)), sorted_loglogreg, label="Log-Log Regularized", linewidth=2, marker='.')
+            ax_err_rats[t].plot(np.arange(len(sorted_dumb)), sorted_dumb, label="Dumb", linewidth=2, marker='.')
+
+            #unsorted
+            # #plot the error ratios
+            # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["lstsq"])), err_dict_list[t]["lstsq"], label="Least Squares", linewidth=2, marker='.')
+            # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglog"])), err_dict_list[t]["loglog"], label="Log-Log", linewidth=2, marker='.')
+            # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglin"])), err_dict_list[t]["loglin"], label="Log-Lin", linewidth=2, marker='.')
+            # # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglogreg"])), err_dict_list[t]["loglogreg"], label="Log-Log Regularized", linewidth=2, marker='.')
+            # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["dumb"])), err_dict_list[t]["dumb"], label="Dumb", linewidth=2, marker='.')
             ax_err_rats[t].set_title("Ratio of MSE over Dummy MSE: t = " + str(ts[t]))
             ax_err_rats[t].set_xlabel("System")
             ax_err_rats[t].set_ylabel("MSE Ratio")
@@ -520,10 +544,8 @@ if __name__ == '__main__':
         save_figure(fig2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
         save_figure_c(figc, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
 
-
         save_figure(fig_err, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=True)
         save_figure(fig_err_rats, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=False, ratios=True)
-
 
         # #analytical
         # save_figure_c(figc_an, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
