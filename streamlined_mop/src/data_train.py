@@ -14,6 +14,7 @@ from log_log_fit import loglogfit, loglinfit, loss, model_function, model_functi
 from scipy.optimize import curve_fit, minimize
 import sympy as sp
 import pickle
+from check_ecdf import get_empirical_cdf
 
 def wandb_train(config_dict, model, output_dir):
     # add ckpt_path to config_dict
@@ -111,7 +112,7 @@ def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, 
 
     return ax
 
-def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted, err=False, ratios=False):
+def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted, err=False, ratios=False, cdf=False):
     
     fig.text(0.5, 0, "The error bars are 3*std.", ha='center', va='bottom', fontsize=12)
     # Adjust layout to make room for the rotated x-axis labels
@@ -122,7 +123,7 @@ def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted, err=False, r
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
     os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ("_fit_err" if err else "")+ ("_dummy_ratios" if ratios else "") + ".png")
+    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ("_fit_err" if err else "")+ ("_dummy_ratios" if ratios else "") + ("_cdf" if cdf else "") + ".png")
     return None
 
 def save_figure_c(fig, config, kfnorm, olsnorm, yax, xax, subtracted):
@@ -158,12 +159,14 @@ def get_opposite_color(hex_color):
 
     return comp_hex
 
-def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sys, past_y_max=0):
+def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sys, eval_start=24, past_y_max=0):
     #compute the element-wise squared error between y_values and yfit_optc
     opt_err = (y_values - fit_y)**2
 
+    if eval_start != rem:
+        raise ValueError("eval_start not to rem which is: ", rem)
     #compute the mean value of opt_err after the index rem
-    mean_opt_err = np.mean(opt_err[rem:])
+    mean_opt_err = np.mean(opt_err[eval_start:])
 
     #plot the error vs x_values on ax_err on a linear linear scale. Have the curve entries before and after rem be different colors
     ax_err[t][sys].plot(x_values, opt_err, label=plot_label + " t="+str(ts[t]), marker='.')
@@ -345,6 +348,8 @@ if __name__ == '__main__':
         figc_an, axc_an = plt.subplots(len(ts), config.num_val_tasks, figsize=(30, 20))
 
         fig_err_rats, ax_err_rats = plt.subplots(len(ts), 1, figsize=(20, 40))
+
+        fig_err_rats_cdf, ax_err_rats_cdf = plt.subplots(len(ts), 1, figsize=(20, 40))
 
         # set the axis scaling
         yax = "lin"
@@ -528,6 +533,24 @@ if __name__ == '__main__':
             # ax_err_rats[t].plot(np.arange(len(sorted_loglogreg)), sorted_loglogreg, label="Log-Log Regularized", linewidth=2, marker='.')
             ax_err_rats[t].plot(np.arange(len(sorted_dumb)), sorted_dumb, label="Dumb", linewidth=2, marker='.')
 
+            #plot cdf of the error ratios
+            ecdf_loglin = get_empirical_cdf(err_dict_list[t]["loglin"])
+            ecdf_loglog = get_empirical_cdf(err_dict_list[t]["loglog"])
+            ecdf_lstsq = get_empirical_cdf(err_dict_list[t]["lstsq"])
+            ecdf_dumb = get_empirical_cdf(err_dict_list[t]["dumb"])
+            # ecdf_loglogreg = get_empirical_cdf(err_dict_list[t]["loglogreg"])
+
+            ax_err_rats_cdf[t].step(ecdf_loglin.x, ecdf_loglin.y, label="Log-Lin", linewidth=2)
+            ax_err_rats_cdf[t].step(ecdf_loglog.x, ecdf_loglog.y, label="Log-Log", linewidth=2)
+            ax_err_rats_cdf[t].step(ecdf_lstsq.x, ecdf_lstsq.y, label="Least Squares", linewidth=2)
+            ax_err_rats_cdf[t].step(ecdf_dumb.x, ecdf_dumb.y, label="Dumb", linewidth=2)
+            # ax_err_rats_cdf[t].step(ecdf_loglogreg.x, ecdf_loglogreg.y, label="Log-Log Regularized", linewidth=2)
+            ax_err_rats_cdf[t].set_title("CDF of MSE Ratios: t = " + str(ts[t]))
+            ax_err_rats_cdf[t].set_xlabel("MSE Ratio Value")
+            ax_err_rats_cdf[t].set_ylabel("CDF")
+            ax_err_rats_cdf[t].legend()
+
+
             #unsorted
             # #plot the error ratios
             # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["lstsq"])), err_dict_list[t]["lstsq"], label="Least Squares", linewidth=2, marker='.')
@@ -546,6 +569,7 @@ if __name__ == '__main__':
 
         save_figure(fig_err, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=True)
         save_figure(fig_err_rats, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=False, ratios=True)
+        save_figure(fig_err_rats_cdf, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=False, ratios=True)
 
         # #analytical
         # save_figure_c(figc_an, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
