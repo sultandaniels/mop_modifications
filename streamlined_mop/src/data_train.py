@@ -393,7 +393,7 @@ if __name__ == '__main__':
                 
                 #keep only the first rem elements of x_values and y_values
                 rem = int(np.ceil(len(x_values)/2))
-                eval_start = len(x_values) - 1 #set eval_start to the last element of x_values
+                eval_start = rem#len(x_values) - 1 #set eval_start to the last element of x_values
                 x_train = x_values[:rem]
                 y_train = y_values[:rem]
 
@@ -529,7 +529,7 @@ if __name__ == '__main__':
 
             #plot the error ratios
             ax_err_rats[t].scatter(np.arange(len(sorted_lstsq)), sorted_lstsq, label="Least Squares", s=2, marker='.')
-            ax_err_rats[t].pscatter(np.arange(len(sorted_loglog)), sorted_loglog, label="Log-Log", s=2, marker='.')
+            ax_err_rats[t].scatter(np.arange(len(sorted_loglog)), sorted_loglog, label="Log-Log", s=2, marker='.')
             ax_err_rats[t].scatter(np.arange(len(sorted_loglin)), sorted_loglin, label="Log-Lin", s=2, marker='.')
             # ax_err_rats[t].scatter(np.arange(len(sorted_loglogreg)), sorted_loglogreg, label="Log-Log Regularized", s=2, marker='.')
             ax_err_rats[t].scatter(np.arange(len(sorted_dumb)), sorted_dumb, label="Dumb", s=2, marker='.')
