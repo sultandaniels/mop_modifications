@@ -163,8 +163,8 @@ def fit_curves_err(fit_y, y_values, x_values, rem, ax_err, plot_label, t, ts, sy
     #compute the element-wise squared error between y_values and yfit_optc
     opt_err = (y_values - fit_y)**2
 
-    if eval_start != rem:
-        raise ValueError("eval_start not to rem which is: ", rem)
+    # if eval_start != rem:
+    #     raise ValueError("eval_start not to rem which is: ", rem)
     #compute the mean value of opt_err after the index rem
     mean_opt_err = np.mean(opt_err[eval_start:])
 
@@ -393,7 +393,7 @@ if __name__ == '__main__':
                 
                 #keep only the first rem elements of x_values and y_values
                 rem = int(np.ceil(len(x_values)/2))
-                eval_start = rem
+                eval_start = len(x_values) - 1 #set eval_start to the last element of x_values
                 x_train = x_values[:rem]
                 y_train = y_values[:rem]
 
