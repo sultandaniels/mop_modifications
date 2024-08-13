@@ -511,7 +511,7 @@ if __name__ == '__main__':
         for t in range(len(ts)):
             if t == 0:
                 #get indices of the sorted list 
-                indices = np.argsort(err_dict_list[t]["loglin"])
+                indices = np.argsort(err_dict_list[t]["loglin"]) #sort the loglin errors in ascending order and get the indices
                 print("indices", indices)
                 print("err_dict_list[t][loglin]", err_dict_list[t]["loglin"])
 
@@ -528,11 +528,11 @@ if __name__ == '__main__':
             # sorted_loglogreg = np.array(err_dict_list[t]["loglogreg"])[indices]
 
             #plot the error ratios
-            ax_err_rats[t].scatter(np.arange(len(sorted_lstsq)), sorted_lstsq, label="Least Squares", markersize=2, marker='.')
-            ax_err_rats[t].pscatter(np.arange(len(sorted_loglog)), sorted_loglog, label="Log-Log", markersize=2, marker='.')
-            ax_err_rats[t].scatter(np.arange(len(sorted_loglin)), sorted_loglin, label="Log-Lin", markersize=2, marker='.')
-            # ax_err_rats[t].scatter(np.arange(len(sorted_loglogreg)), sorted_loglogreg, label="Log-Log Regularized", markersize=2, marker='.')
-            ax_err_rats[t].scatter(np.arange(len(sorted_dumb)), sorted_dumb, label="Dumb", markersize=2, marker='.')
+            ax_err_rats[t].scatter(np.arange(len(sorted_lstsq)), sorted_lstsq, label="Least Squares", s=2, marker='.')
+            ax_err_rats[t].pscatter(np.arange(len(sorted_loglog)), sorted_loglog, label="Log-Log", s=2, marker='.')
+            ax_err_rats[t].scatter(np.arange(len(sorted_loglin)), sorted_loglin, label="Log-Lin", s=2, marker='.')
+            # ax_err_rats[t].scatter(np.arange(len(sorted_loglogreg)), sorted_loglogreg, label="Log-Log Regularized", s=2, marker='.')
+            ax_err_rats[t].scatter(np.arange(len(sorted_dumb)), sorted_dumb, label="Dumb", s=2, marker='.')
 
             #plot cdf of the error ratios
             ecdf_loglin = get_empirical_cdf(err_dict_list[t]["loglin"])
