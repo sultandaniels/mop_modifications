@@ -528,11 +528,11 @@ if __name__ == '__main__':
             # sorted_loglogreg = np.array(err_dict_list[t]["loglogreg"])[indices]
 
             #plot the error ratios
-            ax_err_rats[t].scatter(np.arange(len(sorted_lstsq)), sorted_lstsq, label="Least Squares", s=2, marker='.')
-            ax_err_rats[t].scatter(np.arange(len(sorted_loglog)), sorted_loglog, label="Log-Log", s=2, marker='.')
-            ax_err_rats[t].scatter(np.arange(len(sorted_loglin)), sorted_loglin, label="Log-Lin", s=2, marker='.')
-            # ax_err_rats[t].scatter(np.arange(len(sorted_loglogreg)), sorted_loglogreg, label="Log-Log Regularized", s=2, marker='.')
-            ax_err_rats[t].scatter(np.arange(len(sorted_dumb)), sorted_dumb, label="Dumb", s=2, marker='.')
+            ax_err_rats[t].scatter(np.arange(len(sorted_lstsq)), sorted_lstsq, label="Least Squares", s=20, marker='.')
+            ax_err_rats[t].scatter(np.arange(len(sorted_loglog)), sorted_loglog, label="Log-Log", s=20, marker='.')
+            ax_err_rats[t].scatter(np.arange(len(sorted_loglin)), sorted_loglin, label="Log-Lin", s=20, marker='.')
+            # ax_err_rats[t].scatter(np.arange(len(sorted_loglogreg)), sorted_loglogreg, label="Log-Log Regularized", s=20, marker='.')
+            ax_err_rats[t].scatter(np.arange(len(sorted_dumb)), sorted_dumb, label="Dumb", s=20, marker='.')
 
             #plot cdf of the error ratios
             ecdf_loglin = get_empirical_cdf(err_dict_list[t]["loglin"])
@@ -569,7 +569,7 @@ if __name__ == '__main__':
         save_figure_c(figc, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
 
         save_figure(fig_err, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=True)
-        save_figure(fig_err_rats, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=False, ratios=True)
+        save_figure(fig_err_rats, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=False, ratios=True,eval_start=eval_start)
         save_figure(fig_err_rats_cdf, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=False, ratios=True, cdf=True, eval_start=eval_start)
 
         # #analytical
