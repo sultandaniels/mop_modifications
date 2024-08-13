@@ -112,7 +112,7 @@ def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, 
 
     return ax
 
-def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted, err=False, ratios=False, cdf=False):
+def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted, err=False, ratios=False, cdf=False, eval_start=None):
     
     fig.text(0.5, 0, "The error bars are 3*std.", ha='center', va='bottom', fontsize=12)
     # Adjust layout to make room for the rotated x-axis labels
@@ -123,7 +123,7 @@ def save_figure(fig, config, kfnorm, olsnorm, yax, xax, subtracted, err=False, r
     #get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
     os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ("_fit_err" if err else "") + ("_dummy_ratios" if ratios else "") + ("_cdf" if cdf else "") + ".png")
+    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + config.C_dist + "_system_conv_checks" + ("_KF_normalized" if kfnorm else ("_OLS_normalized" if olsnorm else "")) + ("_subtracted" if subtracted else "") + ("_ylog" if yax == "log" else "") + ("_xlog" if xax == "log" else "") + ("_fit_err" if err else "") + ("_dummy_ratios" if ratios else "") + ("_cdf" if cdf else "") + ("_" + str(eval_start) if eval_start else "")+ ".png")
     return None
 
 def save_figure_c(fig, config, kfnorm, olsnorm, yax, xax, subtracted):
@@ -393,6 +393,7 @@ if __name__ == '__main__':
                 
                 #keep only the first rem elements of x_values and y_values
                 rem = int(np.ceil(len(x_values)/2))
+                eval_start = rem
                 x_train = x_values[:rem]
                 y_train = y_values[:rem]
 
@@ -528,7 +529,7 @@ if __name__ == '__main__':
 
             #plot the error ratios
             ax_err_rats[t].scatter(np.arange(len(sorted_lstsq)), sorted_lstsq, label="Least Squares", markersize=2, marker='.')
-            ax_err_rats[t].pscatternp.arange(len(sorted_loglog)), sorted_loglog, label="Log-Log", markersize=2, marker='.')
+            ax_err_rats[t].pscatter(np.arange(len(sorted_loglog)), sorted_loglog, label="Log-Log", markersize=2, marker='.')
             ax_err_rats[t].scatter(np.arange(len(sorted_loglin)), sorted_loglin, label="Log-Lin", markersize=2, marker='.')
             # ax_err_rats[t].scatter(np.arange(len(sorted_loglogreg)), sorted_loglogreg, label="Log-Log Regularized", markersize=2, marker='.')
             ax_err_rats[t].scatter(np.arange(len(sorted_dumb)), sorted_dumb, label="Dumb", markersize=2, marker='.')
@@ -569,7 +570,7 @@ if __name__ == '__main__':
 
         save_figure(fig_err, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=True)
         save_figure(fig_err_rats, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=False, ratios=True)
-        save_figure(fig_err_rats_cdf, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=False, ratios=True, cdf=True)
+        save_figure(fig_err_rats_cdf, config, kfnorm, olsnorm, yax="lin", xax="lin", subtracted=False, err=False, ratios=True, cdf=True, eval_start=eval_start)
 
         # #analytical
         # save_figure_c(figc_an, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
