@@ -22,6 +22,10 @@ def wandb_train(config_dict, model, output_dir):
     config_dict["dataset_typ"] = "gaussA"
     config_dict["C_dist"] = "_gauss_C"
 
+    #change dataset_typ and C_dist in config to "gaussA" and "_gauss_C"
+    config.override("dataset_typ", "gaussA")
+    config.override("C_dist", "_gauss_C")
+
     # 🐝 1️⃣ Start a new run to track this script
     run = wandb.init(
         # Set the project where this run will be logged
