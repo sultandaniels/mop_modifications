@@ -19,6 +19,8 @@ from check_ecdf import get_empirical_cdf
 def wandb_train(config_dict, model, output_dir):
     # add ckpt_path to config_dict
     config_dict["ckpt_path"] = config.ckpt_path
+    config_dict["dataset_typ"] = "gaussA"
+    config_dict["C_dist"] = "_gauss_C"
 
     # 🐝 1️⃣ Start a new run to track this script
     run = wandb.init(
