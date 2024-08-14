@@ -89,15 +89,20 @@ def loss(lambda_reg, x_values, y_values, params):
     return loss_value
 
 def loglogfit(x_train, x_values, y_train, initial_guess):
-    
-    # Use curve_fit to fit the model function to the data
-    params, covariance = curve_fit(model_function, x_train, y_train, p0=initial_guess)
-    
-    # Extract the parameters
-    a, b, c = params
-    
-    # Generate y-values based on the fitted model
-    fitted_y_values = model_function(x_values, a, b, c)
+    try:
+        # Use curve_fit to fit the model function to the data
+        params, covariance = curve_fit(model_function, x_train, y_train, p0=initial_guess)
+        
+        # Extract the parameters
+        a, b, c = params
+        
+        # Generate y-values based on the fitted model
+        fitted_y_values = model_function(x_values, a, b, c)
+    except RuntimeError:
+        print("Optimal parameters not found: Number of calls to function has reached maxfev.")
+        # Set default values
+        a, b, c = initial_guess
+        fitted_y_values = model_function(x_values, a, b, c)
     
     return fitted_y_values, a, b, c
 
