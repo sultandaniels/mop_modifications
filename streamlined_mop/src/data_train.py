@@ -427,7 +427,7 @@ if __name__ == '__main__':
                 ###########################################################################################
 
                 #plot error
-                ax_err, p, lstsq_mean_err = fit_curves_err(yfit_optc, y_values, x_values, rem, ax_err, "Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), t, ts, sys)
+                ax_err, p, lstsq_mean_err = fit_curves_err(yfit_optc, y_values, x_values, rem, ax_err, "Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), t, ts, sys, eval_start=eval_start)
 
                 # #analytical
                 # min_c_an = c_vals_an[min_err_lin_idx_an]
@@ -442,12 +442,12 @@ if __name__ == '__main__':
                 # Fit a line to the data (line on log-log scale)
                 y_fit_loglog, a_loglog, b_loglog, c_loglog = loglogfit(x_train, x_values, y_train, initial_guess)
 
-                ax_err, p, loglog_mean_err = fit_curves_err(y_fit_loglog, y_values, x_values, rem, ax_err, "y = e^bx^a + c, c=%g, a=%g, b=%g" % (c_loglog, a_loglog, b_loglog), t, ts, sys, past_y_max=p)
+                ax_err, p, loglog_mean_err = fit_curves_err(y_fit_loglog, y_values, x_values, rem, ax_err, "y = e^bx^a + c, c=%g, a=%g, b=%g" % (c_loglog, a_loglog, b_loglog), t, ts, sys, past_y_max=p, eval_start=eval_start)
                 
                 # Fit a line to the data (line on log-linear scale)
                 y_fit_loglin, a_loglin, b_loglin, c_loglin = loglinfit(x_train, x_values, y_train, initial_guess)
 
-                ax_err, p, loglin_mean_err = fit_curves_err(y_fit_loglin, y_values, x_values, rem, ax_err, "y = e^be^(ax) + c, c=%g, a=%g, b=%g" % (c_loglin, a_loglin, b_loglin), t, ts, sys, past_y_max=p)
+                ax_err, p, loglin_mean_err = fit_curves_err(y_fit_loglin, y_values, x_values, rem, ax_err, "y = e^be^(ax) + c, c=%g, a=%g, b=%g" % (c_loglin, a_loglin, b_loglin), t, ts, sys, past_y_max=p, eval_start=eval_start)
 
                 # Fit a regularized line to the data
                 # Regularization strength
@@ -457,12 +457,12 @@ if __name__ == '__main__':
                 # Generate y-values based on the optimized model
                 fitted_y_values_opt = model_function(x_values, a_opt, b_opt, c_opt)
 
-                # ax_err, p, loglogreg_mean_err = fit_curves_err(fitted_y_values_opt, y_values, x_values, rem, ax_err, "Regularized Fit y = e^bx^a, c=%g, a=%g, b=%g" % (c_opt, a_opt, b_opt), t, ts, sys)
+                # ax_err, p, loglogreg_mean_err = fit_curves_err(fitted_y_values_opt, y_values, x_values, rem, ax_err, "Regularized Fit y = e^bx^a, c=%g, a=%g, b=%g" % (c_opt, a_opt, b_opt), t, ts, sys, eval_start=eval_start)
 
                 #dumb predictor
                 last_val = y_train[-1]
                 yfit_dumb = np.full(len(x_values), last_val)
-                ax_err, p, dumb_mean_err = fit_curves_err(yfit_dumb, y_values, x_values, rem, ax_err, "Dumb Predictor", t, ts, sys, past_y_max=p)
+                ax_err, p, dumb_mean_err = fit_curves_err(yfit_dumb, y_values, x_values, rem, ax_err, "Dumb Predictor", t, ts, sys, past_y_max=p, eval_start=eval_start)
 
                 #divide the mean errors by the dumb mean error
                 lstsq_mean_err = lstsq_mean_err/dumb_mean_err
