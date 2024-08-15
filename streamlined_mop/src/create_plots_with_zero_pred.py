@@ -417,7 +417,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
                     [entry["states"][:-1] for entry in samples], axis=0
                 ).reshape((num_systems, num_trials, config.n_positions, config.nx)).astype(np.float32)
             ], axis=2)
-            noiseless_ys = prev_xs @ np.stack([sim_obj.C @ sim_obj.A for sim_obj in sim_objs], axis=0)[:, None].T
+            noiseless_ys = prev_xs @ np.stack([sim_obj.C @ sim_obj.A for sim_obj in sim_objs], axis=0)[:, None].transpose(0, 1, 3, 2)
 
             gc.collect()  # Start the garbage collector
 
