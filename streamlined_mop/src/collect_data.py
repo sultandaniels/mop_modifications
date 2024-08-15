@@ -73,4 +73,4 @@ if __name__ == "__main__":
     model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
                  n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
     
-    collect_data(model, config, "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C", only)
+    collect_data(model, config, "../outputs/GPT2/240615_182401.2139c3_gaussA_gauss_C", only)
