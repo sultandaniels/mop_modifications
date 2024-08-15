@@ -42,7 +42,7 @@ def preds_thread(make_preds, resume_train, train_conv):
     run_deg_kf_test = False #run degenerate KF test
     excess = False #run the excess plots
     shade = True
-    config.override("ckpt_path", "../outputs/GPT2/240615_182401.2139c3_gaussA_gauss_C/checkpoints/step=40000.ckpt")
+    config.override("ckpt_path", "../outputs/GPT2/240615_182401.2139c3_gaussA_gauss_C/checkpoints/step=192000.ckpt")
 
     if resume_train:
         #get the parent directory of the ckpt_path
