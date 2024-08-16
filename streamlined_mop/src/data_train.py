@@ -42,7 +42,7 @@ def preds_thread(make_preds, resume_train, train_conv):
     run_deg_kf_test = False #run degenerate KF test
     excess = False #run the excess plots
     shade = True
-    config.override("ckpt_path", "../outputs/GPT2/240615_182401.2139c3_gaussA_gauss_C/checkpoints/step=192000.ckpt")
+    config.override("ckpt_path", "../outputs/GPT2/240617_150023.5e81de_rotDiagA_gauss_C/checkpoints/step=192000.ckpt")
 
     if resume_train:
         #get the parent directory of the ckpt_path
@@ -558,7 +558,7 @@ if __name__ == '__main__':
             ax_err_rats_cdf[t].step(ecdf_dumb.x, ecdf_dumb.y, label="Dumb", linewidth=2)
             ax_err_rats_cdf[t].set_title("CDF of MSE Ratios: t = " + str(ts[t]))
             ax_err_rats_cdf[t].set_xlabel("MSE Ratio Value")
-            # ax_err_rats_cdf[t].set_xlim([0, 1.25])
+            ax_err_rats_cdf[t].set_xlim([0, 1.25])
             ax_err_rats_cdf[t].set_ylabel("CDF")
             ax_err_rats_cdf[t].legend()
 
