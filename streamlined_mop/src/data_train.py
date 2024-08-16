@@ -17,6 +17,9 @@ import pickle
 from check_ecdf import get_empirical_cdf
 
 def wandb_train(config_dict, model, output_dir):
+
+    test_dataset_typ = config.dataset_typ
+    test_C_dist = config.C_dist
     # add ckpt_path to config_dict
     config_dict["ckpt_path"] = config.ckpt_path
     config_dict["dataset_typ"] = "rotDiagA"
@@ -34,6 +37,10 @@ def wandb_train(config_dict, model, output_dir):
         config=config_dict,
     )
     train_gpt2(model, config, output_dir) # train the model
+
+    #change dataset_typ and C_dist back to the original values
+    config.override("dataset_typ", test_dataset_typ)
+    config.override("C_dist", test_C_dist)
     return None
 
 def preds_thread(make_preds, resume_train, train_conv):
@@ -55,6 +62,7 @@ def preds_thread(make_preds, resume_train, train_conv):
         
         wandb_train(config_dict, model, output_dir)
     if not train_conv:
+        config.override("ckpt_path", "../outputs/GPT2/240617_150023.5e81de_rotDiagA_gauss_C/checkpoints/step=192000.ckpt")
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
     return run_preds, run_deg_kf_test, excess, shade
 
