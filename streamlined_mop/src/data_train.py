@@ -19,11 +19,11 @@ from check_ecdf import get_empirical_cdf
 def wandb_train(config_dict, model, output_dir):
     # add ckpt_path to config_dict
     config_dict["ckpt_path"] = config.ckpt_path
-    config_dict["dataset_typ"] = "gaussA"
+    config_dict["dataset_typ"] = "rotDiagA"
     config_dict["C_dist"] = "_gauss_C"
 
     #change dataset_typ and C_dist in config to "gaussA" and "_gauss_C"
-    config.override("dataset_typ", "gaussA")
+    config.override("dataset_typ", "rotDiagA")
     config.override("C_dist", "_gauss_C")
 
     # 🐝 1️⃣ Start a new run to track this script
@@ -42,7 +42,7 @@ def preds_thread(make_preds, resume_train, train_conv):
     run_deg_kf_test = False #run degenerate KF test
     excess = False #run the excess plots
     shade = True
-    config.override("ckpt_path", "../outputs/GPT2/240617_150023.5e81de_rotDiagA_gauss_C/checkpoints/step=192000.ckpt")
+    config.override("ckpt_path", "../outputs/GPT2/240617_150023.5e81de_rotDiagA_gauss_C/checkpoints/step=40000.ckpt")
 
     if resume_train:
         #get the parent directory of the ckpt_path
