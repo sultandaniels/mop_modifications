@@ -399,7 +399,7 @@ if __name__ == '__main__':
                 
                 #keep only the first rem elements of x_values and y_values
                 rem = int(np.ceil(len(x_values)/2))
-                eval_start = len(x_values) - 1 #set eval_start to the last element of x_values
+                eval_start = rem #len(x_values) - 1 #set eval_start to the last element of x_values
                 x_train = x_values[:rem]
                 y_train = y_values[:rem]
 
@@ -539,21 +539,26 @@ if __name__ == '__main__':
             ax_err_rats[t].scatter(np.arange(len(sorted_loglin)), sorted_loglin, label="Log-Lin", s=200, marker='.')
             # ax_err_rats[t].scatter(np.arange(len(sorted_loglogreg)), sorted_loglogreg, label="Log-Log Regularized", s=200, marker='.')
             ax_err_rats[t].scatter(np.arange(len(sorted_dumb)), sorted_dumb, label="Dumb", s=200, marker='.')
+            ax_err_rats[t].set_title("Ratio of MSE over Dummy MSE: t = " + str(ts[t]))
+            ax_err_rats[t].set_xlabel("System")
+            ax_err_rats[t].set_ylabel("MSE Ratio")
+            ax_err_rats[t].legend()
 
             #plot cdf of the error ratios
-            ecdf_loglin = get_empirical_cdf(err_dict_list[t]["loglin"])
-            ecdf_loglog = get_empirical_cdf(err_dict_list[t]["loglog"])
             ecdf_lstsq = get_empirical_cdf(err_dict_list[t]["lstsq"])
-            ecdf_dumb = get_empirical_cdf(err_dict_list[t]["dumb"])
+            ecdf_loglog = get_empirical_cdf(err_dict_list[t]["loglog"])
+            ecdf_loglin = get_empirical_cdf(err_dict_list[t]["loglin"])
             # ecdf_loglogreg = get_empirical_cdf(err_dict_list[t]["loglogreg"])
-
-            ax_err_rats_cdf[t].step(ecdf_loglin.x, ecdf_loglin.y, label="Log-Lin", linewidth=2)
-            ax_err_rats_cdf[t].step(ecdf_loglog.x, ecdf_loglog.y, label="Log-Log", linewidth=2)
+            ecdf_dumb = get_empirical_cdf(err_dict_list[t]["dumb"])
+            
             ax_err_rats_cdf[t].step(ecdf_lstsq.x, ecdf_lstsq.y, label="Least Squares", linewidth=2)
-            ax_err_rats_cdf[t].step(ecdf_dumb.x, ecdf_dumb.y, label="Dumb", linewidth=2)
+            ax_err_rats_cdf[t].step(ecdf_loglog.x, ecdf_loglog.y, label="Log-Log", linewidth=2)
+            ax_err_rats_cdf[t].step(ecdf_loglin.x, ecdf_loglin.y, label="Log-Lin", linewidth=2)
             # ax_err_rats_cdf[t].step(ecdf_loglogreg.x, ecdf_loglogreg.y, label="Log-Log Regularized", linewidth=2)
+            ax_err_rats_cdf[t].step(ecdf_dumb.x, ecdf_dumb.y, label="Dumb", linewidth=2)
             ax_err_rats_cdf[t].set_title("CDF of MSE Ratios: t = " + str(ts[t]))
             ax_err_rats_cdf[t].set_xlabel("MSE Ratio Value")
+            # ax_err_rats_cdf[t].set_xlim([0, 1.25])
             ax_err_rats_cdf[t].set_ylabel("CDF")
             ax_err_rats_cdf[t].legend()
 
@@ -565,10 +570,6 @@ if __name__ == '__main__':
             # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglin"])), err_dict_list[t]["loglin"], label="Log-Lin", linewidth=2, marker='.')
             # # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["loglogreg"])), err_dict_list[t]["loglogreg"], label="Log-Log Regularized", linewidth=2, marker='.')
             # ax_err_rats[t].plot(np.arange(len(err_dict_list[t]["dumb"])), err_dict_list[t]["dumb"], label="Dumb", linewidth=2, marker='.')
-            ax_err_rats[t].set_title("Ratio of MSE over Dummy MSE: t = " + str(ts[t]))
-            ax_err_rats[t].set_xlabel("System")
-            ax_err_rats[t].set_ylabel("MSE Ratio")
-            ax_err_rats[t].legend()
             
         save_figure(fig, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=True)
         save_figure(fig2, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
