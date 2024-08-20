@@ -19,41 +19,41 @@ class Config(object, metaclass=Singleton):
     seed = 0
     fully_reproducible = False
 
-    Ms = [2**i for i in range(1,15)]
+    Ms = [2**(i) for i in range(2,15,2)]
 
     # Dataset settings
-    num_tasks = 2**16 #number of training systems
-    num_val_tasks = 2 #number of test systems
+    num_tasks = 2**18 #number of training systems
+    num_val_tasks = 4 #number of test systems
     dataset_typ = "gaussA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA"
     C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
-    nx = 6
-    ny = 3
+    nx = 3
+    ny = 2
     n_noise = 1
-    num_traces = {"train": 1, "val": 2000}
+    num_traces = {"train": 1, "val": 100}
 
     sigma_v = 1e-1
     sigma_w = 1e-1
 
     # Training settings
-    train_steps = 2**16 #number of training steps
+    train_steps = 2**18 #number of training steps
     train_int = train_steps // 8 #number of steps between logging
-    batch_size = 28 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
-    train_data_workers = 1 #set to 1 (check if it changes the speed of the training process)
+    batch_size = 64 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
+    train_data_workers = 100 #set to 1 (check if it changes the speed of the training process)
     test_batch_size = 16 #256
     test_data_workers = 1 #4 #set to 1
     num_epochs = 1
 
     # Model settings
-    n_positions = 250 #500 for extended OLS #250 #context length
+    n_positions = 100 #500 for extended OLS #250 #context length
     n_embd = 128
-    n_layer = 12
-    n_head = 8
+    n_layer = 8
+    n_head = 2
     n_dims_in = ny
     n_dims_out = ny  #(IMPORTANT TO KEEP THIS AT 5 FOR NOW) TODO: this used to be 10 but needs to be fixed to match lin_sys.yaml
     changing = False  # only used for plotting
 
     # Optimizer parameters
-    learning_rate = 1e-4
+    learning_rate = 3e-4
     weight_decay = 1e-2
 
     # Gradient Clipping

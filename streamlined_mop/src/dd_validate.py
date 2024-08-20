@@ -49,7 +49,7 @@ def solve_ricc(A, W):  # solve the Riccati equation for the steady state solutio
     ) @ V.T).real
     return Pi
 
-def compute_errors(config):
+def compute_errors(config, val_type='pt'):
     # a function to compute the test errors for the GPT2 model, kalman filter, and zero predictions
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
     logger = logging.getLogger(__name__)  # get the logger
@@ -73,7 +73,7 @@ def compute_errors(config):
     parent_parent_dir = os.path.dirname(parent_dir)
     print("parent_parent_dir:", parent_parent_dir)
 
-    with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
+    with open(parent_parent_dir + f"/data/val_{val_type}_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
         samples = pickle.load(f)
         # for every 2000 entries in samples, get the observation values and append them to the ys list
         i = 0
@@ -86,7 +86,7 @@ def compute_errors(config):
         gc.collect()  # Start the garbage collector
 
     #open fsim file
-    with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
+    with open(parent_parent_dir + f"/data/val_{val_type}_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
         sim_objs = pickle.load(f)
 
     #Transformer Predictions
@@ -119,7 +119,8 @@ def compute_errors(config):
     errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2     # get the errors of transformer predictions
 
     #zero predictor predictions
-    errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2     # get the errors of zero predictions
+    preds_zero = np.zeros_like(ys)
+    errs_zero = np.linalg.norm((ys - preds_zero), axis=-1) ** 2     # get the errors of zero predictions
 
 
     #######################
@@ -142,7 +143,7 @@ def compute_errors(config):
 
     print("DMMSE predictions starting")
     t = time.time()
-    with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
+    with open(parent_parent_dir + f"/data/val_{val_type}_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
         val_systems = pickle.load(f)
     
     with open(parent_parent_dir + f"/data/train_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
@@ -150,31 +151,48 @@ def compute_errors(config):
     
     distinct_train_systems = [train_systems[i] for i in range(0, len(train_systems), config.num_traces["train"])]
 
+    dyn_range = np.log(1e-32) if val_type == 'pt' else np.log(1e-200)
     preds_fpkf = []
-    for i in range(config.num_val_tasks): # Is not being used, could be combined with below.
-        for traceSys in tqdm(val_systems[i*config.num_traces["val"]:(i+1)*config.num_traces["val"]]):
-            for filterSys in distinct_train_systems:
-                kf = kalmanFilterVL(filterSys, config.sigma_v, config.sigma_w)
-                xs, log_likelihood = [kf.x], [np.log(1/config.num_tasks)]
+    # for i in range(config.num_val_tasks): # Is not being used, could be combined with below.
+    for traceSys in tqdm(val_systems): #[i*config.num_traces["val"]:(i+1)*config.num_traces["val"]]:
+        #####
+        for sys in distinct_train_systems:
+            sys['kf'] = kalmanFilterVL(sys, config.sigma_v, config.sigma_w)
+            sys['log_cl'] = [np.log(1/config.num_tasks)]
+            sys['kf_preds'] = [sys['kf'].H @ sys['kf'].x]
+            sys['discarded'] = False
 
-                for i, y in enumerate(traceSys["obs"][:-1,:]):
-                    kf.update(y)
-                    log_likelihood.append(kf.log_likelihood)
-                    kf.predict()
-                    xs.append(kf.x)
+        max_cls = [np.log(1/config.num_tasks)]
+        for i, y in enumerate(traceSys["obs"][:-1,:]):
+            for sys in distinct_train_systems:
+                if sys['discarded']:
+                    continue
+                if sys['log_cl'][-1] < max_cls[-1] + dyn_range:
+                    sys['discarded'] = True
+                    continue
 
-                filterSys["log_cl"] = np.cumsum(log_likelihood)
-                filterSys["kf_pred"] = np.array([kf.H @ x for x in xs])
-            
-            normalization = np.max([sys["log_cl"] for sys in distinct_train_systems], axis=0)
-            for sys in distinct_train_systems:
-                sys["log_cl_norm"] = sys["log_cl"] - normalization
-                sys["cl_norm"] = np.exp(sys["log_cl_norm"])
-            total_likelihood_normalized = np.sum([sys["cl_norm"] for sys in distinct_train_systems], axis=0)
-            for sys in distinct_train_systems:
-                sys["postprob"] = sys["cl_norm"] / total_likelihood_normalized
-        
-            preds_fpkf.append(sum([sys["kf_pred"] * sys["postprob"][:,np.newaxis] for sys in distinct_train_systems]))
+                sys['kf'].update(y)
+                sys['log_cl'].append(sys['log_cl'][-1] + sys['kf'].log_likelihood)
+                sys['kf'].predict()
+                sys['kf_preds'].append(sys['kf'].H @ sys['kf'].x)
+
+            max_cls.append(max(sys['log_cl'][i+1] for sys in distinct_train_systems if not sys['discarded']))
+
+        max_cls = np.array(max_cls)
+        for sys in distinct_train_systems:
+            sys['log_cl'] = np.array(sys['log_cl'])
+            sys['kf_preds'] = np.concatenate(
+                (np.array(sys['kf_preds']),np.zeros((config.n_positions + 1 - sys['log_cl'].size,config.ny))),
+                axis=0
+            )
+            sys["log_cl_norm"] = sys["log_cl"] - max_cls[:sys['log_cl'].size]
+            sys["cl_norm"] = np.concatenate((np.exp(sys["log_cl_norm"]), np.zeros((config.n_positions + 1 - sys['log_cl'].size))))
+        total_likelihood_normalized = np.sum([sys["cl_norm"] for sys in distinct_train_systems], axis=0)
+        for sys in distinct_train_systems:
+            sys["postprob"] = sys["cl_norm"] / total_likelihood_normalized
+        #####
+    
+        preds_fpkf.append(sum([sys["kf_preds"] * sys["postprob"][:,np.newaxis] for sys in distinct_train_systems]))
 
     preds_fpkf = np.reshape(preds_fpkf, (num_systems, num_trials, config.n_positions + 1, config.ny))
     errs_fpkf = np.linalg.norm((ys - preds_fpkf), axis=-1) ** 2
@@ -190,13 +208,17 @@ def compute_errors(config):
         ("FPKF", errs_fpkf)
     ])
 
+    preds = collections.OrderedDict([
+        ("Kalman", preds_kf),
+        ("MOP", preds_tf),
+        ("Zero", preds_zero),
+        ("FPKF", preds_fpkf)
+    ])
+
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
-    return err_lss, irreducible_error
+    return err_lss, irreducible_error, preds
 
 def save_preds(config):
-    err_lss, irreducible_error = compute_errors(config)  #, emb_dim)
-    print("err_lss keys:", err_lss.keys())
-
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
     parent_dir = os.path.dirname(config.ckpt_path)
@@ -212,16 +234,23 @@ def save_preds(config):
 
     os.makedirs(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size, exist_ok=True)
     #save err_lss and irreducible_error to a file
-    with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl", "wb") as f:
-        pickle.dump(err_lss, f)
 
-    with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl", "wb") as f:
-        pickle.dump(irreducible_error, f)
-    
-    return err_lss, irreducible_error
+    for val_type in ('pt', 'true'):
+        err_lss, irreducible_error, preds = compute_errors(config, val_type)  #, emb_dim)
+        print("err_lss keys:", err_lss.keys())
+        with open(parent_parent_dir + f"/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_{val_type}_err_lss.pkl", "wb") as f:
+            pickle.dump(err_lss, f)
+        
+        with open(parent_parent_dir + f"/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_{val_type}_preds.pkl", "wb") as f:
+            pickle.dump(preds, f)
+
+        with open(parent_parent_dir + f"/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_{val_type}_irreducible_error.pkl", "wb") as f:
+            pickle.dump(irreducible_error, f)
+        
+    # return err_lss, irreducible_error
 
 
-def load_preds(config):
+def load_preds(config, val_type='pt'):
     #make the prediction errors directory
     # get the parent directory of the ckpt_path
     parent_dir = os.path.dirname(config.ckpt_path)
@@ -235,23 +264,24 @@ def load_preds(config):
     step_size = config.ckpt_path.split("/")[-1].split("_")[-1]
     print("step_size:", step_size)
 
-    with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl", "rb") as f:
+    with open(parent_parent_dir + f"/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_{val_type}_err_lss.pkl", "rb") as f:
         err_lss_load = pickle.load(f)
 
     print("err_lss_load keys:", err_lss_load.keys())
 
-    with open(parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl", "rb") as f:
+    with open(parent_parent_dir + f"/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_{val_type}_irreducible_error.pkl", "rb") as f:
         irreducible_error_load = pickle.load(f)
     
-    print(irreducible_error_load)
+    with open(parent_parent_dir + f"/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_{val_type}_preds.pkl", "rb") as f:
+        preds_load = pickle.load(f)
     
-    return err_lss_load, irreducible_error_load
+    return err_lss_load, irreducible_error_load, preds_load
 
 
 def make_plots(config, computed_preds=False):
     if not computed_preds:
         save_preds(config)
-    err_lss, irreducible_error = load_preds(config)
+    err_lss, irreducible_error, preds_load = load_preds(config)
     
     parent_dir = os.path.dirname(config.ckpt_path)
     print("parent_dir:", parent_dir)
@@ -271,15 +301,42 @@ def make_plots(config, computed_preds=False):
         ax.legend()
         fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}{config.C_dist}_system{i}")
 
+def make_combined_plot(config, computed_preds=False):
+    if not computed_preds:
+        save_preds(config)
+    err_lss, irreducible_error, preds_load = load_preds(config)
+
+    parent_dir = os.path.dirname(config.ckpt_path)
+    print("parent_dir:", parent_dir)
+    parent_parent_dir = os.path.dirname(parent_dir)
+    os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+
+    print(err_lss['MOP'].shape, irreducible_error.shape)
+
+    fig,ax = plt.subplots(figsize=(7,5))
+    for model_name, err in err_lss.items():
+        if model_name == "Zero":
+            continue
+        print(err-irreducible_error[:,np.newaxis,np.newaxis])
+        print(((err - irreducible_error[:,np.newaxis,np.newaxis]).reshape(-1,config.n_positions + 1)).shape)
+        errs_normal = (err - irreducible_error[:,np.newaxis,np.newaxis]).reshape(-1,config.n_positions + 1).mean(axis=0)
+        ax.semilogy(errs_normal, label=model_name)
+        # ax.plot(err.reshape(-1,config.n_positions+1).mean(axis=0) - np.mean(irreducible_error))
+        print(np.mean(irreducible_error))
+
+    ax.grid()
+    ax.legend()
+    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}{config.C_dist}")
+
+
 if __name__ == "__main__":
     config = Config()
-    
-    num_tasks = 128
-    config.override("ckpt_path", f"/home/jovyan/dd_outputs/240708_182434.1689c9_gaussA_gauss_C/{num_tasks}/checkpoints/step=65536.ckpt")
+
+    num_tasks = 16
+    checkpoint_step = 2**18
+    num_val_traces = 500
+    config.override("ckpt_path", f"/home/jovyan/mop_modifications/dd_outputs/240802_015009.0d2b12_gaussA_gauss_C/{num_tasks}/checkpoints/step={checkpoint_step}.ckpt")
     config.override("num_tasks", num_tasks)
-    config.override("num_traces", {"train": config.train_steps // num_tasks, "val": config.num_traces["val"]})
+    config.override("num_traces", {"train": config.train_steps // num_tasks, "val": num_val_traces})
 
-    make_plots(config, computed_preds=False)
-    
-
-    
+    save_preds(config)

@@ -20,8 +20,6 @@ if __name__ == '__main__':
     # args = parser.parse_args()
     # resume_train = args.resume_train
     #################################################################################
-    
-    resume_train = True
 
     config = Config() 
     config_dict  = {
@@ -57,6 +55,7 @@ if __name__ == '__main__':
     for key in config_attributes:
         config_dict[key] = config.__getattribute__(key)
     
+    resume_train = False # TODO replace this with parser arguments
     if resume_train:
         suite_identifier = "240708_182434.1689c9_gaussA_gauss_C"
         output_dirs = {m: f"../dd_outputs/{suite_identifier}/{m}" for m in config.Ms}
