@@ -21,8 +21,8 @@ class Config(object, metaclass=Singleton):
 
     # Dataset settings
     num_tasks = 40000 #number of training systems
-    num_val_tasks = 3 #number of test systems
-    dataset_typ = "gaussA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA"
+    num_val_tasks = 24 #number of test systems
+    dataset_typ = "upperTriA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA"
     C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
     nx = 10
     ny = 5
