@@ -62,7 +62,7 @@ def preds_thread(make_preds, resume_train, train_conv):
         
         wandb_train(config_dict, model, output_dir)
     if not train_conv:
-        config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=192000.ckpt")
+        # config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=192000.ckpt")
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
     return run_preds, run_deg_kf_test, excess, shade
 
