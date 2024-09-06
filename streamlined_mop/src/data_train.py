@@ -407,7 +407,7 @@ if __name__ == '__main__':
                 
                 #keep only the first rem elements of x_values and y_values
                 rem = int(np.ceil(len(x_values)/2))
-                eval_start = rem #len(x_values) - 1 #set eval_start to the last element of x_values
+                eval_start = len(x_values) - 1 #set eval_start to the last element of x_values
                 x_train = x_values[:rem]
                 y_train = y_values[:rem]
 
