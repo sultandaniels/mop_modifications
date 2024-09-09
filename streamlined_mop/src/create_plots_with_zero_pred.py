@@ -944,7 +944,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
                 gc.collect()  # Start the garbage collector
 
                 axs[i][sys].legend(fontsize=18, loc="upper right", ncol=math.floor(len(handles) / 4))
-                axs[i][sys].set_xlabel("t", fontsize=30)
+                axs[i][sys].set_xlabel("i", fontsize=30)
                 axs[i][sys].set_ylabel("Prediction Error", fontsize=30)
                 axs[i][sys].grid(which="both")
                 axs[i][sys].tick_params(axis='both', which='major', labelsize=30)
