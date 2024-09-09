@@ -49,39 +49,40 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
     for i, (name, err_ls) in enumerate(err_lss.items()):
         print("name", name)
         print("err_ls.shape", err_ls.shape)
-        if normalized:
-            t = np.arange(1, err_ls.shape[-1])
-            # if name != "Kalman" and name != "Analytical_Kalman":
-            if name == "OLS_ir_length1" or name == "OLS_ir_length2" or name == "OLS_ir_length3" or name == "MOP": 
-                normalized_err = (err_ls - err_lss["Kalman"])
+        if name == "MOP" or name == "OLS_ir_length1" or name == "OLS_ir_length2" or name == "OLS_ir_length3" or name == "Analytical_Kalman" or name == "Zero" or name == "Kalman": #plot only select curves
+            if normalized:
+                t = np.arange(1, err_ls.shape[-1])
+                # if name != "Kalman" and name != "Analytical_Kalman":
+                if name == "OLS_ir_length1" or name == "OLS_ir_length2" or name == "OLS_ir_length3" or name == "MOP": 
+                    normalized_err = (err_ls - err_lss["Kalman"])
 
-                q1, median, q3 = np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2)
-                scale = median[1]
-                q1 = q1/scale
-                median = median/scale
-                q3 = q3/scale
-                handles.extend(ax.plot(t, median[1:], label=name + " sys: " + str(sys), linewidth=3))
-                if shade:
-                    ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
-        else:
-            if name != "Analytical_Kalman":
-                avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
-                handles.extend(ax.plot(avg, 
-                                    label=name if name != "OLS_wentinn" else "OLS_ir_length2_unreg", 
-                                    linewidth=1, 
-                                    marker='x' if name == "MOP" or name in ["OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Kalman"] else ".", 
-                                    color=colors[i], 
-                                    markersize=5 if name == "MOP" or name in ["OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Kalman", "Zero"] else 1))
-                if shade:
-                    ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
-            else: #plot the analytical kalman filter
-                handles.extend(ax.plot(err_ls[sys], label=name, linewidth=1, color='#000000'))
-            if name == "Kalman":
-                err_rat[0] = np.mean(avg)/err_irreducible[sys]
-                print("KF (time avergaged mean)/(irreducible): ", err_rat[0])
-            if name == "Zero":
-                err_rat[1] = np.mean(avg)/err_irreducible[sys]
-                print("Zero (time avergaged mean)/(irreducible): ", err_rat[1])
+                    q1, median, q3 = np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2)
+                    scale = median[1]
+                    q1 = q1/scale
+                    median = median/scale
+                    q3 = q3/scale
+                    handles.extend(ax.plot(t, median[1:], label=name + " sys: " + str(sys), linewidth=3))
+                    if shade:
+                        ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
+            else:
+                if name != "Analytical_Kalman":
+                    avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
+                    handles.extend(ax.plot(avg, 
+                                        label=name if name != "OLS_wentinn" else "OLS_ir_length2_unreg", 
+                                        linewidth=1, 
+                                        marker='x' if name == "MOP" or name in ["OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Kalman"] else ".", 
+                                        color=colors[i], 
+                                        markersize=5 if name == "MOP" or name in ["OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Kalman", "Zero"] else 1))
+                    if shade:
+                        ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
+                else: #plot the analytical kalman filter
+                    handles.extend(ax.plot(err_ls[sys], label=name, linewidth=1, color='#000000'))
+                if name == "Kalman":
+                    err_rat[0] = np.mean(avg)/err_irreducible[sys]
+                    print("KF (time avergaged mean)/(irreducible): ", err_rat[0])
+                if name == "Zero":
+                    err_rat[1] = np.mean(avg)/err_irreducible[sys]
+                    print("Zero (time avergaged mean)/(irreducible): ", err_rat[1])
     return handles, err_rat
 
 def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, normalized, legend_loc="upper right", ax=None, shade=True, kal_err=None):
