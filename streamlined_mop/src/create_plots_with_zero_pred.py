@@ -1084,7 +1084,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
                         "-changing" if config.changing else "_excess"))
             else:
                 ax.legend(fontsize=18, loc="upper right", ncol=max(1, math.floor(len(handles) / 4)))
-                ax.set_xlabel("t", fontsize=30)
+                ax.set_xlabel("i", fontsize=30)
                 ax.set_ylabel("Prediction Error", fontsize=30)
                 ax.grid(which="both")
                 ax.tick_params(axis='both', which='major', labelsize=30)
