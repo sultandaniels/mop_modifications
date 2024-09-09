@@ -49,11 +49,11 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
     for i, (name, err_ls) in enumerate(err_lss.items()):
         print("name", name)
         print("err_ls.shape", err_ls.shape)
-        if name == "MOP" or name == "OLS_ir_length1" or name == "OLS_ir_length2" or name == "OLS_ir_length3" or name == "Analytical_Kalman" or name == "Zero" or name == "Kalman": #plot only select curves
+        if name == "MOP" or name == "OLS_ir_1" or name == "OLS_ir_2" or name == "OLS_ir_3" or name == "Analytical_Kalman" or name == "Zero" or name == "Kalman": #plot only select curves
             if normalized:
                 t = np.arange(1, err_ls.shape[-1])
                 # if name != "Kalman" and name != "Analytical_Kalman":
-                if name == "OLS_ir_length1" or name == "OLS_ir_length2" or name == "OLS_ir_length3" or name == "MOP": 
+                if name == "OLS_ir_1" or name == "OLS_ir_2" or name == "OLS_ir_3" or name == "MOP": 
                     normalized_err = (err_ls - err_lss["Kalman"])
 
                     q1, median, q3 = np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2)
