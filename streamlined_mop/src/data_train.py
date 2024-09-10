@@ -261,7 +261,7 @@ if __name__ == '__main__':
         "num_tasks": 1,
         "num_val_tasks": 1,
         "dataset_typ": "single_system",
-        "C_dist": "single_system",
+        "C_dist": "_single_system",
         "nx": 10,
         "ny": 5,
         "n_noise": 1,
