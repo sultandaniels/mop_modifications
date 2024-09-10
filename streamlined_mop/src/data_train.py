@@ -22,12 +22,12 @@ def wandb_train(config_dict, model, output_dir):
     test_C_dist = config.C_dist
     # add ckpt_path to config_dict
     config_dict["ckpt_path"] = config.ckpt_path
-    config_dict["dataset_typ"] = "rotDiagA"
-    config_dict["C_dist"] = "_gauss_C"
+    config_dict["dataset_typ"] = "single_system"
+    config_dict["C_dist"] = "_single_system"
 
-    #change dataset_typ and C_dist in config to "gaussA" and "_gauss_C"
-    config.override("dataset_typ", "rotDiagA")
-    config.override("C_dist", "_gauss_C")
+    #change dataset_typ and C_dist in config to "gaussA" and "_gauss_C" 
+    config.override("dataset_typ", "single_system")
+    config.override("C_dist", "_single_system")
 
     # 🐝 1️⃣ Start a new run to track this script
     run = wandb.init(
