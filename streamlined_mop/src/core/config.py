@@ -20,14 +20,14 @@ class Config(object, metaclass=Singleton):
     fully_reproducible = False
 
     # Dataset settings
-    num_tasks = 40000 #number of training systems
-    num_val_tasks = 3 #number of test systems
-    dataset_typ = "gaussA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA"
-    C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var"
+    num_tasks = 1 #number of training systems
+    num_val_tasks = 1 #number of test systems
+    dataset_typ = "single_system" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system"
+    C_dist = "single_system" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var" #"single_system"
     nx = 10
     ny = 5
     n_noise = 1
-    num_traces = {"train": 1, "val": 2000}
+    num_traces = {"train": 40000, "val": 2000}
 
     # Training settings
     train_steps = 192000 #number of training steps
