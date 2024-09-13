@@ -35,7 +35,6 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
 
         for i in tqdm(range(num_tasks)):
             if name == "train" and train_mix:
-                print(int(np.floor(len(A_dists)*i/num_tasks)))
                 if int(np.floor(len(A_dists)*i/num_tasks)) > 2:
                     index = 0
                     print("greater than 2")
