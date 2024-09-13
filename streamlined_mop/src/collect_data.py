@@ -37,6 +37,9 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
                 else:
                     index = i % np.floor(num_tasks/3)
 
+                print("index:", index)
+                index = int(index)
+
                 zero_count = 0
                 one_count = 0
                 two_count = 0
