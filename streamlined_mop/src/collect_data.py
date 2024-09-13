@@ -62,6 +62,7 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
             sim_objs.append(fsim)
         print("Saving", len(samples), "samples for", name)
 
+        print("config.dataset_typ:", config.dataset_typ)
         with open(output_dir + f"/data/{name}_" + (f"{config.dataset_typ}" if name == "train" else f"{config.val_dataset_typ}") + f"{config.C_dist}" + ("_mix" if train_mix and name == "train" else "") + ".pkl", "wb") as f:
             pickle.dump(samples, f)
 

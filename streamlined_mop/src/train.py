@@ -24,15 +24,14 @@ def train_gpt2(model, config, output_dir, train_mix=False): #input emd_dim as a 
     # model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
     #              n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
 
-    val_dset = FilterDataset(output_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", use_true_len=True) if os.path.exists(output_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl") else None
-    # raise Exception("Just checking FilterDataset")
+    val_dset = FilterDataset(output_dir + f"/data/val_{config.val_dataset_typ}{config.C_dist}.pkl", use_true_len=True) if os.path.exists(output_dir + f"/data/val_{config.val_dataset_typ}{config.C_dist}.pkl") else None
 
     datamodule = DataModuleWrapper(FilterDataset(output_dir + f"/data/train_{config.dataset_typ}{config.C_dist}" + ("_mix" if train_mix else "") + ".pkl"), val_dset)
 
     # Define model
     # output_dir = training.setup_train(model)
     print("output_dir:", output_dir)
-    callbacks, loggers = training.get_callbacks_and_loggers(output_dir, config.train_int)#, config.n_embd)
+    callbacks, loggers = training.get_callbacks_and_loggers(output_dir, config.train_int)
     ckpt_path = config.ckpt_path if config.ckpt_path != '' else None
     print("ckpt_path:", config.ckpt_path)
     

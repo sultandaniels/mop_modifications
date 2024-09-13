@@ -16,18 +16,18 @@ import sympy as sp
 import pickle
 from check_ecdf import get_empirical_cdf
 
-def wandb_train(config_dict, model, output_dir):
+def wandb_train(config_dict, model, output_dir, train_mix=False):
 
-    test_dataset_typ = config.dataset_typ
-    test_C_dist = config.C_dist
-    # add ckpt_path to config_dict
-    config_dict["ckpt_path"] = config.ckpt_path
-    config_dict["dataset_typ"] = "gaussA"
-    config_dict["C_dist"] = "_gauss_C"
+    # test_dataset_typ = config.dataset_typ
+    # test_C_dist = config.C_dist
+    # # add ckpt_path to config_dict
+    # config_dict["ckpt_path"] = config.ckpt_path
+    # config_dict["dataset_typ"] = "gaussA"
+    # config_dict["C_dist"] = "_gauss_C"
 
-    #change dataset_typ and C_dist in config to "gaussA" and "_gauss_C" 
-    config.override("dataset_typ", "gaussA")
-    config.override("C_dist", "_gauss_C")
+    # #change dataset_typ and C_dist in config to "gaussA" and "_gauss_C" 
+    # config.override("dataset_typ", "gaussA")
+    # config.override("C_dist", "_gauss_C")
 
     # 🐝 1️⃣ Start a new run to track this script
     run = wandb.init(
@@ -36,11 +36,11 @@ def wandb_train(config_dict, model, output_dir):
         # Track hyperparameters and run metadata
         config=config_dict,
     )
-    train_gpt2(model, config, output_dir) # train the model
+    train_gpt2(model, config, output_dir, train_mix=train_mix) # train the model
 
-    #change dataset_typ and C_dist back to the original values
-    config.override("dataset_typ", test_dataset_typ)
-    config.override("C_dist", test_C_dist)
+    # #change dataset_typ and C_dist back to the original values
+    # config.override("dataset_typ", test_dataset_typ)
+    # config.override("C_dist", test_C_dist)
     return None
 
 def preds_thread(make_preds, resume_train, train_conv):
@@ -601,9 +601,8 @@ if __name__ == '__main__':
         model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
                     n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
         
-        output_dir = setup_train(model)
-        if train_mix:
-            output_dir = output_dir + "_mix"
+
+        output_dir = setup_train(model, train_mix)
         # output_dir = output_dir + f"_{config.dataset_typ}{config.C_dist}"
         os.makedirs(output_dir + f"/data/", exist_ok=True)
 
@@ -612,7 +611,7 @@ if __name__ == '__main__':
         # replace ckpt_path with the path to the checkpoint file
         config.override("ckpt_path", output_dir + "/checkpoints/step=" + str(config.train_steps) + ".ckpt")
 
-        wandb_train(config_dict, model, output_dir)
+        wandb_train(config_dict, model, output_dir, train_mix=train_mix) # train the model
 
         # create prediction plots
         run_preds = True #run the predictions evaluation

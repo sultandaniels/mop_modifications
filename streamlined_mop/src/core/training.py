@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 config = Config()
 
 
-def setup_train(model):
+def setup_train(model, train_mix=False):
     output_dir = None
     if config.ckpt_path is not None and config.ckpt_path != '':
         output_dir = "/".join(config.ckpt_path.split("/")[:-2])
@@ -28,7 +28,7 @@ def setup_train(model):
                       hashlib.md5(config.get_full_yaml().encode('utf-8')).hexdigest()[:6]
                       )
 
-        output_dir = '../outputs/' + identifier + f"_{config.dataset_typ}{config.C_dist}"
+        output_dir = '../outputs/' + identifier + f"_{config.dataset_typ}{config.C_dist}" + ("_mix" if train_mix else "")
 
         if not os.path.isdir(output_dir):
             print("here")
