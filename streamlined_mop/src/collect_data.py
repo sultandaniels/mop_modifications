@@ -47,9 +47,7 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
                 elif index == 2:
                     two_count += 1
 
-                config.dataset_typ = A_dists[int(i % np.floor(num_tasks/3))]
-                config.dataset_typ = A_dists[i % np.floor(num_tasks/3)] #cycle through the A_dists
-                config.override("dataset_typ", config.dataset_typ) #override the dataset_typ
+                config.override("dataset_typ", A_dists[index]) #override the dataset_typ
 
             fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ, config.num_traces[name], config.n_positions, config.nx, config.ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
                     
