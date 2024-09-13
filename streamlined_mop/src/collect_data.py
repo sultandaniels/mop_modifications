@@ -20,6 +20,9 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
     # model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
     #              n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
 
+    zero_count = 0
+    one_count = 0
+    two_count = 0
     for name, num_tasks in zip(["train", "val"], [config.num_tasks, config.num_val_tasks]):
         if only and name != only: #if only is specified, skip the other dataset
             continue
@@ -38,9 +41,7 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
                     index = i % np.floor(num_tasks/3)
                 index = int(index)
 
-                zero_count = 0
-                one_count = 0
-                two_count = 0
+
                 if index == 0:
                     zero_count += 1
                 elif index == 1:
