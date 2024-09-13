@@ -41,7 +41,7 @@ def wentinn_compute_errors(config):
 
     with open(f"../data/test_sim.pt", "rb") as f:
         sim_objs = torch.load(f)
-    with open(f"../data/test_{config.dataset_typ}.pt", "rb") as f:
+    with open(f"../data/test_{config.val_dataset_typ}.pt", "rb") as f:
         samples = torch.load(f)
         ys = samples["obs"].numpy()
 
@@ -189,7 +189,7 @@ def wentinn_compute_errors(config):
     # ax.plot(np.arange(config.n_positions + 1), np.full(config.n_positions + 1, np.mean(irreducible_error)), color='black', linewidth=5, linestyle='--')
 
     os.makedirs("../figures", exist_ok=True)
-    fig.savefig(f"../figures/{config.dataset_typ}" + ("-changing" if config.changing else ""))
+    fig.savefig(f"../figures/{config.val_dataset_typ}" + ("-changing" if config.changing else ""))
     plt.show()
 
 
@@ -401,10 +401,10 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         parent_parent_dir = os.path.dirname(parent_dir)
 
         # open fsim file
-        with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
+        with open(parent_parent_dir + f"/data/val_{config.val_dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
             sim_objs = pickle.load(f)
 
-        with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
+        with open(parent_parent_dir + f"/data/val_{config.val_dataset_typ}{config.C_dist}.pkl", "rb") as f:
             samples = pickle.load(f)
             # for every 2000 entries in samples, get the observation values and append them to the ys list
             ys = np.stack(
@@ -619,10 +619,10 @@ def compute_errors_conv(config, C_dist, run_deg_kf_test, wentinn_data):
 
 
         # open fsim file
-        with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
+        with open(parent_parent_dir + f"/data/val_{config.val_dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
             sim_objs = pickle.load(f)
 
-        with open(parent_parent_dir + f"/data/val_{config.dataset_typ}{config.C_dist}.pkl", "rb") as f:
+        with open(parent_parent_dir + f"/data/val_{config.val_dataset_typ}{config.C_dist}.pkl", "rb") as f:
             samples = pickle.load(f)
             # for every 2000 entries in samples, get the observation values and append them to the ys list
             ys = np.stack(
@@ -720,19 +720,19 @@ def save_preds(run_deg_kf_test, config):
     if run_deg_kf_test:
         # save err_lss and irreducible_error to a file
         with open(
-                parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss_deg_kf_test.pkl",
+                parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.val_dataset_typ}_err_lss_deg_kf_test.pkl",
                 "wb") as f:
             pickle.dump(err_lss, f)
     else:
         # save err_lss and irreducible_error to a file
         with open(
-                parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl",
+                parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.val_dataset_typ}_err_lss.pkl",
                 "wb") as f:
             pickle.dump(err_lss, f)
             print("err_lss keys", err_lss.keys())
 
     with open(
-            parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl",
+            parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.val_dataset_typ}_irreducible_error.pkl",
             "wb") as f:
         pickle.dump(irreducible_error, f)
 
@@ -745,12 +745,12 @@ def save_preds_conv_helper(save_dir, run_deg_kf_test, config):
     print("helper len of irreducible_error:", len(irreducible_error))
     # save err_lss and irreducible_error to a file
     with open(
-            save_dir + f"/{config.dataset_typ}_err_lss.pkl",
+            save_dir + f"/{config.val_dataset_typ}_err_lss.pkl",
             "wb") as f:
         pickle.dump(err_lss, f)
 
     with open(
-            save_dir + f"/{config.dataset_typ}_irreducible_error.pkl",
+            save_dir + f"/{config.val_dataset_typ}_irreducible_error.pkl",
             "wb") as f:
         pickle.dump(irreducible_error, f)
     return
@@ -799,24 +799,24 @@ def load_preds(run_deg_kf_test, excess, num_systems, config):
 
     if run_deg_kf_test:
         with open(
-                parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.dataset_typ}_err_lss_deg_kf_test.pkl",
+                parent_parent_dir + "/prediction_errors" + config.C_dist + f"/{config.val_dataset_typ}_err_lss_deg_kf_test.pkl",
                 "rb") as f:
             err_lss_load = pickle.load(f)
             print("len(err_lss_load):", len(err_lss_load))
     else:
         with open(
-                parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_err_lss.pkl",
+                parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.val_dataset_typ}_err_lss.pkl",
                 "rb") as f:
             err_lss_load = pickle.load(f)
 
     print("err_lss_load keys:", err_lss_load.keys())
 
     with open(
-            parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.dataset_typ}_irreducible_error.pkl",
+            parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.val_dataset_typ}_irreducible_error.pkl",
             "rb") as f:
         irreducible_error_load = pickle.load(f)
 
-    if config.C_dist == "_unif_C" and config.dataset_typ == "ypred":
+    if config.C_dist == "_unif_C" and config.val_dataset_typ == "ypred":
         with open(f"../data/prediction_errors_unif_C/fir_bounds.pt", "rb") as f:
             fir_bounds = torch.load(f, map_location=torch.device('cpu'))
             fir_bounds = fir_bounds.T
@@ -917,7 +917,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                       "and KF trained and tested on system", sys, ":", cos_sim)
                 cos_sims[i, sys] = cos_sim
 
-                if C_dist == "_unif_C" and config.dataset_typ == "ypred":
+                if C_dist == "_unif_C" and config.val_dataset_typ == "ypred":
                     # plot fir bounds
                     for j in range(fir_bounds.shape[1] - 2):
                         handles.extend(axs[i][sys].plot(np.array(range(config.n_positions)),
@@ -957,8 +957,8 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 axs[i][sys].tick_params(axis='both', which='major', labelsize=30)
                 axs[i][sys].tick_params(axis='both', which='minor', labelsize=20)
                 axs[i][sys].set_title("KF system " + str(i) + " testing on system " + str(sys) + (
-                    ": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
-                        ": Upper Triangular A " if config.dataset_typ == "upperTriA" else ": Dense A ")) + (
+                    ": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+                        ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else ": Dense A ")) + (
                                           "Uniform C" if C_dist == "_unif_C" else (
                                               "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
                 axs[i][sys].set_ylim(bottom=10 ** (-0.7), top=2 * 10 ** (0))
@@ -971,7 +971,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 # get the parent directory of the parent directory
                 parent_parent_dir = os.path.dirname(parent_dir)
                 os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-                deg_fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + (
+                deg_fig.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + (
                     "-changing_deg_kf_test" if config.changing else "deg_kf_test"))
         else:
             fig = plt.figure(figsize=(15, 9))
@@ -1073,9 +1073,9 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 # make the x axis log scale
                 ax.set_xscale('log')
                 # ax.set_ylim(bottom=-1, top=2*10**(-1))
-                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
-                    ": Upper Triangular A " if config.dataset_typ == "upperTriA" else (
-                        ": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + (
+                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+                    ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
+                        ": N(0,0.33) A " if config.val_dataset_typ == "gaussA" else ": Dense A "))) + (
                                  "Uniform C" if C_dist == "_unif_C" else (
                                      "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
                 # ax.set_xlim(left=0, right=10)
@@ -1087,7 +1087,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 parent_parent_dir = os.path.dirname(parent_dir)
                 os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
                 fig.savefig(
-                    parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
+                    parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
                         "-changing" if config.changing else "_excess"))
             else:
                 ax.legend(fontsize=16, loc="upper right", ncol=max(1, math.floor(len(handles) / 2)))
@@ -1104,11 +1104,11 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 if not logscale:
                     ax.set_ylim(bottom=10 ** (-0.7), top=1 * 10 ** (2))  # set the y axis limits
 
-                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
-                    ": Upper Triangular A and " if config.dataset_typ == "upperTriA" else (
-                        ": Gaussian A and " if config.dataset_typ == "gaussA" else ("Single System" if config.dataset_typ == "single_system" else (": Uniform A and " if config.dataset_typ == "unifA" else ": Dense A and "))))) + (
+                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+                    ": Upper Triangular A and " if config.val_dataset_typ == "upperTriA" else (
+                        ": Gaussian A and " if config.val_dataset_typ == "gaussA" else ("Single System" if config.val_dataset_typ == "single_system" else (": Uniform A and " if config.val_dataset_typ == "unifA" else ": Dense A and "))))) + (
                                  "Uniform C" if C_dist == "_unif_C" else (
-                                     "Gaussian C" if C_dist == "_gauss_C" else ("" if config.dataset_typ == "_single_system" else "N(0,1) C"))), fontsize=20)
+                                     "Gaussian C" if C_dist == "_gauss_C" else ("" if config.val_dataset_typ == "_single_system" else "N(0,1) C"))), fontsize=20)
                 # ax.set_xlim(left=0, right=10)
 
                 # get the parent directory of the ckpt_path
@@ -1118,7 +1118,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 parent_parent_dir = os.path.dirname(parent_dir)
                 os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
                 fig.savefig(
-                    parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
+                    parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
                         "logscale" if logscale else ""))
 
     if run_deg_kf_test:
@@ -1144,7 +1144,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
         # get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
         os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_cosine_similarities_deg_kf_test")
+        fig.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_cosine_similarities_deg_kf_test")
 
         # Create a new figure
         fig, ax = plt.subplots(figsize=(12, 2))  # set size frame
@@ -1155,7 +1155,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
         tbl = table(ax, df2, loc='center', cellLoc='center')
         tbl.scale(1, 1.5)
 
-        plt.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_error_ratios_deg_kf_test")
+        plt.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_error_ratios_deg_kf_test")
 
         print("zero_ratios:", zero_ratios)
         fig, ax = plt.subplots(figsize=(12, 2))  # set size frame
@@ -1166,7 +1166,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
         tbl = table(ax, df3, loc='center', cellLoc='center')
         tbl.scale(1, 1.5)
 
-        plt.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_zero_ratios_deg_kf_test")
+        plt.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_zero_ratios_deg_kf_test")
 
     if excess:
         ncol = 1 if len(handles) < 4 else math.floor(len(handles) / 2)
@@ -1179,14 +1179,14 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
         # make the x axis log scale
         ax.set_xscale('log')
         # ax.set_ylim(bottom=-1, top=2*10**(-1))
-        ax.set_title(("Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
-            "Upper Triangular A " if config.dataset_typ == "upperTriA" else (
-                "N(0,0.33) A " if config.dataset_typ == "gaussA" else ("Uniform A" if config.dataset_typ == "unifA" else "Dense A ")))) + (
+        ax.set_title(("Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+            "Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
+                "N(0,0.33) A " if config.val_dataset_typ == "gaussA" else ("Uniform A" if config.val_dataset_typ == "unifA" else "Dense A ")))) + (
                          "Uniform C" if C_dist == "_unif_C" else (
                              "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
         # ax.set_xlim(left=0, right=10)
         os.makedirs(parent_parent_dir + f"/figures", exist_ok=True)
-        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff" + (
+        fig.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff" + (
             "-changing" if config.changing else "_excess"))
 
     return None
@@ -1294,9 +1294,9 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
         # set y axis limits
         ax[sys].set_ylim(bottom=10 ** (-2), top=5 * 10 ** (1))
 
-        ax[sys].set_title("System " + str(sys) + (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
-            ": Upper Triangular A " if config.dataset_typ == "upperTriA" else (
-                ": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + (
+        ax[sys].set_title("System " + str(sys) + (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+            ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
+                ": N(0,0.33) A " if config.val_dataset_typ == "gaussA" else ": Dense A "))) + (
                               "Uniform C" if C_dist == "_unif_C" else (
                                   "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")) + (
                               " Normalized" if kfnorm else ""), fontsize=20)
@@ -1308,7 +1308,7 @@ def convergence_plots(j, config, run_preds, run_deg_kf_test, kfnorm, num_systems
     # get the parent directory of the parent directory
     parent_parent_dir = os.path.dirname(parent_dir)
     os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-    fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_conv" + (
+    fig.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_conv" + (
         "_normalized" if kfnorm else "") + ("-changing" if config.changing else ""))
 
     return (ckpt_steps, sys_errs), (ckpt_steps, sys_errs_an)  # return the checkpoint steps number and the system errors
@@ -1369,7 +1369,7 @@ if __name__ == '__main__':
                       "and KF trained and tested on system", sys, ":", cos_sim)
                 cos_sims[i, sys] = cos_sim
 
-                if C_dist == "_unif_C" and config.dataset_typ == "ypred":
+                if C_dist == "_unif_C" and config.val_dataset_typ == "ypred":
                     # plot fir bounds
                     for j in range(fir_bounds.shape[1] - 2):
                         handles.extend(axs[i][sys].plot(np.array(range(config.n_positions)),
@@ -1409,8 +1409,8 @@ if __name__ == '__main__':
                 axs[i][sys].tick_params(axis='both', which='major', labelsize=30)
                 axs[i][sys].tick_params(axis='both', which='minor', labelsize=20)
                 axs[i][sys].set_title("KF system " + str(i) + " testing on system " + str(sys) + (
-                    ": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
-                        ": Upper Triangular A " if config.dataset_typ == "upperTriA" else ": Dense A ")) + (
+                    ": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+                        ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else ": Dense A ")) + (
                                           "Uniform C" if C_dist == "_unif_C" else (
                                               "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
                 axs[i][sys].set_ylim(bottom=10 ** (-0.7), top=2 * 10 ** (0))
@@ -1423,7 +1423,7 @@ if __name__ == '__main__':
                 # get the parent directory of the parent directory
                 parent_parent_dir = os.path.dirname(parent_dir)
                 os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-                deg_fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + (
+                deg_fig.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + (
                     "-changing_deg_kf_test" if config.changing else "deg_kf_test"))
         else:
             fig = plt.figure(figsize=(15, 9))
@@ -1432,7 +1432,7 @@ if __name__ == '__main__':
             handles, err_rat = plot_errs(colors, sys, err_lss_load, irreducible_error_load, ax=ax, shade=shade,
                                          normalized=excess)
 
-            if C_dist == "_unif_C" and config.dataset_typ == "ypred":
+            if C_dist == "_unif_C" and config.val_dataset_typ == "ypred":
                 if excess:
                     # plot fir bounds
                     for i in range(fir_bounds.shape[1] - 2):
@@ -1525,9 +1525,9 @@ if __name__ == '__main__':
                 # make the x axis log scale
                 ax.set_xscale('log')
                 # ax.set_ylim(bottom=-1, top=2*10**(-1))
-                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
-                    ": Upper Triangular A " if config.dataset_typ == "upperTriA" else (
-                        ": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + (
+                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+                    ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
+                        ": N(0,0.33) A " if config.val_dataset_typ == "gaussA" else ": Dense A "))) + (
                                  "Uniform C" if C_dist == "_unif_C" else (
                                      "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
                 # ax.set_xlim(left=0, right=10)
@@ -1539,7 +1539,7 @@ if __name__ == '__main__':
                 parent_parent_dir = os.path.dirname(parent_dir)
                 os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
                 fig.savefig(
-                    parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
+                    parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
                         "-changing" if config.changing else "_excess"))
             else:
                 ax.legend(fontsize=18, loc="upper right", ncol=max(1, math.floor(len(handles) / 4)))
@@ -1549,9 +1549,9 @@ if __name__ == '__main__':
                 ax.tick_params(axis='both', which='major', labelsize=30)
                 ax.tick_params(axis='both', which='minor', labelsize=20)
                 ax.set_ylim(bottom=10 ** (-0.7), top=3 * 10 ** (0))
-                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
-                    ": Upper Triangular A " if config.dataset_typ == "upperTriA" else (
-                        ": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + (
+                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+                    ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
+                        ": N(0,0.33) A " if config.val_dataset_typ == "gaussA" else ": Dense A "))) + (
                                  "Uniform C" if C_dist == "_unif_C" else (
                                      "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")), fontsize=20)
                 # ax.set_xlim(left=0, right=10)
@@ -1563,7 +1563,7 @@ if __name__ == '__main__':
                 parent_parent_dir = os.path.dirname(parent_dir)
                 os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
                 fig.savefig(
-                    parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
+                    parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
                         "-changing" if config.changing else ""))
 
     if run_deg_kf_test:
@@ -1589,7 +1589,7 @@ if __name__ == '__main__':
         # get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
         os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
-        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_cosine_similarities_deg_kf_test")
+        fig.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_cosine_similarities_deg_kf_test")
 
         # Create a new figure
         fig, ax = plt.subplots(figsize=(12, 2))  # set size frame
@@ -1600,7 +1600,7 @@ if __name__ == '__main__':
         tbl = table(ax, df2, loc='center', cellLoc='center')
         tbl.scale(1, 1.5)
 
-        plt.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_error_ratios_deg_kf_test")
+        plt.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_error_ratios_deg_kf_test")
 
         print("zero_ratios:", zero_ratios)
         fig, ax = plt.subplots(figsize=(12, 2))  # set size frame
@@ -1611,7 +1611,7 @@ if __name__ == '__main__':
         tbl = table(ax, df3, loc='center', cellLoc='center')
         tbl.scale(1, 1.5)
 
-        plt.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_zero_ratios_deg_kf_test")
+        plt.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_zero_ratios_deg_kf_test")
 
     if excess:
         ncol = 1 if len(handles) < 4 else math.floor(len(handles) / 2)
@@ -1624,12 +1624,12 @@ if __name__ == '__main__':
         # make the x axis log scale
         ax.set_xscale('log')
         # ax.set_ylim(bottom=-1, top=2*10**(-1))
-        ax.set_title(("Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
-            "Upper Triangular A " if config.dataset_typ == "upperTriA" else (
-                "N(0,0.33) A " if config.dataset_typ == "gaussA" else "Dense A "))) + (
+        ax.set_title(("Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+            "Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
+                "N(0,0.33) A " if config.val_dataset_typ == "gaussA" else "Dense A "))) + (
                          "Uniform C" if C_dist == "_unif_C" else (
                              "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
         # ax.set_xlim(left=0, right=10)
         os.makedirs(parent_parent_dir + f"/figures", exist_ok=True)
-        fig.savefig(parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff" + (
+        fig.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff" + (
             "-changing" if config.changing else "_excess"))

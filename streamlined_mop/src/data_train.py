@@ -66,7 +66,6 @@ def preds_thread(make_preds, resume_train, train_conv):
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade, logscale=logscale)
     return run_preds, run_deg_kf_test, excess, shade
 
-
 def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax, xax, rem):
 
     if subtract > 0:
@@ -267,6 +266,7 @@ if __name__ == '__main__':
         "num_tasks": 1,
         "num_val_tasks": 1,
         "dataset_typ": "gaussA",
+        "val_dataset_typ": "gaussA",
         "C_dist": "_gauss_C",
         "nx": 10,
         "ny": 5,

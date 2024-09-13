@@ -51,7 +51,7 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
 
                 config.override("dataset_typ", A_dists[index]) #override the dataset_typ
 
-            fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ, config.num_traces[name], config.n_positions, config.nx, config.ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
+            fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ if name == "train" else config.val_dataset_typ, config.num_traces[name], config.n_positions, config.nx, config.ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
                     
             repeated_A = np.repeat(sample["A"][np.newaxis,:,:], config.num_traces[name], axis=0) #repeat the A matrix for each trace
             sample["A"] = repeated_A #repeat the A matrix for each trace
@@ -63,13 +63,13 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
             sim_objs.append(fsim)
         print("Saving", len(samples), "samples for", name)
 
-        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}" + ("_mix" if train_mix and name == "train" else "") + ".pkl", "wb") as f:
+        with open(output_dir + f"/data/{name}_" + (f"{config.dataset_typ}" if name == "train" else f"{config.val_dataset_typ}") + f"{config.C_dist}" + ("_mix" if train_mix and name == "train" else "") + ".pkl", "wb") as f:
             pickle.dump(samples, f)
 
-        print("location:", output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}" + ("_mix" if train_mix and name == "train" else "") + ".pkl")
+        print("location:", output_dir + f"/data/{name}_" + (f"{config.dataset_typ}" if name == "train" else f"{config.val_dataset_typ}") + f"{config.C_dist}" + ("_mix" if train_mix and name == "train" else "") + ".pkl")
         print("output_dir:", output_dir)
         #save fsim to pickle file
-        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}" + ("_mix" if train_mix and name == "train" else "") + "_sim_objs.pkl", "wb") as f:
+        with open(output_dir + f"/data/{name}_" + (f"{config.dataset_typ}" if name == "train" else f"{config.val_dataset_typ}") + f"{config.C_dist}" + ("_mix" if train_mix and name == "train" else "") + "_sim_objs.pkl", "wb") as f:
             pickle.dump(sim_objs, f)
 
     if train_mix:
