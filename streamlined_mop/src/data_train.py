@@ -233,6 +233,7 @@ if __name__ == '__main__':
     parser.add_argument('--olsnorm', help='Boolean. subtract kalman performance from error', action='store_true')
     parser.add_argument('--t_conv_plot', help='Boolean. plot the convergence plots with t as the indep. var.', action='store_true')
     parser.add_argument('--logscale', help='Boolean. plot the system test evaluations on a logscale with KF err subtracted.', action='store_true')
+    parser.add_argument('--train_mix', help='Boolean. generate training data from gaussian, uppertriA, and rotdiagA', action='store_true')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -254,6 +255,8 @@ if __name__ == '__main__':
     t_conv_plot = args.t_conv_plot
     print("logscale arg", args.logscale)
     logscale = args.logscale
+    print("train_mix arg", args.train_mix)
+    train_mix = args.train_mix
 
 
     config = Config() # create a config object
@@ -602,7 +605,7 @@ if __name__ == '__main__':
         # output_dir = output_dir + f"_{config.dataset_typ}{config.C_dist}"
         os.makedirs(output_dir + f"/data/", exist_ok=True)
 
-        collect_data(model, config, output_dir) # collect data
+        collect_data(model, config, output_dir, train_mix=train_mix) # collect data
 
         # replace ckpt_path with the path to the checkpoint file
         config.override("ckpt_path", output_dir + "/checkpoints/step=" + str(config.train_steps) + ".ckpt")

@@ -61,11 +61,11 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
             sim_objs.append(fsim)
         print("Saving", len(samples), "samples for", name)
 
-        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}" + "_mix" if train_mix else "" + ".pkl", "wb") as f:
+        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}" + "_mix" if train_mix and name == "train" else "" + ".pkl", "wb") as f:
             pickle.dump(samples, f)
 
         #save fsim to pickle file
-        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}" + "_mix" if train_mix else "" + ".pkl", "wb") as f:
+        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}" + "_mix" if train_mix and name == "train" else "" + "_sim_objs.pkl", "wb") as f:
             pickle.dump(sim_objs, f)
 
     if train_mix:
