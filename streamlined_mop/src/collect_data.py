@@ -35,8 +35,10 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
 
         for i in tqdm(range(num_tasks)):
             if name == "train" and train_mix:
+                print(int(np.floor(len(A_dists)*i/num_tasks)))
                 if int(np.floor(len(A_dists)*i/num_tasks)) > 2:
                     index = 0
+                    print("greater than 2")
                 else:
                     index = int(np.floor(len(A_dists)*i/num_tasks))
 
@@ -105,4 +107,4 @@ if __name__ == "__main__":
     model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
                  n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
     
-    collect_data(model, config, "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C", only, train_mix)
+    collect_data(model, config, "../outputs/GPT2/240913_041304.9b4f8e_gaussA_gauss_C_mix", only, train_mix)

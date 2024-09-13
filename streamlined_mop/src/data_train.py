@@ -602,6 +602,8 @@ if __name__ == '__main__':
                     n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
         
         output_dir = setup_train(model)
+        if train_mix:
+            output_dir = output_dir + "_mix"
         # output_dir = output_dir + f"_{config.dataset_typ}{config.C_dist}"
         os.makedirs(output_dir + f"/data/", exist_ok=True)
 
