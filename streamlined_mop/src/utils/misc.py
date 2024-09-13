@@ -38,6 +38,7 @@ class classproperty(property):
 
 
 def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
+    names = ["MOP", "OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Analytical_Kalman", "Zero", "Kalman", "OLS_ir_length1_orig", "OLS_ir_length2_orig", "OLS_ir_length3_orig"]
     print("\n\n\nSYS", sys)
     err_rat = np.zeros(2)
     if ax is None:
@@ -46,24 +47,41 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
     ax.set_yscale('log')
     ax.grid()
     handles = []
+    color_count = 0
     for i, (name, err_ls) in enumerate(err_lss.items()):
         print("name", name)
         print("err_ls.shape", err_ls.shape)
-        if name == "MOP" or name == "OLS_ir_1" or name == "OLS_ir_2" or name == "OLS_ir_3" or name == "Analytical_Kalman" or name == "Zero" or name == "Kalman": #plot only select curves
+        if name in names: #plot only select curves
             if normalized:
                 t = np.arange(1, err_ls.shape[-1])
+                
                 # if name != "Kalman" and name != "Analytical_Kalman":
-                if name == "OLS_ir_1" or name == "OLS_ir_2" or name == "OLS_ir_3" or name == "MOP": 
-                    normalized_err = (err_ls - err_lss["Kalman"])
+                if not (name == "Analytical_Kalman"):# or name == "Kalman"): 
+                    print("len of t", len(t))
+                    try:
+                        # normalized_err = (err_ls - err_lss["Kalman"])
+                        #elementwise division of err_ls by err_lss["Analytical_Kalman"]
+                        irr_loses = err_lss["Analytical_Kalman"][:,0]
+                        normalized_err = err_ls[:,:,:]/irr_loses[:,np.newaxis, np.newaxis]
+                    except ValueError as e:
+                        print("name", name)
+                        print("Error: ", e)
+                        normalized_err = (err_ls - err_lss["Kalman"].mean(axis=1))
 
-                    q1, median, q3 = np.quantile(normalized_err[sys], [0.25, 0.5, 0.75], axis=-2)
-                    scale = median[1]
-                    q1 = q1/scale
-                    median = median/scale
-                    q3 = q3/scale
-                    handles.extend(ax.plot(t, median[1:], label=name + " sys: " + str(sys), linewidth=3))
+                    q1, median, q3 = np.quantile(normalized_err[sys], [0.45, 0.5, 0.55], axis=-2)
+                    # scale = median[1] #scale by the median value at the first time step
+                    # q1 = q1/scale
+                    # median = median/scale
+                    # q3 = q3/scale
+                    # if name start "OLS_ir_length" then delete "ir_length" and "orig" from the name
+                    if name.startswith("OLS_ir_length"):
+                        name = name.replace("ir_length", "")
+                        name = name.replace("_orig", "")
+                    handles.extend(ax.plot(t, median[1:], marker = None if name.startswith("OLS") else ".", label=name, linewidth=4 if name=="MOP" else 2, linestyle="-." if name.startswith("OLS") else "solid", color = colors[color_count], alpha= 0.7 if name.startswith("OLS") else 1))
                     if shade:
-                        ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.2)
+                        ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.15)
+                    
+                    color_count += 1
             else:
                 if name != "Analytical_Kalman":
                     avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)

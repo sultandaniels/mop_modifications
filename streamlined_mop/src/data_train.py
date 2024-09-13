@@ -22,12 +22,12 @@ def wandb_train(config_dict, model, output_dir):
     test_C_dist = config.C_dist
     # add ckpt_path to config_dict
     config_dict["ckpt_path"] = config.ckpt_path
-    config_dict["dataset_typ"] = "single_system"
-    config_dict["C_dist"] = "_single_system"
+    config_dict["dataset_typ"] = "gaussA"
+    config_dict["C_dist"] = "_gauss_C"
 
     #change dataset_typ and C_dist in config to "gaussA" and "_gauss_C" 
-    config.override("dataset_typ", "single_system")
-    config.override("C_dist", "_single_system")
+    config.override("dataset_typ", "gaussA")
+    config.override("C_dist", "_gauss_C")
 
     # 🐝 1️⃣ Start a new run to track this script
     run = wandb.init(
@@ -49,7 +49,7 @@ def preds_thread(make_preds, resume_train, train_conv):
     run_deg_kf_test = False #run degenerate KF test
     excess = False #run the excess plots
     shade = True
-    config.override("ckpt_path", "../outputs/GPT2/240910_234646.5b5972_single_system_single_system/checkpoints/step=192000.ckpt")
+    config.override("ckpt_path", "../outputs/GPT2/240615_182401.2139c3_gaussA_gauss_C/checkpoints/step=192000.ckpt")
 
     if resume_train:
         #get the parent directory of the ckpt_path
@@ -63,7 +63,7 @@ def preds_thread(make_preds, resume_train, train_conv):
         wandb_train(config_dict, model, output_dir)
     if not train_conv:
         # config.override("ckpt_path", "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C/checkpoints/step=192000.ckpt")
-        create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
+        create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade, logscale=logscale)
     return run_preds, run_deg_kf_test, excess, shade
 
 
@@ -232,6 +232,7 @@ if __name__ == '__main__':
     parser.add_argument('--kfnorm', help='Boolean. subtract kalman performance from error', action='store_true')
     parser.add_argument('--olsnorm', help='Boolean. subtract kalman performance from error', action='store_true')
     parser.add_argument('--t_conv_plot', help='Boolean. plot the convergence plots with t as the indep. var.', action='store_true')
+    parser.add_argument('--logscale', help='Boolean. plot the system test evaluations on a logscale with KF err subtracted.', action='store_true')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -251,6 +252,8 @@ if __name__ == '__main__':
     olsnorm = args.olsnorm
     print("t_conv_plot arg", args.t_conv_plot)
     t_conv_plot = args.t_conv_plot
+    print("logscale arg", args.logscale)
+    logscale = args.logscale
 
 
     config = Config() # create a config object
@@ -260,8 +263,8 @@ if __name__ == '__main__':
         "fully_reproducible": False,
         "num_tasks": 1,
         "num_val_tasks": 1,
-        "dataset_typ": "single_system",
-        "C_dist": "_single_system",
+        "dataset_typ": "gaussA",
+        "C_dist": "_gauss_C",
         "nx": 10,
         "ny": 5,
         "n_noise": 1,
@@ -613,4 +616,4 @@ if __name__ == '__main__':
         shade = True
 
         print("ckpt_path", config.ckpt_path)
-        create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade)
+        create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade, logscale=logscale)

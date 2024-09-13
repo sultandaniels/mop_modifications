@@ -863,7 +863,7 @@ def setup_deg_kf_axs_arrs(num_systems):
     return cos_sims, err_ratios, zero_ratios, deg_fig, axs
 
 
-def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade):
+def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade, logscale):
     C_dist = config.C_dist
     if excess:
         fig = plt.figure(figsize=(30, 15))
@@ -880,9 +880,17 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
     if run_deg_kf_test:
         cos_sims, err_ratios, zero_ratios, deg_fig, axs = setup_deg_kf_axs_arrs(num_systems)
 
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#00ced1', '#8c564b', '#e377c2', '#A80000', '#bcbd22',
-          '#7D00BD', '#d00960', '#006400', '#ff1493', '#00ff00', '#ff4500', '#8a2be2', '#5f9ea0', '#d2691e',
-          '#ff6347', '#4682b4', '#daa520', '#7fff00']
+    # colors = [ '#EE7733', '#0077BB', '#EE3377', '#CC3311', '#009988', '#DDDDDD', '#33BBEE', '#EEDD88', '#BBBBBB','#7D00BD', '#d00960', '#006400', '#ff1493', '#00ff00', '#ff4500', '#8a2be2', '#5f9ea0', '#d2691e','#ff6347', '#4682b4', '#daa520', '#7fff00']
+
+    # Define the dark colors in hex format
+    colors = [
+    '#1B4F72',  # Dark Blue
+    '#A04000',  # Dark Orange
+    '#2874A6',  # Dark Sky Blue
+    '#196F3D',  # Dark Green
+    '#B7950B',  # Dark Yellow
+    '#943126'   # Dark Red
+    ]
 
     print("len(err_lss_load):", len(err_lss_load))
     for sys in range(len(irreducible_error_load)):
@@ -896,7 +904,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
 
                 # plot transformer, KF and FIR errors
                 handles, err_rat = plot_errs(colors, sys, err_lss_copy, irreducible_error_load, ax=axs[i][sys],
-                                             shade=True, normalized=excess)
+                                             shade=True, normalized=logscale)
 
                 err_ratios[i, sys] = err_rat[0]
                 zero_ratios[i, sys] = err_rat[1]
@@ -970,89 +978,89 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
             ax = fig.add_subplot(111)
             # plot transformer, KF and FIR errors
             handles, err_rat = plot_errs(colors, sys, err_lss_load, irreducible_error_load, ax=ax, shade=shade,
-                                         normalized=excess)
+                                         normalized=logscale)
 
-            if C_dist == "_unif_C" and config.dataset_typ == "ypred":
-                if excess:
-                    # plot fir bounds
-                    for i in range(fir_bounds.shape[1] - 2):
-                        handles.extend(ax.plot(np.array(range(config.n_positions)),
-                                               (fir_bounds[sys, i] - irreducible_error_load[sys]) * np.ones(
-                                                   config.n_positions),
-                                               label="IR Analytical Length " + str(i + 1) + " sys: " + str(sys),
-                                               linewidth=3, linestyle='--'))  # , color = colors[i + 5]))
+            # if C_dist == "_unif_C" and config.dataset_typ == "ypred":
+            #     if excess:
+            #         # plot fir bounds
+            #         for i in range(fir_bounds.shape[1] - 2):
+            #             handles.extend(ax.plot(np.array(range(config.n_positions)),
+            #                                    (fir_bounds[sys, i] - irreducible_error_load[sys]) * np.ones(
+            #                                        config.n_positions),
+            #                                    label="IR Analytical Length " + str(i + 1) + " sys: " + str(sys),
+            #                                    linewidth=3, linestyle='--'))  # , color = colors[i + 5]))
 
-                    # #plot RNN errors
-                    # rnn_er = rnn_errors[sys].detach().numpy()
-                    # kalman_err = err_lss_load["Kalman"][sys,:, ::5].mean(axis=(0))
-                    # #figure out how to take median and quantiles of the rnn errors
-                    # rnn_q1, rnn_median, rnn_q3 = np.quantile((rnn_er -kalman_err), [0.25, 0.5, 0.75], axis=-2)
-                    # scale = rnn_median[1]
-                    # rnn_median = rnn_median/scale
-                    # rnn_q1 = rnn_q1/scale
-                    # rnn_q3 = rnn_q3/scale
-                    # N = rnn_median.shape[0]
-                    # # Adjust the range of np.arange function
-                    # x = np.arange(1, (N-1)*5 + 1, 5)
-                    # handles.append(ax.scatter(x, rnn_median[1:], label="RNN sys: " + str(sys), linewidth=3, marker='x', s=50))#, color=colors[len(err_lss_load)]))
-                    # if shade:
-                    #     ax.fill_between(x, rnn_q1[1:], rnn_q3[1:], facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+            #         # #plot RNN errors
+            #         # rnn_er = rnn_errors[sys].detach().numpy()
+            #         # kalman_err = err_lss_load["Kalman"][sys,:, ::5].mean(axis=(0))
+            #         # #figure out how to take median and quantiles of the rnn errors
+            #         # rnn_q1, rnn_median, rnn_q3 = np.quantile((rnn_er -kalman_err), [0.25, 0.5, 0.75], axis=-2)
+            #         # scale = rnn_median[1]
+            #         # rnn_median = rnn_median/scale
+            #         # rnn_q1 = rnn_q1/scale
+            #         # rnn_q3 = rnn_q3/scale
+            #         # N = rnn_median.shape[0]
+            #         # # Adjust the range of np.arange function
+            #         # x = np.arange(1, (N-1)*5 + 1, 5)
+            #         # handles.append(ax.scatter(x, rnn_median[1:], label="RNN sys: " + str(sys), linewidth=3, marker='x', s=50))#, color=colors[len(err_lss_load)]))
+            #         # if shade:
+            #         #     ax.fill_between(x, rnn_q1[1:], rnn_q3[1:], facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
 
-                    print("rnn_an_errors.shape:", rnn_an_errors.shape)
-                    # plot Analytical RNN errors
-                    rnn_an_er = rnn_an_errors[sys].detach().numpy()
-                    print("shape of err_lss_load[Kalman]:", err_lss_load["Kalman"][sys, :, ::5].shape)
-                    kalman_err = err_lss_load["Kalman"][sys, :, ::5].mean(axis=(0))
-                    # figure out how to take median and quantiles of the rnn errors
-                    rnn_an_q1, rnn_an_median, rnn_an_q3 = np.quantile((rnn_an_er - kalman_err), [0.25, 0.5, 0.75],
-                                                                      axis=-2)
-                    scale = rnn_an_median[1]
-                    rnn_an_median = rnn_an_median / scale
-                    rnn_an_q1 = rnn_an_q1 / scale
-                    rnn_an_q3 = rnn_an_q3 / scale
-                    N = rnn_an_median.shape[0]
-                    # Adjust the range of np.arange function
-                    x = np.arange(1, (N - 1) * 5 + 1, 5)
-                    handles.append(
-                        ax.scatter(x, rnn_an_median[1:], label="RNN Analytical sys: " + str(sys), linewidth=1,
-                                   marker='o', s=100))  # , color=colors[len(err_lss_load)]))
-                    if shade:
-                        ax.fill_between(x, rnn_an_q1[1:], rnn_an_q3[1:], facecolor=handles[-1].get_facecolor()[0],
-                                        alpha=0.2)
-                    # avg_an, std_an = rnn_an_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_an_errors.shape[1]))*rnn_an_errors.std(axis=(0, 1))
-                    # avg_an_numpy = avg_an.detach().numpy()
-                    # std_an_numpy = std_an.detach().numpy()
-                    # handles.append(ax.scatter(np.arange(0,251,5), avg_an_numpy, label="RNN Analytical", linewidth=1, marker='o', s=100))#, color=colors[len(err_lss_load)], zorder=10))
-                    # ax.fill_between(np.arange(rnn_an_errors.shape[-1]), avg_an_numpy - std_an_numpy, avg_an_numpy + std_an_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
-                else:
-                    # plot fir bounds
-                    for i in range(fir_bounds.shape[1] - 2):
-                        handles.extend(ax.plot(np.array(range(config.n_positions)),
-                                               fir_bounds[sys, i] * np.ones(config.n_positions),
-                                               label="IR Analytical Length " + str(i + 1), linewidth=3, linestyle='--',
-                                               color=colors[i + 5]))
+            #         print("rnn_an_errors.shape:", rnn_an_errors.shape)
+            #         # plot Analytical RNN errors
+            #         rnn_an_er = rnn_an_errors[sys].detach().numpy()
+            #         print("shape of err_lss_load[Kalman]:", err_lss_load["Kalman"][sys, :, ::5].shape)
+            #         kalman_err = err_lss_load["Kalman"][sys, :, ::5].mean(axis=(0))
+            #         # figure out how to take median and quantiles of the rnn errors
+            #         rnn_an_q1, rnn_an_median, rnn_an_q3 = np.quantile((rnn_an_er - kalman_err), [0.25, 0.5, 0.75],
+            #                                                           axis=-2)
+            #         scale = rnn_an_median[1]
+            #         rnn_an_median = rnn_an_median / scale
+            #         rnn_an_q1 = rnn_an_q1 / scale
+            #         rnn_an_q3 = rnn_an_q3 / scale
+            #         N = rnn_an_median.shape[0]
+            #         # Adjust the range of np.arange function
+            #         x = np.arange(1, (N - 1) * 5 + 1, 5)
+            #         handles.append(
+            #             ax.scatter(x, rnn_an_median[1:], label="RNN Analytical sys: " + str(sys), linewidth=1,
+            #                        marker='o', s=100))  # , color=colors[len(err_lss_load)]))
+            #         if shade:
+            #             ax.fill_between(x, rnn_an_q1[1:], rnn_an_q3[1:], facecolor=handles[-1].get_facecolor()[0],
+            #                             alpha=0.2)
+            #         # avg_an, std_an = rnn_an_errors[sys,:,:].mean(axis=(0)), (3/np.sqrt(rnn_an_errors.shape[1]))*rnn_an_errors.std(axis=(0, 1))
+            #         # avg_an_numpy = avg_an.detach().numpy()
+            #         # std_an_numpy = std_an.detach().numpy()
+            #         # handles.append(ax.scatter(np.arange(0,251,5), avg_an_numpy, label="RNN Analytical", linewidth=1, marker='o', s=100))#, color=colors[len(err_lss_load)], zorder=10))
+            #         # ax.fill_between(np.arange(rnn_an_errors.shape[-1]), avg_an_numpy - std_an_numpy, avg_an_numpy + std_an_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+            #     else:
+            #         # plot fir bounds
+            #         for i in range(fir_bounds.shape[1] - 2):
+            #             handles.extend(ax.plot(np.array(range(config.n_positions)),
+            #                                    fir_bounds[sys, i] * np.ones(config.n_positions),
+            #                                    label="IR Analytical Length " + str(i + 1), linewidth=3, linestyle='--',
+            #                                    color=colors[i + 5]))
 
-                    # plot RNN errors
-                    print("rnn_errors.shape:", rnn_errors.shape)
-                    avg, std = rnn_errors[sys, :, :].mean(axis=(0)), (3 / np.sqrt(
-                        rnn_errors.shape[1])) * rnn_errors.std(axis=(0, 1))
-                    avg_numpy = avg.detach().numpy()
-                    std_numpy = std.detach().numpy()
-                    handles.append(
-                        ax.scatter(np.arange(0, config.n_positions + 1, 5), avg_numpy, label="RNN", linewidth=1,
-                                   marker='x', s=50, color=colors[len(err_lss_load)]))
-                    ax.fill_between(np.arange(rnn_errors.shape[-1]), avg_numpy - std_numpy, avg_numpy + std_numpy,
-                                    facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+            #         # plot RNN errors
+            #         print("rnn_errors.shape:", rnn_errors.shape)
+            #         avg, std = rnn_errors[sys, :, :].mean(axis=(0)), (3 / np.sqrt(
+            #             rnn_errors.shape[1])) * rnn_errors.std(axis=(0, 1))
+            #         avg_numpy = avg.detach().numpy()
+            #         std_numpy = std.detach().numpy()
+            #         handles.append(
+            #             ax.scatter(np.arange(0, config.n_positions + 1, 5), avg_numpy, label="RNN", linewidth=1,
+            #                        marker='x', s=50, color=colors[len(err_lss_load)]))
+            #         ax.fill_between(np.arange(rnn_errors.shape[-1]), avg_numpy - std_numpy, avg_numpy + std_numpy,
+            #                         facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
 
-                    avg_an, std_an = rnn_an_errors[sys, :, :].mean(axis=(0)), (3 / np.sqrt(
-                        rnn_an_errors.shape[1])) * rnn_an_errors.std(axis=(0, 1))
-                    avg_an_numpy = avg_an.detach().numpy()
-                    std_an_numpy = std_an.detach().numpy()
-                    handles.append(
-                        ax.scatter(np.arange(0, 251, 5), avg_an_numpy, label="RNN Analytical", linewidth=1, marker='o',
-                                   s=100, color=colors[len(err_lss_load)], zorder=10))
-                    ax.fill_between(np.arange(rnn_an_errors.shape[-1]), avg_an_numpy - std_an_numpy,
-                                    avg_an_numpy + std_an_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
+            #         avg_an, std_an = rnn_an_errors[sys, :, :].mean(axis=(0)), (3 / np.sqrt(
+            #             rnn_an_errors.shape[1])) * rnn_an_errors.std(axis=(0, 1))
+            #         avg_an_numpy = avg_an.detach().numpy()
+            #         std_an_numpy = std_an.detach().numpy()
+            #         handles.append(
+            #             ax.scatter(np.arange(0, 251, 5), avg_an_numpy, label="RNN Analytical", linewidth=1, marker='o',
+            #                        s=100, color=colors[len(err_lss_load)], zorder=10))
+            #         ax.fill_between(np.arange(rnn_an_errors.shape[-1]), avg_an_numpy - std_an_numpy,
+            #                         avg_an_numpy + std_an_numpy, facecolor=handles[-1].get_facecolor()[0], alpha=0.2)
 
             if excess:
                 ncol = 1 if len(handles) < 4 else math.floor(len(handles) / 4)
@@ -1082,20 +1090,25 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
                     parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
                         "-changing" if config.changing else "_excess"))
             else:
-                ax.legend(fontsize=18, loc="upper right", ncol=max(1, math.floor(len(handles) / 4)))
+                ax.legend(fontsize=16, loc="upper right", ncol=max(1, math.floor(len(handles) / 2)))
                 ax.set_xlabel("i", fontsize=30)
-                ax.set_ylabel("Prediction Error", fontsize=30)
+                ax.set_ylabel("log(Err / Analytical KF Err)" if logscale else "Prediction Error", fontsize=30)
                 ax.grid(which="both")
                 ax.tick_params(axis='both', which='major', labelsize=30)
                 ax.tick_params(axis='both', which='minor', labelsize=20)
+                if logscale:
+                    ax.set_yscale('log')
+                    ax.set_xscale('log')
 
-                ax.set_ylim(bottom=10 ** (-0.7), top=1 * 10 ** (2))  # set the y axis limits
+
+                if not logscale:
+                    ax.set_ylim(bottom=10 ** (-0.7), top=1 * 10 ** (2))  # set the y axis limits
 
                 ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
-                    ": Upper Triangular A " if config.dataset_typ == "upperTriA" else (
-                        ": N(0,0.33) A " if config.dataset_typ == "gaussA" else ": Dense A "))) + (
+                    ": Upper Triangular A and " if config.dataset_typ == "upperTriA" else (
+                        ": Gaussian A and " if config.dataset_typ == "gaussA" else ("Single System" if config.dataset_typ == "single_system" else (": Uniform A and " if config.dataset_typ == "unifA" else ": Dense A and "))))) + (
                                  "Uniform C" if C_dist == "_unif_C" else (
-                                     "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")), fontsize=20)
+                                     "Gaussian C" if C_dist == "_gauss_C" else ("" if config.dataset_typ == "_single_system" else "N(0,1) C"))), fontsize=20)
                 # ax.set_xlim(left=0, right=10)
 
                 # get the parent directory of the ckpt_path
@@ -1106,7 +1119,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
                 os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
                 fig.savefig(
                     parent_parent_dir + f"/figures/{config.dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
-                        "-changing" if config.changing else ""))
+                        "logscale" if logscale else ""))
 
     if run_deg_kf_test:
         # Create a DataFrame from the numpy array
@@ -1168,7 +1181,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade)
         # ax.set_ylim(bottom=-1, top=2*10**(-1))
         ax.set_title(("Rotated Diagonal A " if config.dataset_typ == "rotDiagA" else (
             "Upper Triangular A " if config.dataset_typ == "upperTriA" else (
-                "N(0,0.33) A " if config.dataset_typ == "gaussA" else "Dense A "))) + (
+                "N(0,0.33) A " if config.dataset_typ == "gaussA" else ("Uniform A" if config.dataset_typ == "unifA" else "Dense A ")))) + (
                          "Uniform C" if C_dist == "_unif_C" else (
                              "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
         # ax.set_xlim(left=0, right=10)

@@ -9,7 +9,7 @@ from models import GPT2
 import argparse
 
 #modify collect data so that it can tolerate multiple traces for one system
-def collect_data(model, config, output_dir, only=""):
+def collect_data(model, config, output_dir, only="", train_mix=False):
 
     logger = logging.getLogger(__name__)
     # config = Config()
@@ -26,7 +26,31 @@ def collect_data(model, config, output_dir, only=""):
         samples = [] #make sure that train and val samples are different
         sim_objs = [] #make sure that train and val sim_objs are different
         print("Generating", num_tasks, "samples for", name)
+
+        if name == "train" and train_mix:
+            A_dists = ["gaussA", "upperTriA", "rotDiagA"]
+
         for i in tqdm(range(num_tasks)):
+            if name == "train" and train_mix:
+                if i % np.floor(num_tasks/3) >2:
+                    index = 0
+                else:
+                    index = i % np.floor(num_tasks/3)
+
+                zero_count = 0
+                one_count = 0
+                two_count = 0
+                if index == 0:
+                    zero_count += 1
+                elif index == 1:
+                    one_count += 1
+                elif index == 2:
+                    two_count += 1
+
+                config.dataset_typ = A_dists[int(i % np.floor(num_tasks/3))]
+                config.dataset_typ = A_dists[i % np.floor(num_tasks/3)] #cycle through the A_dists
+                config.override("dataset_typ", config.dataset_typ) #override the dataset_typ
+
             fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ, config.num_traces[name], config.n_positions, config.nx, config.ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
                     
             repeated_A = np.repeat(sample["A"][np.newaxis,:,:], config.num_traces[name], axis=0) #repeat the A matrix for each trace
@@ -39,12 +63,17 @@ def collect_data(model, config, output_dir, only=""):
             sim_objs.append(fsim)
         print("Saving", len(samples), "samples for", name)
 
-        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}.pkl", "wb") as f:
+        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}" + "_mix" if train_mix else "" + ".pkl", "wb") as f:
             pickle.dump(samples, f)
 
         #save fsim to pickle file
-        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}_sim_objs.pkl", "wb") as f:
+        with open(output_dir + f"/data/{name}_{config.dataset_typ}{config.C_dist}" + "_mix" if train_mix else "" + ".pkl", "wb") as f:
             pickle.dump(sim_objs, f)
+
+    if train_mix:
+        print("zero_count:", zero_count)
+        print("one_count:", one_count)
+        print("two_count:", two_count)
 
 if __name__ == "__main__":
 
@@ -54,12 +83,16 @@ if __name__ == "__main__":
     # Add the arguments
     parser.add_argument('--val', help='Boolean. only generate validation data', action='store_true')
     parser.add_argument('--train', help='Boolean. only generate training data', action='store_true')
+    parser.add_argument('--train_mix', help='Boolean. generate training data from gaussian, uppertriA, and rotdiagA', action='store_true')
 
 
     # Parse the arguments
     args = parser.parse_args()
     print("only val:", args.val)
     print("only train:", args.train)
+    print("train_mix:", args.train_mix)
+
+    train_mix = args.train_mix
 
     # Now you can use the flag
     if args.val:
@@ -73,4 +106,4 @@ if __name__ == "__main__":
     model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
                  n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
     
-    collect_data(model, config, "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C", only)
+    collect_data(model, config, "../outputs/GPT2/240619_070456.1e49ad_upperTriA_gauss_C", only, train_mix)
