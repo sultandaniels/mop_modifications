@@ -35,12 +35,10 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
 
         for i in tqdm(range(num_tasks)):
             if name == "train" and train_mix:
-                if i % np.floor(num_tasks/3) >2:
+                if int(np.floor(len(A_dists)*i/num_tasks)) > 2:
                     index = 0
                 else:
-                    index = i % np.floor(num_tasks/3)
-                index = int(index)
-
+                    index = int(np.floor(len(A_dists)*i/num_tasks))
 
                 if index == 0:
                     zero_count += 1
@@ -74,6 +72,7 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
         print("zero_count:", zero_count)
         print("one_count:", one_count)
         print("two_count:", two_count)
+        print("config.dataset_typ:", config.dataset_typ)
 
 if __name__ == "__main__":
 
