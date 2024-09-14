@@ -42,7 +42,7 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
     print("\n\n\nSYS", sys)
     err_rat = np.zeros(2)
     if ax is None:
-        fig = plt.figure(figsize=(15, 9))
+        fig = plt.figure(figsize=(15, 30))
         ax = fig.add_subplot(111)
     ax.set_yscale('log')
     ax.grid()
@@ -56,13 +56,12 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                 t = np.arange(1, err_ls.shape[-1])
                 
                 # if name != "Kalman" and name != "Analytical_Kalman":
-                if not (name == "Analytical_Kalman"):# or name == "Kalman"): 
-                    print("len of t", len(t))
+                if not (name == "Analytical_Kalman" or name == "Kalman"): 
                     try:
-                        # normalized_err = (err_ls - err_lss["Kalman"])
-                        #elementwise division of err_ls by err_lss["Analytical_Kalman"]
-                        irr_loses = err_lss["Analytical_Kalman"][:,0]
-                        normalized_err = err_ls[:,:,:]/irr_loses[:,np.newaxis, np.newaxis]
+                        normalized_err = (err_ls - err_lss["Kalman"])
+                        # #elementwise division of err_ls by err_lss["Analytical_Kalman"]
+                        # irr_loses = err_lss["Analytical_Kalman"][:,0]
+                        # normalized_err = err_ls[:,:,:]/irr_loses[:,np.newaxis, np.newaxis]
                     except ValueError as e:
                         print("name", name)
                         print("Error: ", e)
@@ -79,7 +78,7 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                         name = name.replace("_orig", "")
                     handles.extend(ax.plot(t, median[1:], marker = None if name.startswith("OLS") else ".", label=name, linewidth=4 if name=="MOP" else 2, linestyle="-." if name.startswith("OLS") else "solid", color = colors[color_count], alpha= 0.7 if name.startswith("OLS") else 1))
                     if shade:
-                        ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.15)
+                        ax.fill_between(t, q1[1:], q3[1:], facecolor=handles[-1].get_color(), alpha=0.07)
                     
                     color_count += 1
             else:

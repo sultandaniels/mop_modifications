@@ -73,9 +73,9 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
             pickle.dump(sim_objs, f)
 
     if train_mix:
-        print("zero_count:", zero_count)
-        print("one_count:", one_count)
-        print("two_count:", two_count)
+        print(A_dists[0] + " count:", zero_count)
+        print(A_dists[1] + "count:", one_count)
+        print(A_dists[2] + "count:", two_count)
         print("config.dataset_typ:", config.dataset_typ)
 
 if __name__ == "__main__":

@@ -884,12 +884,12 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
 
     # Define the dark colors in hex format
     colors = [
-    '#1B4F72',  # Dark Blue
-    '#A04000',  # Dark Orange
-    '#2874A6',  # Dark Sky Blue
-    '#196F3D',  # Dark Green
-    '#B7950B',  # Dark Yellow
-    '#943126'   # Dark Red
+    '#1f77b4',  # Dark Blue
+    '#ff7f0e',  # Dark Orange
+    '#2ca02c',  # Dark Green
+    '#d62728',  # Dark Red
+    '#9467bd',  # Purple
+    '#17becf'   # Dark Cyan
     ]
 
     print("len(err_lss_load):", len(err_lss_load))
@@ -974,7 +974,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 deg_fig.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + (
                     "-changing_deg_kf_test" if config.changing else "deg_kf_test"))
         else:
-            fig = plt.figure(figsize=(15, 9))
+            fig = plt.figure(figsize=(15, 15)) # create a figure with a size of 15x15
             ax = fig.add_subplot(111)
             # plot transformer, KF and FIR errors
             handles, err_rat = plot_errs(colors, sys, err_lss_load, irreducible_error_load, ax=ax, shade=shade,
@@ -1090,9 +1090,12 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                     parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
                         "-changing" if config.changing else "_excess"))
             else:
-                ax.legend(fontsize=16, loc="upper right", ncol=max(1, math.floor(len(handles) / 2)))
+                ax.legend(fontsize=16, loc="lower right", ncol=max(1, math.floor(len(handles) / 2)))
                 ax.set_xlabel("i", fontsize=30)
-                ax.set_ylabel("log(Err / Analytical KF Err)" if logscale else "Prediction Error", fontsize=30)
+
+                # ax.set_ylabel("log(Err / Analytical KF Err)" if logscale else "Prediction Error", fontsize=30)
+                ax.set_ylabel("log(Err - Empirical KF Err)" if logscale else "Prediction Error", fontsize=30)
+
                 ax.grid(which="both")
                 ax.tick_params(axis='both', which='major', labelsize=30)
                 ax.tick_params(axis='both', which='minor', labelsize=20)
