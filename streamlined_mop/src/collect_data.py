@@ -109,4 +109,4 @@ if __name__ == "__main__":
     model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
                  n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
     
-    collect_data(model, config, "../outputs/GPT2/240913_041304.9b4f8e_gaussA_gauss_C_mix", only, train_mix)
+    collect_data(model, config, "../outputs/GPT2/240913_232646.06cf0c_gaussA_gauss_C_mix", only, train_mix)
