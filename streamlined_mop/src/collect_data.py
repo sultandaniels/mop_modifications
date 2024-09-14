@@ -13,7 +13,6 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
 
     logger = logging.getLogger(__name__)
     # config = Config()
-    print("Collecting data for", config.dataset_typ, config.C_dist)
 
 
     # instantiate gpt2 model (FOR THE SAKE OF TESTING, REMOVE LATER)
@@ -32,6 +31,11 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
 
         if name == "train" and train_mix:
             A_dists = ["gaussA", "upperTriA", "rotDiagA"]
+            print("Collecting training data from", A_dists, config.C_dist)
+        elif name == "train" and not train_mix:
+            print("Collecting training data from", config.dataset_typ, config.C_dist)
+        elif name == "val":
+            print("Collecting validation data from", config.val_dataset_typ, config.C_dist)
 
         for i in tqdm(range(num_tasks)):
             if name == "train" and train_mix:
@@ -62,7 +66,6 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
             sim_objs.append(fsim)
         print("Saving", len(samples), "samples for", name)
 
-        print("config.dataset_typ:", config.dataset_typ)
         with open(output_dir + f"/data/{name}_" + (f"{config.dataset_typ}" if name == "train" else f"{config.val_dataset_typ}") + f"{config.C_dist}" + ("_mix" if train_mix and name == "train" else "") + ".pkl", "wb") as f:
             pickle.dump(samples, f)
 
