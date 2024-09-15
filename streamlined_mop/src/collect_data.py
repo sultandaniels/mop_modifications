@@ -93,7 +93,7 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
         print(A_dists[2] + "count:", two_count)
         print("config.dataset_typ:", config.dataset_typ)
     
-    if config.dataset_typ == "cond_num":
+    if config.dataset_typ == "cond_num" and not (only == "val"):
         for i in range(config.distinct_cond_nums):
             print("cond_num:", cond_nums[i], "count:", cond_counts[i])
 
