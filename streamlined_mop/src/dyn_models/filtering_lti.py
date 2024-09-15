@@ -162,7 +162,6 @@ class FilterSim:
             self.A = A * 0.95 #scale the matrix
 
         elif tri == "cond_num":
-            print("in cond_num")
             A = generate_random_mat_cond_number(nx, cond_num) #generate a random matrix with a condition number of cond_number
             self.A = A
 
