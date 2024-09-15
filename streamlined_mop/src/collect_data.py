@@ -37,7 +37,17 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
         elif name == "val":
             print("Collecting validation data from", config.val_dataset_typ, config.C_dist)
 
+        if name == "train" and config.dataset_typ == "cond_num":
+            #set a list with 10 integer values from 1 to max_cond_num
+            cond_nums = np.linspace(0, config.max_cond_num, config.distinct_cond_nums + 1, dtype=int)
+            cond_nums = cond_nums[1:] #remove the first element which is 0
+            print("cond_num:", cond_nums)
+            #setup counters for each distinct cond_num
+            cond_counts = np.zeros(config.distinct_cond_nums)
+
+
         for i in tqdm(range(num_tasks)):
+            print("i:", i)
             if name == "train" and train_mix:
                 if int(np.floor(len(A_dists)*i/num_tasks)) > 2:
                     index = 0
@@ -54,7 +64,10 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
 
                 config.override("dataset_typ", A_dists[index]) #override the dataset_typ
 
-            fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ if name == "train" else config.val_dataset_typ, config.num_traces[name], config.n_positions, config.nx, config.ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise)
+            fsim, sample = generate_lti_sample(config.C_dist, config.dataset_typ if name == "train" else config.val_dataset_typ, config.num_traces[name], config.n_positions, config.nx, config.ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=config.n_noise, cond_num=cond_nums[int(np.floor(config.distinct_cond_nums*i/num_tasks))] if (name == "train" and config.dataset_typ == "cond_num") else None)
+
+            if name == "train" and config.dataset_typ == "cond_num":
+                cond_counts[int(np.floor(config.distinct_cond_nums*i/num_tasks))] += 1
                     
             repeated_A = np.repeat(sample["A"][np.newaxis,:,:], config.num_traces[name], axis=0) #repeat the A matrix for each trace
             sample["A"] = repeated_A #repeat the A matrix for each trace
@@ -80,6 +93,10 @@ def collect_data(model, config, output_dir, only="", train_mix=False):
         print(A_dists[1] + "count:", one_count)
         print(A_dists[2] + "count:", two_count)
         print("config.dataset_typ:", config.dataset_typ)
+    
+    if config.dataset_typ == "cond_num":
+        for i in range(config.distinct_cond_nums):
+            print("cond_num:", cond_nums[i], "count:", cond_counts[i])
 
 if __name__ == "__main__":
 

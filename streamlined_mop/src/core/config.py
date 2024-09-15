@@ -22,8 +22,10 @@ class Config(object, metaclass=Singleton):
     # Dataset settings
     num_tasks = 40000 #number of training systems
     num_val_tasks = 3 #number of test systems
-    dataset_typ = "gaussA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system"
-    val_dataset_typ = "upperTriA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system"
+    dataset_typ = "cond_num" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system" #"cond_num"
+    max_cond_num = 100
+    distinct_cond_nums = 10
+    val_dataset_typ = "gaussA"#"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system"
     C_dist = "_unif_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var" #"single_system"
     nx = 10
     ny = 5

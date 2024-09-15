@@ -3,6 +3,7 @@ import scipy as sc
 from numpy import linalg as lin
 from scipy import linalg as la
 from filterpy.kalman import KalmanFilter
+import random
 
 
 def softplus(x):
@@ -63,6 +64,38 @@ def gen_A(elow, ehigh, n): # generates a 2d A matrix with evalue magnitudes in b
     print("np.abs(lin.eigvals(out)):", np.abs(lin.eigvals(out))) 
     return out
 
+def generate_random_list(lowest, highest):
+    # Generate 8 random numbers between lowest and highest
+    random_numbers = [random.uniform(lowest, highest) for _ in range(8)]
+    
+    # Add the specified lowest and highest numbers
+    random_numbers.append(lowest)
+    random_numbers.append(highest)
+    
+    #sort the list from lowest to highest
+    random_numbers.sort(reverse=False)
+    
+    return random_numbers
+
+def generate_random_rotation_matrix(n):
+    # Generate a random 10x10 matrix
+    random_matrix = np.random.randn(n, n)
+
+    # Use QR decomposition to get a random rotation matrix
+    Q, R = np.linalg.qr(random_matrix)
+    return Q
+
+def generate_random_mat_cond_number(n, cond_number):
+    top = 1 #set the top bound for the singular values
+    low = top / cond_number
+    s = generate_random_list(low, top)
+    S = np.diag(s)
+    U = generate_random_rotation_matrix(n)
+    VT = generate_random_rotation_matrix(n)
+    random_matrix = U @ S @ VT
+
+    # print("cond number = ", np.linalg.cond(random_matrix))
+    return random_matrix
 
 ####################################################################################################
 
@@ -87,7 +120,7 @@ class FilterSim:
 
     # ####################################################################################################
     # #code that I added
-    def __init__(self, nx, ny, sigma_w, sigma_v, tri, C_dist, n_noise, new_eig):
+    def __init__(self, nx, ny, sigma_w, sigma_v, tri, C_dist, n_noise, new_eig, cond_num=10):
         self.sigma_w = sigma_w
         self.sigma_v = sigma_v
 
@@ -127,6 +160,12 @@ class FilterSim:
             ]) #generate a random specific matrix
             A /= np.max(np.abs(np.linalg.eigvals(A)))
             self.A = A * 0.95 #scale the matrix
+
+        elif tri == "cond_num":
+            print("in cond_num")
+            A = generate_random_mat_cond_number(nx, cond_num) #generate a random matrix with a condition number of cond_number
+            self.A = A
+
         else:
             if new_eig:
                 self.A = gen_A(0.97, 0.99, nx)
@@ -261,8 +300,8 @@ def apply_kf(fsim, ys, sigma_w=None, sigma_v=None, return_obj=False):
 # code that I added
 
 
-def _generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
-    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri=dataset_typ, C_dist=C_dist, n_noise=n_noise, new_eig = False)
+def _generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1, cond_num=None):
+    fsim = FilterSim(nx, ny, sigma_w, sigma_v, tri=dataset_typ, C_dist=C_dist, n_noise=n_noise, new_eig = False, cond_num=cond_num)
     states, obs = fsim.simulate_steady(batch_size, n_positions)
     return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
 
@@ -272,9 +311,9 @@ def _generate_lti_sample_new_eig(C_dist, dataset_typ, batch_size, n_positions, n
     return fsim, {"states": states, "obs": obs, "A": fsim.A, "C": fsim.C}
 
 
-def generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1):
+def generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w=1e-1, sigma_v=1e-1, n_noise=1, cond_num=None):
     while True:
-        fsim, entry = _generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w, sigma_v, n_noise=n_noise)
+        fsim, entry = _generate_lti_sample(C_dist, dataset_typ, batch_size, n_positions, nx, ny, sigma_w, sigma_v, n_noise=n_noise, cond_num=cond_num)
         if check_validity(entry):
             return fsim, entry
         
