@@ -372,6 +372,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
     logger = logging.getLogger(__name__)  # get the logger
 
+    print("val_dataset_typ:", config.val_dataset_typ)
     num_systems = config.num_val_tasks  # number of validation tasks
     print("Number of validation systems:", num_systems)
     num_trials = config.num_traces["val"]  # number of traces
