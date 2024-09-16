@@ -1109,7 +1109,7 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
 
                 ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
                     ": Upper Triangular A and " if config.val_dataset_typ == "upperTriA" else (
-                        ": Gaussian A and " if config.val_dataset_typ == "gaussA" else ("Single System" if config.val_dataset_typ == "single_system" else (": Uniform A and " if config.val_dataset_typ == "unifA" else ": Dense A and "))))) + (
+                        ": Gaussian A and " if config.val_dataset_typ == "gaussA" else (": Single System " if config.val_dataset_typ == "single_system" else (": Uniform A and " if config.val_dataset_typ == "unifA" else ": Dense A and "))))) + (
                                  "Uniform C" if C_dist == "_unif_C" else (
                                      "Gaussian C" if C_dist == "_gauss_C" else ("" if config.val_dataset_typ == "_single_system" else "N(0,1) C"))), fontsize=20)
                 # ax.set_xlim(left=0, right=10)
