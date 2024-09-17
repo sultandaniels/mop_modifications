@@ -6,6 +6,7 @@ from models import BaseModel
 
 class TransformerXL(BaseModel):
     def __init__(self, config):
+        super(TransformerXL, self).__init__()  # Initialize the parent class
         self.config = config
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
