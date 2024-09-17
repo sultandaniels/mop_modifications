@@ -5,16 +5,16 @@ from transformers import TransfoXLConfig, TransfoXLModel
 from models import BaseModel
 
 class TransformerXL(BaseModel):
-    def __init__(self, config):
+    def __init__(self, config, d_model, n_head, n_layer, n_positions):
         self.config = config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # Initialize Transformer-XL model from scratch
         model_config = TransfoXLConfig(
-            d_model=config.d_model,
-            n_head=config.n_head,
-            n_layer=config.n_layer,
-            n_positions=config.n_positions
+            d_model=d_model,
+            n_head=n_head,
+            n_layer=n_layer,
+            n_positions=n_positions
         )
         self.model = TransfoXLModel(model_config).to(self.device)
         
