@@ -7,7 +7,7 @@ from models import BaseModel
 class TransformerXL(BaseModel):
     def __init__(self, config):
         self.config = config
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # Initialize Transformer-XL model from scratch
         model_config = TransfoXLConfig(
@@ -16,7 +16,7 @@ class TransformerXL(BaseModel):
             n_layer=config.n_layer,
             n_positions=config.n_positions
         )
-        self.model = TransfoXLModel(model_config).to(self.device)
+        self.model = TransfoXLModel(model_config).to(self._device)
         
         # Optimizer
         self.optimizer = optim.AdamW(self.model.parameters(), lr=config.learning_rate)
@@ -29,8 +29,8 @@ class TransformerXL(BaseModel):
         for epoch in range(self.config.epochs):
             for batch in train_dataloader:
                 inputs, labels = batch
-                inputs = inputs.to(self.device)
-                labels = labels.to(self.device)
+                inputs = inputs.to(self._device)
+                labels = labels.to(self._device)
                 
                 self.optimizer.zero_grad()
                 outputs = self.model(inputs)
@@ -50,8 +50,8 @@ class TransformerXL(BaseModel):
         with torch.no_grad():
             for batch in dataloader:
                 inputs, labels = batch
-                inputs = inputs.to(self.device)
-                labels = labels.to(self.device)
+                inputs = inputs.to(self._device)
+                labels = labels.to(self._device)
                 
                 outputs = self.model(inputs)
                 logits = outputs.last_hidden_state
@@ -81,14 +81,14 @@ class TransformerXL(BaseModel):
         return output_dict
 
     def predict_ar(self, ins, fix_window_len=True):
-        ins = torch.from_numpy(ins).float().to(self.device)
+        ins = torch.from_numpy(ins).float().to(self._device)
         one_d = False
         if ins.ndim == 2:
             one_d = True
             ins = ins.unsqueeze(0)
         bsize, points, _ = ins.shape
         d_o = self.config.n_dims_out
-        outs = torch.zeros(bsize, 1, d_o).to(self.device)
+        outs = torch.zeros(bsize, 1, d_o).to(self._device)
         with torch.no_grad():
             for i in range(1, points + 1):
                 I = ins[:, :i]
@@ -103,7 +103,7 @@ class TransformerXL(BaseModel):
         return outs
 
     def predict_step(self, input_dict):
-        xs = input_dict["xs"].to(self.device)
+        xs = input_dict["xs"].to(self._device)
         outputs = self.model(xs)
         preds = outputs.last_hidden_state
         intermediate_dict = {"preds": preds}
