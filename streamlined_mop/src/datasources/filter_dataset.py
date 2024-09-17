@@ -26,7 +26,7 @@ class FilterDataset(Dataset):
 
         obs = entry.pop("obs")
         L = obs.shape[-2]
-        if config.dataset_typ in ["unifA", "noniid", "upperTriA", "rotDiagA", "gaussA", "gaussA_noscale", "single_system", "cond_num"]:
+        if config.dataset_typ in ["unifA", "noniid", "upperTriA", "rotDiagA", "rotDiagA_unif", "rotDiagA_gauss", "gaussA", "gaussA_noscale", "single_system", "cond_num"]:
             entry["xs"] = np.take(obs, np.arange(L - 1), axis=-2)
             entry["ys"] = np.take(obs, np.arange(1, L), axis=-2)
         elif config.dataset_typ == "drone":

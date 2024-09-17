@@ -31,7 +31,6 @@ def setup_train(model, train_mix=False):
         output_dir = '../outputs/' + identifier + f"_{config.dataset_typ}{config.C_dist}" + ("_mix" if train_mix else "")
 
         if not os.path.isdir(output_dir):
-            print("here")
             os.makedirs(output_dir, exist_ok=True)
 
         # Write source code to output dir
