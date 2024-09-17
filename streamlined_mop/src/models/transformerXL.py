@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from transformers import TransfoXLConfig, TransfoXLModel
+from models import BaseModel
 
-class TransformerXLTrainer:
+class TransformerXL(BaseModel):
     def __init__(self, config):
         self.config = config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
