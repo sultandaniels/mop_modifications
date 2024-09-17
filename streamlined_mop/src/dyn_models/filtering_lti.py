@@ -131,7 +131,7 @@ class FilterSim:
             A[np.triu_indices(nx, 1)] = np.random.uniform(-1, 1, (nx ** 2 + nx) // 2 - nx)
             self.A = A
         # elif tri == "rotDiagA":
-        elif tri.beginswith("rotDiagA"):
+        elif tri.startswith("rotDiagA"):
             if tri == "rotDiagA":
                 A = np.diag([0.99,0.98,0.97,0.96,0.95,0.94,0.93,0.92,0.91,0.9]) * 0.95 #generate a random diagonal matrix #values are handpicked to be near 1
             elif tri == "rotDiagA_unif":
