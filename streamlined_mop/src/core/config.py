@@ -20,21 +20,21 @@ class Config(object, metaclass=Singleton):
     fully_reproducible = False
 
     # Dataset settings
-    num_tasks = 4 #number of training systems
+    num_tasks = 40000 #number of training systems
     num_val_tasks = 3 #number of test systems
-    dataset_typ = "gaussA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system" #"cond_num"
+    dataset_typ = "single_system" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system" #"cond_num"
     max_cond_num = 100
     distinct_cond_nums = 10
-    val_dataset_typ = "gaussA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system" #"cond_num"
-    C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var" #"_single_system"
+    val_dataset_typ = "single_system" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system" #"cond_num"
+    C_dist = "_single_system" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var" #"_single_system"
     nx = 10
     ny = 5
     n_noise = 1
     num_traces = {"train": 1, "val": 2000}
 
     # Training settings
-    train_steps = 7 #192000 #number of training steps
-    train_int = 7 #4000 #number of steps between logging (train interval)
+    train_steps = 192000 #number of training steps
+    train_int = 4000 #number of steps between logging (train interval)
     batch_size = 28 #does changing this by 2x or 0.5x change the training time? (if no effect than batch size is too big)
     train_data_workers = 1 #set to 1 (check if it changes the speed of the training process)
     test_batch_size = 16 #256
@@ -42,7 +42,7 @@ class Config(object, metaclass=Singleton):
     num_epochs = 1
 
     # Model settings
-    model_type = "transfoXL" #"GPT2" #"transfoXL"
+    model_type = "GPT2" #"GPT2" #"transfoXL"
     n_positions = 250 #500 for extended OLS #250 #context length
     n_embd = 128
     n_layer = 12

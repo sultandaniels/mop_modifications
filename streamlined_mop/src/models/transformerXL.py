@@ -25,25 +25,39 @@ class TransformerXL(BaseModel):
         # Loss function
         self.criterion = nn.CrossEntropyLoss()
 
-    def train(self, train_dataloader, val_dataloader=None):
-        self.model.train()
-        for epoch in range(self.config.epochs):
-            for batch in train_dataloader:
-                inputs, labels = batch
-                inputs = inputs.to(self._device)
-                labels = labels.to(self._device)
+    # def train(self, train_dataloader, val_dataloader=None):
+    #     self.model.train()
+    #     for epoch in range(self.config.epochs):
+    #         for batch in train_dataloader:
+    #             inputs, labels = batch
+    #             inputs = inputs.to(self._device)
+    #             labels = labels.to(self._device)
                 
-                self.optimizer.zero_grad()
-                outputs = self.model(inputs)
-                logits = outputs.last_hidden_state
-                loss = self.criterion(logits.view(-1, logits.size(-1)), labels.view(-1))
-                loss.backward()
-                self.optimizer.step()
+    #             self.optimizer.zero_grad()
+    #             outputs = self.model(inputs)
+    #             logits = outputs.last_hidden_state
+    #             loss = self.criterion(logits.view(-1, logits.size(-1)), labels.view(-1))
+    #             loss.backward()
+    #             self.optimizer.step()
                 
-                print(f"Epoch {epoch}, Loss: {loss.item()}")
+    #             print(f"Epoch {epoch}, Loss: {loss.item()}")
 
-            if val_dataloader:
-                self.evaluate(val_dataloader)
+    #         if val_dataloader:
+    #             self.evaluate(val_dataloader)
+
+    def forward(self, inputs):
+        """
+        Forward pass for the TransformerXL model.
+        
+        Args:
+            inputs (torch.Tensor): Input tensor of shape (batch_size, sequence_length).
+        
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, sequence_length, d_model).
+        """
+        inputs = inputs.to(self._device)
+        outputs = self.model(inputs)
+        return outputs.last_hidden_state
 
     def evaluate(self, dataloader):
         self.model.eval()
