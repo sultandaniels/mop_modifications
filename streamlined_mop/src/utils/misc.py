@@ -100,6 +100,9 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                 if name == "Zero":
                     err_rat[1] = np.mean(avg)/err_irreducible[sys]
                     print("Zero (time avergaged mean)/(irreducible): ", err_rat[1])
+
+        if name == "Zero":
+            print("System", sys, "Zero predictor avged over traces and time:", err_ls[sys,:,:].mean(axis=(0,1)))
     return handles, err_rat
 
 def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, normalized, legend_loc="upper right", ax=None, shade=True, kal_err=None):
