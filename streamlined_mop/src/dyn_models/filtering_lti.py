@@ -178,8 +178,6 @@ class FilterSim:
             ]) #generate a random specific matrix
             A /= np.max(np.abs(np.linalg.eigvals(A)))
             self.A = A * 0.95 #scale the matrix
-            print("A:", self.A)
-            print("eigenvalues of A:", np.linalg.eigvals(self.A))
 
         elif tri == "cond_num":
             A = generate_random_mat_cond_number(nx, cond_num) #generate a random matrix with a condition number of cond_number
@@ -213,7 +211,6 @@ class FilterSim:
                 [ 0.34049993, -1.39124344,  1.17060005, -0.52646281, -1.23408133, -0.67153237,
                 1.51040147,  0.91665462, -1.1607541, -0.10762072]
             ]) #generate a random specific matrix  
-            print("C:", self.C)
         else:
             self.C = np.eye(nx) if nx == ny else self.construct_C(self.A, ny, normC)
 
