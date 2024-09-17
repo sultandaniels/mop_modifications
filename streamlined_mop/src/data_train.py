@@ -601,7 +601,7 @@ if __name__ == '__main__':
             # instantiate gpt2 model
             model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
                         n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
-        elif config.model_type == "transofXL":
+        elif config.model_type == "transfoXL":
             model = transformerXL(d_model=config.d_model,
                 n_head=config.n_head,
                 n_layer=config.n_layer,
