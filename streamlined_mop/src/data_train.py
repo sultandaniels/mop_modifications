@@ -602,10 +602,7 @@ if __name__ == '__main__':
             model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
                         n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
         elif config.model_type == "transfoXL":
-            model = TransformerXL(d_model=config.d_model,
-                n_head=config.n_head,
-                n_layer=config.n_layer,
-                n_positions=config.n_positions)
+            model = TransformerXL(config=config)
         
 
         output_dir = setup_train(model, train_mix)
