@@ -12,13 +12,8 @@ class TransformerXLTrainer:
         model_config = TransfoXLConfig(
             d_model=config.d_model,
             n_head=config.n_head,
-            d_inner=config.d_inner,
             n_layer=config.n_layer,
-            cutoffs=config.cutoffs,
-            div_val=config.div_val,
-            mem_len=config.mem_len,
-            same_length=config.same_length,
-            clamp_len=config.clamp_len
+            n_positions=config.n_positions
         )
         self.model = TransfoXLModel(model_config).to(self.device)
         

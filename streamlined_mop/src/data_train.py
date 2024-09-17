@@ -1,5 +1,5 @@
 from collect_data import collect_data
-from models import GPT2
+from models import GPT2, transformerXL
 from core import Config
 from train import train_gpt2
 from core import setup_train
@@ -597,9 +597,15 @@ if __name__ == '__main__':
         # save_figure_c(figc_an, config, kfnorm, olsnorm, yax=yax, xax=xax, subtracted=False)
 
     else:
-        # instantiate gpt2 model
-        model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
-                    n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
+        if config.model_type == "GPT2":
+            # instantiate gpt2 model
+            model = GPT2(config.n_dims_in, config.n_positions, n_dims_out=config.n_dims_out,
+                        n_embd=config.n_embd, n_layer=config.n_layer, n_head=config.n_head)
+        elif config.model_type == "transofXL":
+            model = transformerXL(d_model=config.d_model,
+                n_head=config.n_head,
+                n_layer=config.n_layer,
+                n_positions=config.n_positions)
         
 
         output_dir = setup_train(model, train_mix)

@@ -51,6 +51,15 @@ class Config(object, metaclass=Singleton):
     n_dims_out = 5  #(IMPORTANT TO KEEP THIS AT 5 FOR NOW) TODO: this used to be 10 but needs to be fixed to match lin_sys.yaml
     changing = False  # only used for plotting
 
+    #transfoXL specific
+    d_model = 512
+    # d_inner = 2048
+    # cutoffs = [20000, 40000, 200000]
+    # div_val = 4
+    # mem_len = 1600
+    # same_length = True
+    # clamp_len = 1000
+
     # Optimizer parameters
     learning_rate = 3e-4
     weight_decay = 1e-2
