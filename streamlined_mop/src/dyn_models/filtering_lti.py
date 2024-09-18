@@ -154,7 +154,7 @@ class FilterSim:
         elif tri == "gaussA_noscale":
             self.A = np.sqrt(0.33)*np.random.randn(nx, nx) #same second moment as uniform(-1,1)
         elif tri == "single_system":
-            A = np.array([
+            self.A = np.array([
                 [ 0.18456165,  0.16021711,  0.21647554,  0.26663666, -0.14021315, -0.11500664,
                 0.22839415,  0.22999771,  0.24614115, -0.11526197],
                 [ 0.16313339,  0.01252268,  0.37899637, -0.05354309, -0.0167731,  -0.20861132,
