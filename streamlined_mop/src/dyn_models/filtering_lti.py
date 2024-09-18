@@ -176,8 +176,6 @@ class FilterSim:
                 [-0.1204465,   0.26444027,  0.04800574, -0.1564598,  -0.2613636,   0.22308088,
                 -0.13157398, -0.15901738, -0.14905257, -0.14572716]
             ]) #generate a random specific matrix
-            A /= np.max(np.abs(np.linalg.eigvals(A)))
-            self.A = A * 0.95 #scale the matrix
 
         elif tri == "cond_num":
             A = generate_random_mat_cond_number(nx, cond_num) #generate a random matrix with a condition number of cond_number

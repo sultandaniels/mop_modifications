@@ -49,6 +49,8 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
     handles = []
     color_count = 0
     for i, (name, err_ls) in enumerate(err_lss.items()):
+        if name == "Zero":
+            print("\n\nSystem", sys, "Zero predictor avged over traces and time:", err_ls[sys,:,:].mean(axis=(0,1)))
         print("name", name)
         print("err_ls.shape", err_ls.shape)
         if name in names: #plot only select curves
@@ -82,27 +84,31 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                     
                     color_count += 1
             else:
-                if name != "Analytical_Kalman":
-                    avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
-                    handles.extend(ax.plot(avg, 
-                                        label=name if name != "OLS_wentinn" else "OLS_ir_length2_unreg", 
-                                        linewidth=1, 
-                                        marker='x' if name == "MOP" or name in ["OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Kalman"] else ".", 
-                                        color=colors[i], 
-                                        markersize=5 if name == "MOP" or name in ["OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Kalman", "Zero"] else 1))
-                    if shade:
-                        ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
-                else: #plot the analytical kalman filter
-                    handles.extend(ax.plot(err_ls[sys], label=name, linewidth=1, color='#000000'))
-                if name == "Kalman":
-                    err_rat[0] = np.mean(avg)/err_irreducible[sys]
-                    print("KF (time avergaged mean)/(irreducible): ", err_rat[0])
-                if name == "Zero":
-                    err_rat[1] = np.mean(avg)/err_irreducible[sys]
-                    print("Zero (time avergaged mean)/(irreducible): ", err_rat[1])
+                if name in names:
+                    if name != "Analytical_Kalman":
+                        avg, std = err_ls[sys,:,:].mean(axis=(0)), (3/np.sqrt(err_ls.shape[1]))*err_ls[sys,:,:].std(axis=0)
+                        handles.extend(ax.plot(avg, 
+                                            label=name if name != "OLS_wentinn" else "OLS_ir_length2_unreg", 
+                                            linewidth=1, 
+                                            marker='x' if name == "MOP" or name in ["OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Kalman"] else ".", 
+                                            color=colors[color_count], 
+                                            markersize=5 if name == "MOP" or name in ["OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Kalman", "Zero"] else 1))
+                        if shade:
+                            ax.fill_between(np.arange(err_ls.shape[-1]), avg - std, avg + std, facecolor=handles[-1].get_color(), alpha=0.2)
 
-        if name == "Zero":
-            print("System", sys, "Zero predictor avged over traces and time:", err_ls[sys,:,:].mean(axis=(0,1)))
+                        color_count += 1
+
+                    else: #plot the analytical kalman filter
+                        handles.extend(ax.plot(err_ls[sys], label=name, linewidth=1, color='#000000'))
+                    if name == "Kalman":
+                        err_rat[0] = np.mean(avg)/err_irreducible[sys]
+                        print("KF (time averaged mean)/(irreducible): ", err_rat[0])
+                    if name == "Zero":
+                        err_rat[1] = np.mean(avg)/err_irreducible[sys]
+                        print("Zero (time averaged mean)/(irreducible): ", err_rat[1])
+
+
+
     return handles, err_rat
 
 def plot_errs_conv(ts, j, colors, sys, err_lss, err_irreducible, train_steps, normalized, legend_loc="upper right", ax=None, shade=True, kal_err=None):

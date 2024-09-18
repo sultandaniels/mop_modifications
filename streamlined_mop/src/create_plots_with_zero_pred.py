@@ -1106,13 +1106,13 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
 
 
                 if not logscale:
-                    ax.set_ylim(bottom=10 ** (-0.7), top=1 * 10 ** (2))  # set the y axis limits
+                    ax.set_ylim(bottom=10 ** (-0.7), top=0.5 * 10 ** (1))  # set the y axis limits
 
                 ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
                     ": Upper Triangular A and " if config.val_dataset_typ == "upperTriA" else (
                         ": Gaussian A and " if config.val_dataset_typ == "gaussA" else (": Single System " if config.val_dataset_typ == "single_system" else (": Uniform A and " if config.val_dataset_typ == "unifA" else ": Dense A and "))))) + (
                                  "Uniform C" if C_dist == "_unif_C" else (
-                                     "Gaussian C" if C_dist == "_gauss_C" else ("" if config.val_dataset_typ == "_single_system" else "N(0,1) C"))), fontsize=20)
+                                     "Gaussian C" if C_dist == "_gauss_C" else ("" if C_dist == "_single_system" else "N(0,1) C"))), fontsize=20)
                 # ax.set_xlim(left=0, right=10)
 
                 # get the parent directory of the ckpt_path
