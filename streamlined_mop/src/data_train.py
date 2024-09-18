@@ -303,7 +303,7 @@ if __name__ == '__main__':
         kal_errors = None
         #load the prediction errors from the step=40000 prediction_errors file
         num_systems = config.num_val_tasks
-        config.override("ckpt_path", "../outputs/GPT2/240615_182401.2139c3_gaussA_gauss_C/checkpoints/step=192000.ckpt")
+        config.override("ckpt_path", "../outputs/GPT2/240617_150023.5e81de_rotDiagA_gauss_C/checkpoints/step=192000.ckpt")
         err_lss_load, irreducible_error_load, fir_bounds, rnn_errors, rnn_an_errors = load_preds(run_deg_kf_test, excess, num_systems, config)
         print("len of irreducible_error_load", len(irreducible_error_load))
 
@@ -313,7 +313,7 @@ if __name__ == '__main__':
             kal_errors = np.mean(err_lss_load["OLS_ir_length3_orig"], axis=1)
 
         #for loop to iterate through all the checkpoints in the output directory
-        output_dir = "../outputs/GPT2/240615_182401.2139c3_gaussA_gauss_C"
+        output_dir = "../outputs/GPT2/240617_150023.5e81de_rotDiagA_gauss_C"
         fig, axs = plt.subplots(1, config.num_val_tasks, figsize=(200, 20))  # 1 row, val_tasks columns, with a figure size of 100x20 inches
         ts = [50, 100, 200]
 
