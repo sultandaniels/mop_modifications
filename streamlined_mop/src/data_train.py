@@ -49,7 +49,7 @@ def preds_thread(make_preds, resume_train, train_conv):
     run_deg_kf_test = False #run degenerate KF test
     excess = False #run the excess plots
     shade = True
-    config.override("ckpt_path", "../outputs/GPT2/240917_214326.03463b_single_system_single_system/checkpoints/step=192000.ckpt")
+    config.override("ckpt_path", "../outputs/GPT2/240615_182401.2139c3_gaussA_gauss_C/checkpoints/step=192000.ckpt")
 
     if resume_train:
         #get the parent directory of the ckpt_path
@@ -66,7 +66,7 @@ def preds_thread(make_preds, resume_train, train_conv):
         create_plots(config, run_preds, run_deg_kf_test, excess, num_systems=config.num_val_tasks, shade=shade, logscale=logscale)
     return run_preds, run_deg_kf_test, excess, shade
 
-def plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax, xax, rem):
+def plot_train_conv(t, ax, subtract, error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax, xax, rem):
 
     if subtract > 0:
         plot_label_mean = "Mean - s, s=%g" % subtract
@@ -508,7 +508,7 @@ if __name__ == '__main__':
 
                 subtract = c_loglog #c_vals[min_err_lin_idx]
 
-                ax = plot_train_conv(ax, subtract, error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
+                ax = plot_train_conv(t, ax, subtract, error_checkpoints_tuples, y_values, x_values, y_fit_loglog, y_fit_loglin, a_loglog, b_loglog, c_loglog, a_loglin, b_loglin, c_loglin, a_opt, b_opt, c_opt, ts, sys, kfnorm, olsnorm, yax=yax, xax=xax, rem=rem)
 
                 #plot the optimal c value
                 ax[t][sys].plot(x_values, yfit_optc-subtract, label="Least Squares Optimal c=%g, a=%g, b=%g" % (c_vals[min_err_lin_idx], a_vals[min_err_lin_idx], b_vals[min_err_lin_idx]), linestyle='--')

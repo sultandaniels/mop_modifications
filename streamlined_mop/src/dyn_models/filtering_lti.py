@@ -252,6 +252,12 @@ class FilterSim:
         xs = [x0]  # initial state of dimension nx
         ys = [xs[0] @ self.C.T + vs[:, :n_noise].sum(axis=1)]  # output of dimension ny
 
+        #check if self.A is upper triangular
+        # print("check if self.A is upper triangular")
+        if not np.all(np.triu(self.A) == self.A):
+            print("self.A:", self.A)
+            raise ValueError("A is not upper triangular")
+        
         for i in range(1, traj_len + 1):
             x = xs[-1] @ self.A.T + ws[:, i:i + n_noise].sum(axis=1)
             xs.append(x)

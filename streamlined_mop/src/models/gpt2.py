@@ -34,7 +34,6 @@ class GPT2(BaseModel):
         embeds = self._read_in(xs)
         output = self._backbone(inputs_embeds=embeds).last_hidden_state
         prediction = self._read_out(output)
-
         # predict only on xs
         return input_dict, {"preds": prediction}
 

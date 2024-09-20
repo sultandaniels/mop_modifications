@@ -772,15 +772,12 @@ def save_preds_conv(make_preds, run_deg_kf_test, config):
     save_dir = parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size
 
     # a boolean for whether the below directory exists
-    if make_preds:
-        save_preds_conv_helper(save_dir, run_deg_kf_test, config)
+    #check if a specific file named config.val_dataset_typ_err_lss.pkl exists in the directory
+    if os.path.exists(save_dir + f"/{config.val_dataset_typ}_err_lss.pkl"):
+        print(f"{config.val_dataset_typ}_err_lss.pkl for ", step_size, " already exists")
     else:
-        # check if save_dir exists
-        if os.path.exists(save_dir):
-            print("The directory for ", step_size, " already exists")
-        else:
-            print("The directory for ", step_size, " does not exist")
-            save_preds_conv_helper(save_dir, run_deg_kf_test, config)
+        print(f"{config.val_dataset_typ}_err_lss.pkl for ", step_size, " does not exist")
+        save_preds_conv_helper(save_dir, run_deg_kf_test, config)
     return
 
         
