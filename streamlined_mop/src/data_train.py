@@ -49,7 +49,7 @@ def preds_thread(make_preds, resume_train, train_conv):
     run_deg_kf_test = False #run degenerate KF test
     excess = False #run the excess plots
     shade = True
-    config.override("ckpt_path", "../outputs/GPT2/240615_182401.2139c3_gaussA_gauss_C/checkpoints/step=192000.ckpt")
+    config.override("ckpt_path", "../outputs/GPT2/240617_150023.5e81de_rotDiagA_gauss_C/checkpoints/step=192000.ckpt")
 
     if resume_train:
         #get the parent directory of the ckpt_path
@@ -333,7 +333,6 @@ if __name__ == '__main__':
                 sys_error_checkpoints_tuples.append(step_avg_tup) #append the tuple to the list of tuples
 
                 sys_error_an_checkpoints_tuples.append(step_avg_an_tup) #append the tuple to the list of tuples
-
 
             #create the train_conv directory
             os.makedirs(output_dir + "/train_conv", exist_ok=True)

@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import torch
 from pandas.plotting import table
+from datetime import datetime
 
 from core import Config
 from dyn_models import apply_kf
@@ -1071,11 +1072,11 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 # make the x axis log scale
                 ax.set_xscale('log')
                 # ax.set_ylim(bottom=-1, top=2*10**(-1))
-                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+                ax.set_title("System " + str(sys) +(": Rotated Diagonal (Uniform Eigs) A " if config.val_dataset_typ == "rotDiagA_gauss" else (": Rotated Diagonal (Gaussian Eigs) A " if config.val_dataset_typ == "rotDiagA_gauss" else (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
                     ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
                         ": N(0,0.33) A " if config.val_dataset_typ == "gaussA" else ": Dense A "))) + (
                                  "Uniform C" if C_dist == "_unif_C" else (
-                                     "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
+                                     "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))))
                 # ax.set_xlim(left=0, right=10)
 
                 # get the parent directory of the ckpt_path
@@ -1105,11 +1106,11 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 if not logscale:
                     ax.set_ylim(bottom=10 ** (-0.7), top=0.5 * 10 ** (1))  # set the y axis limits
 
-                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
-                    ": Upper Triangular A and " if config.val_dataset_typ == "upperTriA" else (
-                        ": Gaussian A and " if config.val_dataset_typ == "gaussA" else (": Single System " if config.val_dataset_typ == "single_system" else (": Uniform A and " if config.val_dataset_typ == "unifA" else ": Dense A and "))))) + (
+                ax.set_title("System " + str(sys) + (": Rotated Diagonal (|N(0,1)| <= 0.95 Eigs) A " if config.val_dataset_typ == "rotDiagA_gauss" else (": Rotated Diagonal (Unif(-1,1) Eigs) A " if config.val_dataset_typ == "rotDiagA_unif" else (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+                    ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
+                        ": N(0,0.33) A " if config.val_dataset_typ == "gaussA" else ": Dense A "))) + (
                                  "Uniform C" if C_dist == "_unif_C" else (
-                                     "Gaussian C" if C_dist == "_gauss_C" else ("" if C_dist == "_single_system" else "N(0,1) C"))), fontsize=20)
+                                     "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))))
                 # ax.set_xlim(left=0, right=10)
 
                 # get the parent directory of the ckpt_path
@@ -1118,9 +1119,15 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 # get the parent directory of the parent directory
                 parent_parent_dir = os.path.dirname(parent_dir)
                 os.makedirs(parent_parent_dir + "/figures", exist_ok=True)
+                #add the date and time to the filename
+                now = datetime.now()
+                timestamp = now.strftime("%Y%m%d_%H%M%S")
+
+                #add a caption to the bottom of the figure
+                fig.text(0.5, 0.01, timestamp, ha='center', fontsize=30)
                 fig.savefig(
                     parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
-                        "logscale" if logscale else ""))
+                        "logscale" if logscale else "") + "_" + timestamp) 
 
     if run_deg_kf_test:
         # Create a DataFrame from the numpy array
@@ -1526,11 +1533,11 @@ if __name__ == '__main__':
                 # make the x axis log scale
                 ax.set_xscale('log')
                 # ax.set_ylim(bottom=-1, top=2*10**(-1))
-                ax.set_title("System " + str(sys) + (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+                ax.set_title("System " + str(sys) + (": Rotated Diagonal (|N(0,1)| <= 0.95 Eigs) A " if config.val_dataset_typ == "rotDiagA_gauss" else (": Rotated Diagonal (Unif(-1,1) Eigs) A " if config.val_dataset_typ == "rotDiagA" else (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
                     ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
                         ": N(0,0.33) A " if config.val_dataset_typ == "gaussA" else ": Dense A "))) + (
                                  "Uniform C" if C_dist == "_unif_C" else (
-                                     "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
+                                     "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))))
                 # ax.set_xlim(left=0, right=10)
 
                 # get the parent directory of the ckpt_path
@@ -1625,11 +1632,11 @@ if __name__ == '__main__':
         # make the x axis log scale
         ax.set_xscale('log')
         # ax.set_ylim(bottom=-1, top=2*10**(-1))
-        ax.set_title(("Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
-            "Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
-                "N(0,0.33) A " if config.val_dataset_typ == "gaussA" else "Dense A "))) + (
-                         "Uniform C" if C_dist == "_unif_C" else (
-                             "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))
+        ax.set_title("System " + str(sys) + (": Rotated Diagonal (|N(0,1)| <= 0.95 Eigs) A " if config.val_dataset_typ == "rotDiagA_gauss" else (": Rotated Diagonal (Unif(-1,1) Eigs) A " if config.val_dataset_typ == "rotDiagA" else (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
+                    ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (
+                        ": N(0,0.33) A " if config.val_dataset_typ == "gaussA" else ": Dense A "))) + (
+                                 "Uniform C" if C_dist == "_unif_C" else (
+                                     "N(0,0.33) C" if C_dist == "_gauss_C" else "N(0,1) C")))))
         # ax.set_xlim(left=0, right=10)
         os.makedirs(parent_parent_dir + f"/figures", exist_ok=True)
         fig.savefig(parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff" + (
