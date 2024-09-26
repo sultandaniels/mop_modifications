@@ -24,7 +24,7 @@ class CnnKF(nn.Module):
 
     @classmethod
     def analytical_error(cls, observation_IR: torch.Tensor, systems: TensorDict[str, torch.Tensor]) -> torch.Tensor:
-        device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
+        device = observation_IR.device
 
         # Variable definition
         Q = utils.complex(observation_IR)  # [B... x O_D x R x O_D]
@@ -47,6 +47,7 @@ class CnnKF(nn.Module):
         # Highlight
         ws_current_err = (Hs @ sqrt_S_Ws).norm(dim=(-2, -1)) ** 2  # [B...]
 
+        print(observation_IR.device, L.device, torch.get_default_device())
         L_pow_series = L.unsqueeze(-2) ** torch.arange(1, R + 1)[:, None]  # [B... x R x S_D]
         L_pow_series_inv = 1. / L_pow_series  # [B... x R x S_D]
 

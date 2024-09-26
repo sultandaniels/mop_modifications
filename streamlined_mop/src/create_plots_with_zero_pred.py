@@ -308,6 +308,7 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
 
 def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
+    torch.set_default_device(device)
 
     # [n_systems x n_traces x (n_positions + 1) x O_D]
     ys = torch.Tensor(ys).to(device)
