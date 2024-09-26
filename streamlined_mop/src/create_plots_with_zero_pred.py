@@ -277,8 +277,100 @@ def compute_OLS_and_OLS_analytical_revised(config, ys, sim_objs, ir_length, err_
     err_lss["OLS_analytical"] = np.array(preds_rls_analytical)
     return err_lss
 
-
 def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
+
+    # set torch precision to float64
+    torch.set_default_dtype(torch.float64)
+    print("max_ir_length + 1:", max_ir_length + 1)
+    for ir_length in range(1, max_ir_length + 1):
+        start = time.time()
+        print(f"\tIR length: {ir_length}")
+
+        if ir_length == 2:
+            preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, 0.0)
+
+            err_lss[f"OLS_ir_{ir_length}_unreg"] = torch.norm(ys.to(device) - preds_rls_wentinn.to(device), dim=-1) ** 2
+            err_lss[f"OLS_analytical_ir_{ir_length}_unreg"] = preds_rls_wentinn_analytical
+
+        preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, 1.0)
+
+        err_lss[f"OLS_ir_{ir_length}"] = torch.norm(ys.to(device) - preds_rls_wentinn.to(device), dim=-1) ** 2
+        err_lss[f"OLS_analytical_ir_{ir_length}"] = preds_rls_wentinn_analytical
+        end = time.time()
+        print("\ttime elapsed:", (end - start) / 60, "min\n")
+    # set torch precision back to float32
+    torch.set_default_dtype(torch.float32)
+    return err_lss
+
+def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
+    device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
+
+    # [n_systems x n_traces x (n_positions + 1) x O_D]
+    ys = ys.to(torch.get_default_dtype())
+    # [n_systems x n_traces x (n_positions + ir_length) x O_D]
+    padded_ys = torch.cat([
+        torch.zeros((*ys.shape[:2], ir_length - 1, config.ny)).to(device), ys.to(device)
+    ], dim=-2)
+
+    Y_indices = torch.arange(ir_length, (config.n_positions - 1) + ir_length)[:, None]  # [(n_positions - 1) x 1]
+    X_indices = Y_indices - 1 - torch.arange(ir_length)
+
+    X, Y = padded_ys[..., X_indices, :], padded_ys[..., Y_indices, :]   # [n_systems x n_traces x (n_positions - 1) x ir_length x O_D], [n_systems x n_traces x (n_positions - 1) x 1 x O_D]
+    flattened_X, flattened_Y = X.flatten(-2, -1), Y.flatten(-2, -1)     # [n_systems x n_traces x (n_positions - 1) x (ir_length * O_D)], [n_systems x n_traces x (n_positions - 1) x O_D]
+
+    # [n_systems x n_traces x (n_positions - 1) x (ir_length * I_D) x (ir_length * O_D)]
+    cumulative_XTX = torch.cumsum(flattened_X[..., :, None].to(device) * flattened_X[..., None, :], dim=-3).to(device) + ridge * torch.eye(ir_length * config.ny).to(device)
+    # [n_systems x n_traces x (n_positions - 1) x (ir_length * I_D) x O_D]
+    cumulative_XTY = torch.cumsum(flattened_X[..., :, None] * flattened_Y[..., None, :], dim=-3)
+
+    min_eqs = config.ny if ridge == 0.0 else 1
+
+    _rank_full = torch.inverse(cumulative_XTX[..., min_eqs - 1:, :, :]) @ cumulative_XTY[..., min_eqs - 1:, :, :]
+    _rank_deficient = []
+    for n_eqs in range(1, min_eqs):
+        _rank_deficient.append(torch.linalg.pinv(flattened_X[..., :n_eqs, :]) @ flattened_Y[..., :n_eqs, :])
+    if len(_rank_deficient) == 0:
+        _rank_deficient = torch.zeros_like(_rank_full[..., :0, :, :])
+    else:
+        _rank_deficient = torch.stack(_rank_deficient, dim=-3)
+
+    # [n_systems x n_traces x (n_positions - 1) x (ir_length * O_D) x O_D]
+    # -> [n_systems x n_traces x (n_positions - 1) x ir_length x O_D x O_D]
+    # -> [n_systems x n_traces x (n_positions - 1) x O_D x ir_length x O_D]
+    observation_IRs = torch.cat([_rank_deficient, _rank_full], dim=-3).unflatten(-2, (ir_length, config.ny)).transpose(dim0=-3, dim1=-2)
+
+    # SECTION: Compute the empirical output
+    shifted_X = padded_ys[..., X_indices + 1, :]    # [n_systems x n_traces x (n_positions - 1) x ir_length x O_D]
+
+    flattened_observation_IRs = observation_IRs.flatten(0, 2)   # [B x O_D x ir_length x O_D]
+    flattened_shifted_X = shifted_X.flatten(0, 2)               # [B x ir_length x O_D]
+
+    preds_rls_wentinn = torch.vmap(Fn.conv2d)(
+        flattened_observation_IRs,                                              # [B x O_D x ir_length x O_D]
+        flattened_shifted_X.transpose(dim0=-2, dim1=-1)[..., None, :, :, None]  # [B x 1 x O_D x ir_length x 1]
+    ).reshape(*ys.shape[:2], config.n_positions - 1, config.ny) # [n_systems x n_traces x (n_positions - 1)]
+
+    preds_rls_wentinn = torch.cat([
+        torch.zeros_like(ys[..., :2, :]),
+        preds_rls_wentinn
+    ], dim=-2)  # [n_systems x n_traces x (n_positions + 1) x O_D]
+
+    # SECTION: Compute analytical errors
+    preds_rls_wentinn_analytical = CnnKF.analytical_error(
+        observation_IRs,                                                                                # [n_systems x n_traces x (n_positions - 1) x ...]
+        sim_objs.td()["environment"][:, None, None].apply(lambda t: t.to(torch.get_default_dtype()))    # [n_systems x 1 x 1 x ...]
+    )   # [n_systems x n_traces x (n_positions - 1)]
+
+    preds_rls_wentinn_analytical = torch.cat([
+        torch.norm(ys[..., :2, :], dim=-1) ** 2,    # [n_systems x n_traces x 2]
+        preds_rls_wentinn_analytical,               # [n_systems x n_traces x (n_positions - 1)]
+    ], dim=-1)  # [n_systems x n_traces x (n_positions + 1)]
+
+    return preds_rls_wentinn, preds_rls_wentinn_analytical
+
+def compute_OLS_ir_current(config, ys, sim_objs, max_ir_length, err_lss):
     # set torch precision to float64
     torch.set_default_dtype(torch.float64)
     print("\n\n max_ir_length + 1:", max_ir_length + 1)
@@ -303,7 +395,7 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
     return err_lss
 
 
-def compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, config, ridge):
+def compute_OLS_little_helper_current(ls, ls_analytical, sim_obj, padded_ys, ir_length, config, ridge):
     rls_wentinn = CnnKF(config.ny, ir_length, ridge=ridge)
     for i in range(config.n_positions - 1):
         obs_tensor = rls_wentinn.update(
@@ -319,7 +411,7 @@ def compute_OLS_little_helper(ls, ls_analytical, sim_obj, padded_ys, ir_length, 
     return ls, ls_analytical
 
 
-def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
+def compute_OLS_helper_current(config, ys, sim_objs, ir_length, ridge):
     preds_rls_wentinn = []
     preds_rls_wentinn_analytical = []
     for sim_obj, _ys in zip(sim_objs, ys):
