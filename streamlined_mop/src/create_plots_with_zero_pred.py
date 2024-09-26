@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn.functional as Fn
+from tensordict import TensorDict
 from pandas.plotting import table
 from datetime import datetime
 
@@ -308,7 +310,7 @@ def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
 
     # [n_systems x n_traces x (n_positions + 1) x O_D]
-    ys = ys.to(torch.get_default_dtype())
+    ys = torch.Tensor(ys).to(device)
     # [n_systems x n_traces x (n_positions + ir_length) x O_D]
     padded_ys = torch.cat([
         torch.zeros((*ys.shape[:2], ir_length - 1, config.ny)).to(device), ys.to(device)
@@ -357,10 +359,25 @@ def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
         preds_rls_wentinn
     ], dim=-2)  # [n_systems x n_traces x (n_positions + 1) x O_D]
 
+    sim_objs_td = TensorDict({
+        "F": torch.Tensor(np.stack([
+            sim_obj.A for sim_obj in sim_objs
+        ], axis=0)),
+        "H": torch.Tensor(np.stack([
+            sim_obj.C for sim_obj in sim_objs
+        ], axis=0)),
+        "sqrt_S_W": torch.stack([
+            torch.eye(config.nx) * sim_obj.sigma_w for sim_obj in sim_objs
+        ]),
+        "sqrt_S_V": torch.stack([
+            torch.eye(config.ny) * sim_obj.sigma_v for sim_obj in sim_objs
+        ]),
+    }, batch_size=(len(sim_objs),)).to(device)
+
     # SECTION: Compute analytical errors
     preds_rls_wentinn_analytical = CnnKF.analytical_error(
-        observation_IRs,                                                                                # [n_systems x n_traces x (n_positions - 1) x ...]
-        sim_objs.td()["environment"][:, None, None].apply(lambda t: t.to(torch.get_default_dtype()))    # [n_systems x 1 x 1 x ...]
+        observation_IRs,            # [n_systems x n_traces x (n_positions - 1) x ...]
+        sim_objs_td[:, None, None]  # [n_systems x 1 x 1 x ...]
     )   # [n_systems x n_traces x (n_positions - 1)]
 
     preds_rls_wentinn_analytical = torch.cat([
@@ -494,6 +511,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         # get the parent directory of the parent directory
         parent_parent_dir = os.path.dirname(parent_dir)
 
+        print("getting the validation data")
         # open fsim file
         with open(parent_parent_dir + f"/data/val_{config.val_dataset_typ}{config.C_dist}_sim_objs.pkl", "rb") as f:
             sim_objs = pickle.load(f)
@@ -515,43 +533,44 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
             gc.collect()  # Start the garbage collector
 
-    # Transformer Predictions
-    start = time.time()  # start the timer for transformer predictions
-    with torch.no_grad():  # no gradients
-        I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)  # get the inputs (observations without the last one)
-        # if config.dataset_typ == "drone":  # if the dataset type is drone
-        #     I = np.concatenate([I, us], axis=-1)  # concatenate the inputs
+    # # Transformer Predictions
+    # start = time.time()  # start the timer for transformer predictions
+    # with torch.no_grad():  # no gradients
+    #     I = np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2)  # get the inputs (observations without the last one)
+    #     # if config.dataset_typ == "drone":  # if the dataset type is drone
+    #     #     I = np.concatenate([I, us], axis=-1)  # concatenate the inputs
 
-        if config.changing:
-            preds_tf = model.predict_ar(ys[:, :-1])  # predict using the model
-        else:
-            # print("before model.predict_step()")
-            batch_shape = I.shape[:-2]
-            # print("batch_shape:", batch_shape)
-            flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
-            # print("flattened_I.shape:", flattened_I.shape)
-            validation_loader = torch.utils.data.DataLoader(torch.from_numpy(flattened_I),
-                                                            batch_size=config.test_batch_size)
-            preds_arr = []  # Store the predictions for all batches
-            for validation_batch in iter(validation_loader):
-                _, flattened_preds_tf = model.predict_step(
-                    {"xs": validation_batch.to(device)})  # .float().to(device)})    # predict using the model
-                preds_arr.append(flattened_preds_tf["preds"].cpu().numpy())
-            preds_tf = np.reshape(np.concatenate(preds_arr, axis=0),
-                                  (*batch_shape, *I.shape[-2:]))  # Combine the predictions for all batches
-            # print("preds_tf.shape:", preds_tf.shape)
-            preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf],
-                                      axis=-2)  # concatenate the predictions
-            # print("preds_tf.shape:", preds_tf.shape)
-    end = time.time()  # end the timer for transformer predictions
-    print("time elapsed for MOP Pred:", (end - start) / 60, "min")  # print the time elapsed for transformer predictions
+    #     if config.changing:
+    #         preds_tf = model.predict_ar(ys[:, :-1])  # predict using the model
+    #     else:
+    #         # print("before model.predict_step()")
+    #         batch_shape = I.shape[:-2]
+    #         # print("batch_shape:", batch_shape)
+    #         flattened_I = np.reshape(I, (np.prod(batch_shape), *I.shape[-2:]))
+    #         # print("flattened_I.shape:", flattened_I.shape)
+    #         validation_loader = torch.utils.data.DataLoader(torch.from_numpy(flattened_I),
+    #                                                         batch_size=config.test_batch_size)
+    #         preds_arr = []  # Store the predictions for all batches
+    #         for validation_batch in iter(validation_loader):
+    #             _, flattened_preds_tf = model.predict_step(
+    #                 {"xs": validation_batch.to(device)})  # .float().to(device)})    # predict using the model
+    #             preds_arr.append(flattened_preds_tf["preds"].cpu().numpy())
+    #         preds_tf = np.reshape(np.concatenate(preds_arr, axis=0),
+    #                               (*batch_shape, *I.shape[-2:]))  # Combine the predictions for all batches
+    #         # print("preds_tf.shape:", preds_tf.shape)
+    #         preds_tf = np.concatenate([np.zeros_like(np.take(preds_tf, [0], axis=-2)), preds_tf],
+    #                                   axis=-2)  # concatenate the predictions
+    #         # print("preds_tf.shape:", preds_tf.shape)
+    # end = time.time()  # end the timer for transformer predictions
+    # print("time elapsed for MOP Pred:", (end - start) / 60, "min")  # print the time elapsed for transformer predictions
 
-    errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2  # get the errors of transformer predictions
-    noiseless_errs_tf = np.linalg.norm((noiseless_ys - preds_tf), axis=-1) ** 2 + np.array([
-        (np.linalg.norm(sim_obj.C) * sim_obj.sigma_w) ** 2 + config.ny * (sim_obj.sigma_v ** 2)
-        for sim_obj in sim_objs
-    ])[:, None, None]
+    # errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2  # get the errors of transformer predictions
+    # noiseless_errs_tf = np.linalg.norm((noiseless_ys - preds_tf), axis=-1) ** 2 + np.array([
+    #     (np.linalg.norm(sim_obj.C) * sim_obj.sigma_w) ** 2 + config.ny * (sim_obj.sigma_v ** 2)
+    #     for sim_obj in sim_objs
+    # ])[:, None, None]
 
+    print("zero predictor")
     # zero predictor predictions
     errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2  # get the errors of zero predictions
 
@@ -594,23 +613,25 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
                 errs_kf[kf_index, sys] = np.linalg.norm((ys[sys] - preds_kf[kf_index, sys]), axis=-1) ** 2  # get the errors of the kalman filter predictions for the test system and the training system
             kf_index += 1
 
-    else:  # Kalman Predictions
-        preds_kf = np.array([[
-            apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise),
-                     sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-            for __ys in _ys
-        ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
-        ])  # get kalman filter predictions
-        errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
+    else:  
+        print("no kf pred")
+        # Kalman Predictions
+        # preds_kf = np.array([[
+        #     apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise),
+        #              sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
+        #     for __ys in _ys
+        # ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
+        # ])  # get kalman filter predictions
+        # errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
 
-    end = time.time()  # end the timer for kalman filter predictions
-    print("time elapsed for KF Pred:", (end - start) / 60,
-          "min")  # print the time elapsed for kalman filter predictions
+    # end = time.time()  # end the timer for kalman filter predictions
+    # print("time elapsed for KF Pred:", (end - start) / 60,
+        #   "min")  # print the time elapsed for kalman filter predictions
 
     err_lss = collections.OrderedDict([
-        ("Kalman", errs_kf),
-        ("MOP", errs_tf),
-        ("MOP_analytical", noiseless_errs_tf),
+        # ("Kalman", errs_kf),
+        # ("MOP", errs_tf),
+        # ("MOP_analytical", noiseless_errs_tf),
         ("Zero", errs_zero)
     ])
     print("err_lss keys:", err_lss.keys())
@@ -630,6 +651,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=3, err_lss=err_lss)
     end = time.time()  # end the timer for OLS predictions
     print("time elapsed for OLS Pred:", (end - start) / 60, "min")  # print the time elapsed for OLS predictions
+    raise ValueError("Stop here after OLS")
 
     # #Revised OLS
     # print("\n\nREVISED OLS")
