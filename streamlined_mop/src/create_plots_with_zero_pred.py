@@ -22,6 +22,7 @@ from models import GPT2, CnnKF
 from utils import RLS, plot_errs, plot_errs_conv
 
 plt.rcParams['axes.titlesize'] = 20
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 
 ####################################################################################################
@@ -296,95 +297,158 @@ def compute_OLS_ir(config, ys, sim_objs, max_ir_length, err_lss):
             err_lss[f"OLS_ir_{ir_length}_unreg"] = np.linalg.norm(ys - np.array(preds_rls_wentinn.cpu()), axis=-1) ** 2
             err_lss[f"OLS_analytical_ir_{ir_length}_unreg"] = np.array(preds_rls_wentinn_analytical.cpu())
 
+            del preds_rls_wentinn
+            del preds_rls_wentinn_analytical
+            torch.cuda.empty_cache()
+            gc.collect()
+
         preds_rls_wentinn, preds_rls_wentinn_analytical = compute_OLS_helper(config, ys, sim_objs, ir_length, 1.0)
 
         err_lss[f"OLS_ir_{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn.cpu()), axis=-1) ** 2
         err_lss[f"OLS_analytical_ir_{ir_length}"] = np.array(preds_rls_wentinn_analytical.cpu())
         end = time.time()
         print("\ttime elapsed:", (end - start) / 60, "min\n")
+
+        del preds_rls_wentinn
+        del preds_rls_wentinn_analytical   
+        torch.cuda.empty_cache()
+        gc.collect()
+
+        # Check if CUDA is available
+        if torch.cuda.is_available():
+
+            # Print memory usage
+            print(f"Memory Allocated: {torch.cuda.memory_allocated(device) / (1024 ** 2):.2f} MB")
+            print(f"Memory Reserved: {torch.cuda.memory_reserved(device) / (1024 ** 2):.2f} MB")
+            print(f"Max Memory Allocated: {torch.cuda.max_memory_allocated(device) / (1024 ** 2):.2f} MB")
+            print(f"Max Memory Reserved: {torch.cuda.max_memory_reserved(device) / (1024 ** 2):.2f} MB")
+        else:
+            print("CUDA is not available.")
     # set torch precision back to float32
     torch.set_default_dtype(torch.float32)
     return err_lss
 
 def compute_OLS_helper(config, ys, sim_objs, ir_length, ridge):
     device = "cuda" if torch.cuda.is_available() else "cpu"  # check if cuda is available
+
     torch.set_default_device(device)
+    preds_rls_wentinn = torch.zeros(np.expand_dims(ys[0],axis=0).shape)
+    preds_rls_wentinn_analytical = torch.zeros(np.expand_dims(ys[0,:,:,0], axis=0).shape)
 
-    # [n_systems x n_traces x (n_positions + 1) x O_D]
-    ys = torch.Tensor(ys).to(device)
-    # [n_systems x n_traces x (n_positions + ir_length) x O_D]
-    padded_ys = torch.cat([
-        torch.zeros((*ys.shape[:2], ir_length - 1, config.ny)).to(device), ys.to(device)
-    ], dim=-2)
 
-    Y_indices = torch.arange(ir_length, (config.n_positions - 1) + ir_length)[:, None]  # [(n_positions - 1) x 1]
-    X_indices = Y_indices - 1 - torch.arange(ir_length)
+    with torch.no_grad():
+        for sys in range(config.num_val_tasks):
+            ys_sys = np.expand_dims(ys[sys], axis=0)
+        
+            # [n_systems x n_traces x (n_positions + 1) x O_D]
+            torch_ys = torch.Tensor(ys_sys).to(device)
 
-    X, Y = padded_ys[..., X_indices, :], padded_ys[..., Y_indices, :]   # [n_systems x n_traces x (n_positions - 1) x ir_length x O_D], [n_systems x n_traces x (n_positions - 1) x 1 x O_D]
-    flattened_X, flattened_Y = X.flatten(-2, -1), Y.flatten(-2, -1)     # [n_systems x n_traces x (n_positions - 1) x (ir_length * O_D)], [n_systems x n_traces x (n_positions - 1) x O_D]
 
-    # [n_systems x n_traces x (n_positions - 1) x (ir_length * I_D) x (ir_length * O_D)]
-    cumulative_XTX = torch.cumsum(flattened_X[..., :, None].to(device) * flattened_X[..., None, :], dim=-3).to(device) + ridge * torch.eye(ir_length * config.ny).to(device)
-    # [n_systems x n_traces x (n_positions - 1) x (ir_length * I_D) x O_D]
-    cumulative_XTY = torch.cumsum(flattened_X[..., :, None] * flattened_Y[..., None, :], dim=-3)
+            # [n_systems x n_traces x (n_positions + ir_length) x O_D]
+            padded_ys = torch.cat([
+                torch.zeros((*torch_ys.shape[:2], ir_length - 1, config.ny)).to(device), torch_ys.to(device)
+            ], dim=-2)
 
-    min_eqs = config.ny if ridge == 0.0 else 1
+            Y_indices = torch.arange(ir_length, (config.n_positions - 1) + ir_length)[:, None]  # [(n_positions - 1) x 1]
+            X_indices = Y_indices - 1 - torch.arange(ir_length)
 
-    _rank_full = torch.inverse(cumulative_XTX[..., min_eqs - 1:, :, :]) @ cumulative_XTY[..., min_eqs - 1:, :, :]
-    _rank_deficient = []
-    for n_eqs in range(1, min_eqs):
-        _rank_deficient.append(torch.linalg.pinv(flattened_X[..., :n_eqs, :]) @ flattened_Y[..., :n_eqs, :])
-    if len(_rank_deficient) == 0:
-        _rank_deficient = torch.zeros_like(_rank_full[..., :0, :, :])
-    else:
-        _rank_deficient = torch.stack(_rank_deficient, dim=-3)
+            del torch_ys
+            torch.cuda.empty_cache()
+            gc.collect()
 
-    # [n_systems x n_traces x (n_positions - 1) x (ir_length * O_D) x O_D]
-    # -> [n_systems x n_traces x (n_positions - 1) x ir_length x O_D x O_D]
-    # -> [n_systems x n_traces x (n_positions - 1) x O_D x ir_length x O_D]
-    observation_IRs = torch.cat([_rank_deficient, _rank_full], dim=-3).unflatten(-2, (ir_length, config.ny)).transpose(dim0=-3, dim1=-2)
+            X, Y = padded_ys[..., X_indices, :], padded_ys[..., Y_indices, :]   # [n_systems x n_traces x (n_positions - 1) x ir_length x O_D], [n_systems x n_traces x (n_positions - 1) x 1 x O_D]
 
-    # SECTION: Compute the empirical output
-    shifted_X = padded_ys[..., X_indices + 1, :]    # [n_systems x n_traces x (n_positions - 1) x ir_length x O_D]
+            flattened_X, flattened_Y = X.flatten(-2, -1), Y.flatten(-2, -1)     # [n_systems x n_traces x (n_positions - 1) x (ir_length * O_D)], [n_systems x n_traces x (n_positions - 1) x O_D]
 
-    flattened_observation_IRs = observation_IRs.flatten(0, 2)   # [B x O_D x ir_length x O_D]
-    flattened_shifted_X = shifted_X.flatten(0, 2)               # [B x ir_length x O_D]
+            # [n_systems x n_traces x (n_positions - 1) x (ir_length * I_D) x (ir_length * O_D)]
+            cumulative_XTX = torch.cumsum(flattened_X[..., :, None].to(device) * flattened_X[..., None, :], dim=-3).to(device) + ridge * torch.eye(ir_length * config.ny).to(device)
+            # [n_systems x n_traces x (n_positions - 1) x (ir_length * I_D) x O_D]
+            cumulative_XTY = torch.cumsum(flattened_X[..., :, None] * flattened_Y[..., None, :], dim=-3)
 
-    preds_rls_wentinn = torch.vmap(Fn.conv2d)(
-        flattened_observation_IRs,                                              # [B x O_D x ir_length x O_D]
-        flattened_shifted_X.transpose(dim0=-2, dim1=-1)[..., None, :, :, None]  # [B x 1 x O_D x ir_length x 1]
-    ).reshape(*ys.shape[:2], config.n_positions - 1, config.ny) # [n_systems x n_traces x (n_positions - 1)]
+            min_eqs = config.ny if ridge == 0.0 else 1
 
-    preds_rls_wentinn = torch.cat([
-        torch.zeros_like(ys[..., :2, :]),
-        preds_rls_wentinn
-    ], dim=-2)  # [n_systems x n_traces x (n_positions + 1) x O_D]
+            _rank_full = torch.inverse(cumulative_XTX[..., min_eqs - 1:, :, :]) @ cumulative_XTY[..., min_eqs - 1:, :, :]
+            _rank_deficient = []
+            for n_eqs in range(1, min_eqs):
+                _rank_deficient.append(torch.linalg.pinv(flattened_X[..., :n_eqs, :]) @ flattened_Y[..., :n_eqs, :])
+            if len(_rank_deficient) == 0:
+                _rank_deficient = torch.zeros_like(_rank_full[..., :0, :, :])
+            else:
+                _rank_deficient = torch.stack(_rank_deficient, dim=-3)
 
-    sim_objs_td = TensorDict({
-        "F": torch.Tensor(np.stack([
-            sim_obj.A for sim_obj in sim_objs
-        ], axis=0)),
-        "H": torch.Tensor(np.stack([
-            sim_obj.C for sim_obj in sim_objs
-        ], axis=0)),
-        "sqrt_S_W": torch.stack([
-            torch.eye(config.nx) * sim_obj.sigma_w for sim_obj in sim_objs
-        ]),
-        "sqrt_S_V": torch.stack([
-            torch.eye(config.ny) * sim_obj.sigma_v for sim_obj in sim_objs
-        ]),
-    }, batch_size=(len(sim_objs),)).to(device)
+            # [n_systems x n_traces x (n_positions - 1) x (ir_length * O_D) x O_D]
+            # -> [n_systems x n_traces x (n_positions - 1) x ir_length x O_D x O_D]
+            # -> [n_systems x n_traces x (n_positions - 1) x O_D x ir_length x O_D]
+            observation_IRs = torch.cat([_rank_deficient, _rank_full], dim=-3).unflatten(-2, (ir_length, config.ny)).transpose(dim0=-3, dim1=-2)
 
-    # SECTION: Compute analytical errors
-    preds_rls_wentinn_analytical = CnnKF.analytical_error(
-        observation_IRs,            # [n_systems x n_traces x (n_positions - 1) x ...]
-        sim_objs_td[:, None, None]  # [n_systems x 1 x 1 x ...]
-    )   # [n_systems x n_traces x (n_positions - 1)]
+            # SECTION: Compute the empirical output
+            shifted_X = padded_ys[..., X_indices + 1, :]    # [n_systems x n_traces x (n_positions - 1) x ir_length x O_D]
 
-    preds_rls_wentinn_analytical = torch.cat([
-        torch.norm(ys[..., :2, :], dim=-1) ** 2,    # [n_systems x n_traces x 2]
-        preds_rls_wentinn_analytical,               # [n_systems x n_traces x (n_positions - 1)]
-    ], dim=-1)  # [n_systems x n_traces x (n_positions + 1)]
+            # Clean up padded_ys to free memory
+            del padded_ys
+            torch.cuda.empty_cache()
+            gc.collect()
+
+            flattened_observation_IRs = observation_IRs.flatten(0, 2)   # [B x O_D x ir_length x O_D]
+            flattened_shifted_X = shifted_X.flatten(0, 2)               # [B x ir_length x O_D]
+
+            # [n_systems x n_traces x (n_positions + 1) x O_D]
+            torch_ys = torch.Tensor(ys_sys).to(device)
+
+            del ys_sys
+            torch.cuda.empty_cache()
+            gc.collect()
+
+            preds_rls_wentinn_sys = torch.vmap(Fn.conv2d)(
+                flattened_observation_IRs,                                              # [B x O_D x ir_length x O_D]
+                flattened_shifted_X.transpose(dim0=-2, dim1=-1)[..., None, :, :, None]  # [B x 1 x O_D x ir_length x 1]
+            ).reshape(*torch_ys.shape[:2], config.n_positions - 1, config.ny) # [n_systems x n_traces x (n_positions - 1)]
+
+            preds_rls_wentinn_sys = torch.cat([
+                torch.zeros_like(torch_ys[..., :2, :]),
+                preds_rls_wentinn_sys
+            ], dim=-2)  # [n_systems x n_traces x (n_positions + 1) x O_D]
+
+            if torch.all(preds_rls_wentinn == 0):
+                preds_rls_wentinn = preds_rls_wentinn_sys
+            else:
+                preds_rls_wentinn = torch.vstack((preds_rls_wentinn, preds_rls_wentinn_sys))
+
+            sim_objs_td = TensorDict({
+                "F": torch.Tensor(np.stack([
+                    sim_obj.A for sim_obj in sim_objs
+                ], axis=0)),
+                "H": torch.Tensor(np.stack([
+                    sim_obj.C for sim_obj in sim_objs
+                ], axis=0)),
+                "sqrt_S_W": torch.stack([
+                    torch.eye(config.nx) * sim_obj.sigma_w for sim_obj in sim_objs
+                ]),
+                "sqrt_S_V": torch.stack([
+                    torch.eye(config.ny) * sim_obj.sigma_v for sim_obj in sim_objs
+                ]),
+            }, batch_size=(len(sim_objs),)).to(device)
+
+            # SECTION: Compute analytical errors
+            preds_rls_wentinn_analytical_sys = CnnKF.analytical_error(
+                observation_IRs,            # [n_systems x n_traces x (n_positions - 1) x ...]
+                sim_objs_td[sys, None, None]  # [n_systems x 1 x 1 x ...]
+            )   # [n_systems x n_traces x (n_positions - 1)]
+
+            preds_rls_wentinn_analytical_sys = torch.cat([
+                torch.norm(torch_ys[..., :2, :], dim=-1) ** 2,    # [n_systems x n_traces x 2]
+                preds_rls_wentinn_analytical_sys,               # [n_systems x n_traces x (n_positions - 1)]
+            ], dim=-1)  # [n_systems x n_traces x (n_positions + 1)]
+
+            # preds_rls_wentinn_analytical[sys] = preds_rls_wentinn_analytical_sys
+            if torch.all(preds_rls_wentinn_analytical == 0):
+                preds_rls_wentinn_analytical = preds_rls_wentinn_analytical_sys
+            else:
+                preds_rls_wentinn_analytical = torch.vstack((preds_rls_wentinn_analytical, preds_rls_wentinn_analytical_sys))
+
+            del torch_ys
+            torch.cuda.empty_cache()
+            gc.collect()
 
     return preds_rls_wentinn, preds_rls_wentinn_analytical
 
@@ -534,6 +598,7 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
 
             gc.collect()  # Start the garbage collector
 
+    # print("no tf pred")
     # Transformer Predictions
     print("start tf pred")
     start = time.time()  # start the timer for transformer predictions
@@ -637,68 +702,41 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
         ("MOP_analytical", noiseless_errs_tf),
         ("Zero", errs_zero)
     ])
-    print("err_lss keys:", err_lss.keys())
+    del preds_kf
+    del errs_kf
+    del preds_tf
+    del errs_tf
+    del noiseless_errs_tf
+    del noiseless_ys
+    del errs_zero
+
+    torch.cuda.empty_cache()
+    gc.collect()
+
+    # # Check if CUDA is available
+    # if torch.cuda.is_available():
+
+    #     # Print memory usage
+    #     print(f"Memory Allocated: {torch.cuda.memory_allocated(device) / (1024 ** 2):.2f} MB")
+    #     print(f"Memory Reserved: {torch.cuda.memory_reserved(device) / (1024 ** 2):.2f} MB")
+    #     print(f"Max Memory Allocated: {torch.cuda.max_memory_allocated(device) / (1024 ** 2):.2f} MB")
+    #     print(f"Max Memory Reserved: {torch.cuda.max_memory_reserved(device) / (1024 ** 2):.2f} MB")
+    # else:
+    #     print("CUDA is not available.")
+
 
     # Analytical Kalman Predictions
     analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems, 1)) @ np.ones((1, config.n_positions))
 
-    # # OLS Wentinn
-    # start = time.time() #start the timer for OLS Wentinn predictions
-    # err_lss = compute_OLS_wentinn(config, ys, sim_objs, ir_length=2, err_lss=err_lss)
-    # end = time.time() #end the timer for OLS Wentinn predictions
-    # print("time elapsed for OLS Wentinn Pred:", (end - start)/60, "min") #print the time elapsed for OLS Wentinn predictions
-
     # Original OLS
     # Clear the PyTorch cache
     start = time.time()  # start the timer for OLS predictions
     print("start OLS pred")
+    #print(torch.cuda.memory_summary())
     err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=3, err_lss=err_lss)
     end = time.time()  # end the timer for OLS predictions
     print("time elapsed for OLS Pred:", (end - start) / 60, "min")  # print the time elapsed for OLS predictions
-
-    # #Revised OLS
-    # print("\n\nREVISED OLS")
-    # sim_obj_td = torch.stack([
-    #     TensorDict({
-    #         'F': torch.Tensor(sim.A),                              # [N x S_D x S_D]
-    #         'H': torch.Tensor(sim.C),                              # [N x O_D x S_D]
-    #         'sqrt_S_W': sim.sigma_w * torch.eye(sim.C.shape[-1]),  # [N x S_D x S_D]
-    #         'sqrt_S_V': sim.sigma_v * torch.eye(sim.C.shape[-2])   # [N x O_D x O_D]
-    #     }, batch_size=())
-    #     for sim in sim_objs
-    # ])
-
-    # for ir_length in range(1, 4):
-    #     print(f"IR length: {ir_length}")
-    #     start = time.time()
-    #     rls_preds, rls_analytical_error = [], []
-
-    #     torch_ys = torch.Tensor(ys)         # [N x E x L x O_D]
-    #     print("torch_ys.shape:", torch_ys.shape)
-    #     padded_torch_ys = torch.cat([
-    #         torch_ys,
-    #         # torch.zeros((num_systems, num_trials, ir_length - 1, config.ny))
-    #         torch.zeros((num_systems, num_trials, config.n_positions +1, config.ny))
-    #     ], dim=-2)                                  # [N x E x (L + R - 1) x O_D]
-
-    #     rls_wentinn = CnnKF(batch_shape=(num_systems, num_trials), ny=config.ny, ir_length=ir_length, ridge=1.0)
-    #     for i in range(config.n_positions - 1):
-    #         rls_wentinn.update(
-    #             padded_torch_ys[:, :, i:i + ir_length],
-    #             padded_torch_ys[:, :, i + ir_length]
-    #         )
-    #         rls_preds.append(rls_wentinn(padded_torch_ys[i + 1:i + ir_length + 1]))
-    #         rls_analytical_error.append(rls_wentinn.analytical_error(sim_obj_td[:, None]))
-
-    #     rls_preds = torch.stack(rls_preds, dim=2).detach().numpy()                      # [N x E x L x O_D]
-    #     rls_analytical_error = torch.stack(rls_analytical_error, dim=2).detach.numpy()  # [N x E x L]
-
-    #     err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(rls_preds), axis=-1) ** 2
-
-    #     # err_lss[f"OLS_ir_length{ir_length}"] = np.linalg.norm(ys - np.array(preds_rls_wentinn), axis=-1) ** 2
-    #     end = time.time()
-    #     print("time elapsed:", (end - start)/60, "min")
 
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error
