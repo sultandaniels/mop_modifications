@@ -1279,11 +1279,14 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                 now = datetime.now()
                 timestamp = now.strftime("%Y%m%d_%H%M%S")
 
+                #get only the ckpt step from the ckpt_path
+                ckpt_step = config.ckpt_path.split("=")[1].split(".")[0]
+
                 #add a caption to the bottom of the figure
-                fig.text(0.5, 0.01, timestamp, ha='center', fontsize=30)
+                fig.text(0.5, 0.01, "step=" + ckpt_step + "_" + timestamp, ha='center', fontsize=30)
                 fig.savefig(
                     parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
-                        "logscale" if logscale else "") + "_" + timestamp) 
+                        "logscale" if logscale else "") + "_" + "step=" + ckpt_step + "_" + timestamp) 
 
     if run_deg_kf_test:
         # Create a DataFrame from the numpy array
