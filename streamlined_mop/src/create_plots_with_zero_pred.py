@@ -1245,11 +1245,12 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                     parent_parent_dir + f"/figures/{config.val_dataset_typ}" + C_dist + "_system_cutoff_" + str(sys) + (
                         "-changing" if config.changing else "_excess"))
             else:
-                ax.legend(fontsize=16, loc="lower right", ncol=max(1, math.floor(len(handles) / 2)))
+                ax.legend(fontsize=16, loc="upper right", ncol=max(1, math.floor(len(handles) / 2)))
                 ax.set_xlabel("i", fontsize=30)
 
-                # ax.set_ylabel("log(Err / Analytical KF Err)" if logscale else "Prediction Error", fontsize=30)
-                ax.set_ylabel("log(Err - Empirical KF Err)" if logscale else "Prediction Error", fontsize=30)
+                ax.set_ylabel("Median of Err / Empirical KF Err" if logscale else "Prediction Error", fontsize=30)
+                # ax.set_ylabel("Err - Empirical KF Err" if logscale else "Prediction Error", fontsize=30)
+                # ax.set_ylabel("Median Error" if logscale else "Avg Error", fontsize=30)
 
                 ax.grid(which="both")
                 ax.tick_params(axis='both', which='major', labelsize=30)
@@ -1258,9 +1259,12 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
                     ax.set_yscale('log')
                     ax.set_xscale('log')
 
+                # ax.set_yscale('linear')
+                # ax.set_xscale('linear')
 
-                if not logscale:
-                    ax.set_ylim(bottom=10 ** (-0.7), top=0.5 * 10 ** (1))  # set the y axis limits
+
+                # if not logscale:
+                #     ax.set_ylim(bottom=10 ** (-0.7), top=0.5 * 10 ** (1))  # set the y axis limits
 
                 ax.set_title("System " + str(sys) + (": Rotated Diagonal (|N(0,1)| <= 0.95 Eigs) A " if config.val_dataset_typ == "rotDiagA_gauss" else (": Rotated Diagonal (Unif(-1,1) Eigs) A " if config.val_dataset_typ == "rotDiagA_unif" else (": Rotated Diagonal A " if config.val_dataset_typ == "rotDiagA" else (
                     ": Upper Triangular A " if config.val_dataset_typ == "upperTriA" else (

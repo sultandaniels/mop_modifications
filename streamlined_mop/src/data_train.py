@@ -49,7 +49,7 @@ def preds_thread(make_preds, resume_train, train_conv):
     run_deg_kf_test = False #run degenerate KF test
     excess = False #run the excess plots
     shade = True
-    config.override("ckpt_path", "../outputs/GPT2/240917_215957.2e788e_rotDiagA_gauss_gauss_C/checkpoints/step=192000.ckpt")
+    config.override("ckpt_path", "../outputs/GPT2/240923_201715.03463b_single_system_single_system/checkpoints/step=192000.ckpt")
 
     if resume_train:
         #get the parent directory of the ckpt_path
@@ -232,6 +232,7 @@ if __name__ == '__main__':
     parser.add_argument('--olsnorm', help='Boolean. subtract kalman performance from error', action='store_true')
     parser.add_argument('--t_conv_plot', help='Boolean. plot the convergence plots with t as the indep. var.', action='store_true')
     parser.add_argument('--logscale', help='Boolean. plot the system test evaluations on a logscale with KF err subtracted.', action='store_true')
+    parser.add_argument('--logscale_an', help='Boolean. plot the system test evaluations on a logscale divided by analytical KF err.', action='store_true')
     parser.add_argument('--train_mix', help='Boolean. generate training data from gaussian, uppertriA, and rotdiagA', action='store_true')
 
     # Parse the arguments
@@ -254,6 +255,8 @@ if __name__ == '__main__':
     t_conv_plot = args.t_conv_plot
     print("logscale arg", args.logscale)
     logscale = args.logscale
+    print("logscale_an arg", args.logscale_an)
+    logscale_an = args.logscale_an
     print("train_mix arg", args.train_mix)
     train_mix = args.train_mix
 
