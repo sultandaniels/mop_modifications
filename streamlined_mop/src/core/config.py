@@ -21,12 +21,12 @@ class Config(object, metaclass=Singleton):
 
     # Dataset settings
     num_tasks = 40000 #number of training systems
-    num_val_tasks = 3 #number of test systems
-    dataset_typ = "single_system" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"rotDiagA_unif" #"rotDiagA_gauss" #"upperTriA" #"single_system" #"cond_num"
+    num_val_tasks = 1000 #number of test systems
+    dataset_typ = "gaussA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"rotDiagA_unif" #"rotDiagA_gauss" #"upperTriA" #"single_system" #"cond_num"
     max_cond_num = 100
     distinct_cond_nums = 10
-    val_dataset_typ = "single_system"  #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"rotDiagA_unif" #"rotDiagA_gauss" #"upperTriA" #"single_system" #"cond_num"
-    C_dist = "_single_system" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var" #"_single_system"
+    val_dataset_typ = "gaussA"  #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"rotDiagA_unif" #"rotDiagA_gauss" #"upperTriA" #"single_system" #"cond_num"
+    C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var" #"_single_system"
     nx = 10
     ny = 5
     n_noise = 1

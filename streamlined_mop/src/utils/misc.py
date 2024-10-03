@@ -73,8 +73,6 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                     q1, median, q3 = np.quantile(normalized_err[sys], [0.45, 0.5, 0.55], axis=-2)
 
                     q1_2, median_2, q3_2 = np.quantile(err_ls[sys], [0.45, 0.5, 0.55], axis=-2)
-
-
                     
                     # #check if median values are less than or equal to 1
                     # if np.any(median[1:] <= 1):
