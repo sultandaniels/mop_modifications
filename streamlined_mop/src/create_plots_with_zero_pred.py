@@ -729,6 +729,13 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     analytical_kf = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     err_lss["Analytical_Kalman"] = analytical_kf.reshape((num_systems, 1)) @ np.ones((1, config.n_positions))
 
+    #Analytical simulation predictions
+    #generate config.n_positions multivariate normal random variables with mean zero and covariance sim_obj.S_observation_inf and do this config.num_traces["val"] times for each sim_obj
+    an_sims = np.array([np.random.multivariate_normal(np.zeros(config.ny), sim_obj.S_observation_inf, (config.num_traces["val"], config.n_positions+1)) for sim_obj in sim_objs])
+
+    print("an_sims shape:", an_sims.shape)
+    err_lss["Analytical_Simulation"] = np.linalg.norm(an_sims, axis=-1) ** 2
+
     # Original OLS
     # Clear the PyTorch cache
     start = time.time()  # start the timer for OLS predictions
@@ -1037,15 +1044,16 @@ def create_plots(config, run_preds, run_deg_kf_test, excess, num_systems, shade,
 
     # colors = [ '#EE7733', '#0077BB', '#EE3377', '#CC3311', '#009988', '#DDDDDD', '#33BBEE', '#EEDD88', '#BBBBBB','#7D00BD', '#d00960', '#006400', '#ff1493', '#00ff00', '#ff4500', '#8a2be2', '#5f9ea0', '#d2691e','#ff6347', '#4682b4', '#daa520', '#7fff00']
 
-    # Define the dark colors in hex format
+   # Define the dark colors in hex format
     colors = [
     '#1f77b4',  # Dark Blue
     '#ff7f0e',  # Dark Orange
     '#2ca02c',  # Dark Green
     '#d62728',  # Dark Red
     '#9467bd',  # Purple
-    '#17becf'   # Dark Cyan
-    ]
+    '#17becf',  # Dark Cyan
+    '#8c564b',  # Dark Brown
+]
 
     print("len(err_lss_load):", len(err_lss_load))
     for sys in range(len(irreducible_error_load)):

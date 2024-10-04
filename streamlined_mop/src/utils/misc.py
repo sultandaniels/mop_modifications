@@ -38,7 +38,7 @@ class classproperty(property):
 
 
 def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", ax=None, shade=True, normalized=True):
-    names = ["MOP", "OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Analytical_Kalman", "Zero", "Kalman", "OLS_ir_length1_orig", "OLS_ir_length2_orig", "OLS_ir_length3_orig"]
+    names = ["MOP", "OLS_ir_1", "OLS_ir_2", "OLS_ir_3", "Analytical_Kalman", "Analytical_Simulation", "Zero", "Kalman", "OLS_ir_length1_orig", "OLS_ir_length2_orig", "OLS_ir_length3_orig"]
     print("\n\n\nSYS", sys)
     err_rat = np.zeros(2)
     if ax is None:
@@ -102,19 +102,19 @@ def plot_errs(colors, sys, err_lss, err_irreducible, legend_loc="upper right", a
                     
                     color_count += 1
 
-                elif name == "Analytical_Kalman": #plot the analytical kalman filter
-                        t = np.arange(err_lss["Kalman"].shape[-1])
-                        #take the reciprocal of every element in err_lss["Kalman"]
-                        rec_kalman = 1/err_lss["Kalman"][sys]
-                        #multiply rec_kalman by err_ls[sys][0] elementwise
-                        normalized_err = rec_kalman * err_ls[sys][0]
+                # elif name == "Analytical_Kalman": #plot the analytical kalman filter
+                #         t = np.arange(err_lss["Kalman"].shape[-1])
+                #         #take the reciprocal of every element in err_lss["Kalman"]
+                #         rec_kalman = 1/err_lss["Kalman"][sys]
+                #         #multiply rec_kalman by err_ls[sys][0] elementwise
+                #         normalized_err = rec_kalman * err_ls[sys][0]
 
-                        q1, median, q3 = np.quantile(normalized_err, [0.45, 0.5, 0.55], axis=-2)
-                        print("shape of median", median.shape)
-                        print("len of t", len(t))
-                        handles.extend(ax.plot(t, median, marker = None, label=name, linewidth=4, linestyle="-.", color = '#000000', alpha= 0.7))
-                        if shade:
-                            ax.fill_between(t, q1, q3, facecolor=handles[-1].get_color(), alpha=0.07)
+                #         q1, median, q3 = np.quantile(normalized_err, [0.45, 0.5, 0.55], axis=-2)
+                #         print("shape of median", median.shape)
+                #         print("len of t", len(t))
+                #         handles.extend(ax.plot(t, median, marker = None, label=name, linewidth=4, linestyle="-.", color = '#000000', alpha= 0.7))
+                #         if shade:
+                #             ax.fill_between(t, q1, q3, facecolor=handles[-1].get_color(), alpha=0.07)
             else:
                 if name in names:
                     if name != "Analytical_Kalman":
