@@ -632,14 +632,20 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     print("time elapsed for MOP Pred:", (end - start) / 60, "min")  # print the time elapsed for transformer predictions
 
     errs_tf = np.linalg.norm((ys - preds_tf), axis=-1) ** 2  # get the errors of transformer predictions
-    noiseless_errs_tf = np.linalg.norm((noiseless_ys - preds_tf), axis=-1) ** 2 + np.array([
-        (np.linalg.norm(sim_obj.C) * sim_obj.sigma_w) ** 2 + config.ny * (sim_obj.sigma_v ** 2)
-        for sim_obj in sim_objs
-    ])[:, None, None]
+    # noiseless_errs_tf = np.linalg.norm((noiseless_ys - preds_tf), axis=-1) ** 2 + np.array([
+    #     (np.linalg.norm(sim_obj.C) * sim_obj.sigma_w) ** 2 + config.ny * (sim_obj.sigma_v ** 2)
+    #     for sim_obj in sim_objs
+    # ])[:, None, None]
+
+
+    del preds_tf
+
+    torch.cuda.empty_cache()
+    gc.collect()
 
     print("zero predictor")
     # zero predictor predictions
-    errs_zero = np.linalg.norm((ys - np.zeros_like(ys)), axis=-1) ** 2  # get the errors of zero predictions
+    errs_zero = np.linalg.norm(ys, axis=-1) ** 2  # get the errors of zero predictions
 
     n_noise = config.n_noise
 
@@ -681,33 +687,32 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             kf_index += 1
 
     else:  
-        # print("no kf pred")
-        # Kalman Predictions
-        print("start kf pred")
-        preds_kf = np.array([[
-            apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise),
-                     sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-            for __ys in _ys
-        ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
-        ])  # get kalman filter predictions
-        errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
+        print("no kf pred")
+    #     # Kalman Predictions
+    #     print("start kf pred")
+    #     preds_kf = np.array([[
+    #         apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise),
+    #                  sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
+    #         for __ys in _ys
+    #     ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
+    #     ])  # get kalman filter predictions
+    #     errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
 
-    end = time.time()  # end the timer for kalman filter predictions
-    print("time elapsed for KF Pred:", (end - start) / 60,
-          "min")  # print the time elapsed for kalman filter predictions
+    # end = time.time()  # end the timer for kalman filter predictions
+    # print("time elapsed for KF Pred:", (end - start) / 60,
+    #       "min")  # print the time elapsed for kalman filter predictions
 
     err_lss = collections.OrderedDict([
-        ("Kalman", errs_kf),
+        # ("Kalman", errs_kf),
         ("MOP", errs_tf),
-        ("MOP_analytical", noiseless_errs_tf),
+        # ("MOP_analytical", noiseless_errs_tf),
         ("Zero", errs_zero)
     ])
-    del preds_kf
-    del errs_kf
-    del preds_tf
+    # del preds_kf
+    # del errs_kf
     del errs_tf
-    del noiseless_errs_tf
-    del noiseless_ys
+    # del noiseless_errs_tf
+    # del noiseless_ys
     del errs_zero
 
     torch.cuda.empty_cache()
@@ -736,14 +741,14 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
     print("an_sims shape:", an_sims.shape)
     err_lss["Analytical_Simulation"] = np.linalg.norm(an_sims, axis=-1) ** 2
 
-    # Original OLS
-    # Clear the PyTorch cache
-    start = time.time()  # start the timer for OLS predictions
-    print("start OLS pred")
-    #print(torch.cuda.memory_summary())
-    err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=3, err_lss=err_lss)
-    end = time.time()  # end the timer for OLS predictions
-    print("time elapsed for OLS Pred:", (end - start) / 60, "min")  # print the time elapsed for OLS predictions
+    # # Original OLS
+    # # Clear the PyTorch cache
+    # start = time.time()  # start the timer for OLS predictions
+    # print("start OLS pred")
+    # #print(torch.cuda.memory_summary())
+    # err_lss = compute_OLS_ir(config, ys, sim_objs, max_ir_length=3, err_lss=err_lss)
+    # end = time.time()  # end the timer for OLS predictions
+    # print("time elapsed for OLS Pred:", (end - start) / 60, "min")  # print the time elapsed for OLS predictions
 
     irreducible_error = np.array([np.trace(sim_obj.S_observation_inf) for sim_obj in sim_objs])
     return err_lss, irreducible_error
@@ -889,6 +894,7 @@ def save_preds(run_deg_kf_test, config):
                 "wb") as f:
             pickle.dump(err_lss, f)
     else:
+        print("saving prediction errors")
         # save err_lss and irreducible_error to a file
         with open(
                 parent_parent_dir + "/prediction_errors" + config.C_dist + "_" + step_size + f"/{config.val_dataset_typ}_err_lss.pkl",

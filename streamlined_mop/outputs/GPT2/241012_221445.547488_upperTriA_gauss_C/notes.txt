@@ -1,0 +1,1 @@
+trained on off-diagonal sampled unif(-0.7, 0.7).
