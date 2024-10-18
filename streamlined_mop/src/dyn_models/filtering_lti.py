@@ -5,6 +5,7 @@ from scipy import linalg as la
 from filterpy.kalman import KalmanFilter
 import random
 from decimal import Decimal, getcontext
+import control as ct
 
 
 def softplus(x):
@@ -16,29 +17,29 @@ def softplus(x):
 def is_symmetric(matrix, tol=1e-8):
     return np.allclose(matrix, matrix.T, atol=tol)
 
-# code that I added
-def solve_ricc(A, W):  # solve the Riccati equation for the steady state solution
-    # Ensure input arrays are of high precision type
-    A = np.array(A, dtype=np.float64)
-    W = np.array(W, dtype=np.float64)
+# # code that I added
+# def solve_ricc(A, W):  # solve the Riccati equation for the steady state solution
+#     # Ensure input arrays are of high precision type
+#     A = np.array(A, dtype=np.float64)
+#     W = np.array(W, dtype=np.float64)
 
-    L, V = np.linalg.eig(A)
-    Vinv = np.linalg.inv(V)
-    Pi = (V @ (
-            (Vinv @ W @ Vinv.T) / (1 - L[:, None] * L)
-    ) @ V.T).real
+#     L, V = np.linalg.eig(A)
+#     Vinv = np.linalg.inv(V)
+#     Pi = (V @ (
+#             (Vinv @ W @ Vinv.T) / (1 - L[:, None] * L)
+#     ) @ V.T).real
     
-    # if lin.trace(Pi) < 0:
+#     # if lin.trace(Pi) < 0:
 
-    #     print("\n\ntrace of Pi:", lin.trace(Pi))
-    #     print("is symmetric:", is_symmetric((Vinv @ W @ Vinv.T) / (1 - L[:, None] * L)))
-    #     print("eigs of inner mat:", lin.eig((Vinv @ W @ Vinv.T) / (1 - L[:, None] * L)))
-    #     print("\nVinv:", Vinv)
-    #     print("\nL:", L)
-    #     print("\nLinv:", 1/L)
+#     #     print("\n\ntrace of Pi:", lin.trace(Pi))
+#     #     print("is symmetric:", is_symmetric((Vinv @ W @ Vinv.T) / (1 - L[:, None] * L)))
+#     #     print("eigs of inner mat:", lin.eig((Vinv @ W @ Vinv.T) / (1 - L[:, None] * L)))
+#     #     print("\nVinv:", Vinv)
+#     #     print("\nL:", L)
+#     #     print("\nLinv:", 1/L)
 
-    # Pi = np.array(Pi, dtype=np.float32)
-    return Pi
+#     # Pi = np.array(Pi, dtype=np.float32)
+#     return Pi
 
 def gen_A(elow, ehigh, n): # generates a 2d A matrix with evalue magnitudes in between elow and ehigh. For matrices larger than 2d, when there are complex evalues it just ensures that all evalues are below ehigh and at least one evalue is above elow.
     if elow > ehigh:
@@ -240,7 +241,7 @@ class FilterSim:
 
             
 
-            self.S_state_inf = solve_ricc(self.A, np.eye(nx) * self.sigma_w ** 2)
+            self.S_state_inf = ct.dlyap(self.A, np.eye(nx) * self.sigma_w ** 2)
 
             eval, evec = lin.eig(self.S_state_inf)
 
@@ -254,8 +255,6 @@ class FilterSim:
                 # rescale C and V
                 V = np.eye(ny) * self.sigma_v ** 2
                 obs_tr = lin.trace(self.C @ self.S_state_inf @ self.C.T + V)
-                # print("original obs tr", obs_tr)
-                # beta = np.sqrt(E / (obs_fro**2))
 
                 if obs_tr < 0:
                     print("obs_tr negative:", obs_tr)
@@ -279,9 +278,9 @@ class FilterSim:
 
                 S_state_inf_intermediate = sc.linalg.solve_discrete_are(self.A.T, self.C.T, np.eye(nx) * self.sigma_w ** 2, np.eye(ny) * self.sigma_v ** 2)
                 self.S_observation_inf = self.C @ S_state_inf_intermediate @ self.C.T + np.eye(ny) * self.sigma_v ** 2
-            # else:
-            #     print("steady-state covariance symmetric?:", is_symmetric(self.S_state_inf))
-            #     print("steady-state covariance positive definite?:", np.all(np.greater(eval, 0)))
+            else:
+                print("steady-state covariance symmetric?:", is_symmetric(self.S_state_inf))
+                print("steady-state covariance positive definite?:", np.all(np.greater(eval, 0)))
 
         
 

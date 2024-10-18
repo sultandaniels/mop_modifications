@@ -687,20 +687,20 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             kf_index += 1
 
     else:  
-        print("no kf pred")
-    #     # Kalman Predictions
-    #     print("start kf pred")
-    #     preds_kf = np.array([[
-    #         apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise),
-    #                  sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
-    #         for __ys in _ys
-    #     ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
-    #     ])  # get kalman filter predictions
-    #     errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
+        # print("no kf pred")
+        # Kalman Predictions
+        print("start kf pred")
+        preds_kf = np.array([[
+            apply_kf(sim_obj, __ys, sigma_w=sim_obj.sigma_w * np.sqrt(n_noise),
+                     sigma_v=sim_obj.sigma_v * np.sqrt(n_noise))
+            for __ys in _ys
+        ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
+        ])  # get kalman filter predictions
+        errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
 
-    # end = time.time()  # end the timer for kalman filter predictions
-    # print("time elapsed for KF Pred:", (end - start) / 60,
-    #       "min")  # print the time elapsed for kalman filter predictions
+    end = time.time()  # end the timer for kalman filter predictions
+    print("time elapsed for KF Pred:", (end - start) / 60,
+          "min")  # print the time elapsed for kalman filter predictions
 
     err_lss = collections.OrderedDict([
         # ("Kalman", errs_kf),

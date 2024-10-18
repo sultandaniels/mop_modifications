@@ -21,12 +21,12 @@ class Config(object, metaclass=Singleton):
 
     # Dataset settings
     num_tasks = 40000 #number of training systems
-    num_val_tasks = 3 #number of test systems
-    dataset_typ = "cond_num" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system" #"cond_num"
+    num_val_tasks = 1000 #number of test systems
+    dataset_typ = "gaussA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"rotDiagA_unif" #"rotDiagA_gauss" #"upperTriA" #"single_system" #"cond_num"
     max_cond_num = 100
     distinct_cond_nums = 10
-    val_dataset_typ = "rotDiagA" #"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"upperTriA" #"single_system"
-    C_dist = "_unif_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var" #"single_system"
+    val_dataset_typ = "gaussA"#"unifA" #"gaussA" #"gaussA_noscale" #"rotDiagA" #"rotDiagA_unif" #"rotDiagA_gauss" #"upperTriA" #"single_system" #"cond_num"
+    C_dist = "_gauss_C" #"_unif_C" #"_gauss_C" #"_gauss_C_large_var" #"_single_system"
     nx = 10
     ny = 5
     n_noise = 1
@@ -42,6 +42,7 @@ class Config(object, metaclass=Singleton):
     num_epochs = 1
 
     # Model settings
+    model_type = "GPT2" #"GPT2" #"transfoXL"
     n_positions = 250 #500 for extended OLS #250 #context length
     n_embd = 128
     n_layer = 12
@@ -49,6 +50,15 @@ class Config(object, metaclass=Singleton):
     n_dims_in = 5
     n_dims_out = 5  #(IMPORTANT TO KEEP THIS AT 5 FOR NOW) TODO: this used to be 10 but needs to be fixed to match lin_sys.yaml
     changing = False  # only used for plotting
+
+    #transfoXL specific
+    d_model = 512
+    # d_inner = 2048
+    # cutoffs = [20000, 40000, 200000]
+    # div_val = 4
+    # mem_len = 1600
+    # same_length = True
+    # clamp_len = 1000
 
     # Optimizer parameters
     learning_rate = 3e-4
