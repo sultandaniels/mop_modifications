@@ -696,20 +696,20 @@ def compute_errors(config, C_dist, run_deg_kf_test, wentinn_data):
             for __ys in _ys
         ] for sim_obj, _ys in zip(sim_objs, np.take(ys, np.arange(ys.shape[-2] - 1), axis=-2))
         ])  # get kalman filter predictions
-        errs_kf = np.linalg.norm((ys - preds_kf), axis=-1) ** 2
+        errs_kf = np.linalg.norm((ys.to(device) - preds_kf), axis=-1) ** 2
 
     end = time.time()  # end the timer for kalman filter predictions
     print("time elapsed for KF Pred:", (end - start) / 60,
           "min")  # print the time elapsed for kalman filter predictions
 
     err_lss = collections.OrderedDict([
-        # ("Kalman", errs_kf),
+        ("Kalman", errs_kf),
         ("MOP", errs_tf),
         # ("MOP_analytical", noiseless_errs_tf),
         ("Zero", errs_zero)
     ])
-    # del preds_kf
-    # del errs_kf
+    del preds_kf
+    del errs_kf
     del errs_tf
     # del noiseless_errs_tf
     # del noiseless_ys
